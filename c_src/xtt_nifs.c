@@ -7,6 +7,7 @@
 #define MAX_BASENAME_SIZE 1024
 
 static ERL_NIF_TERM
+xtt_client_handshake_context(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]){
 {
     if(argc != 2) {
         return enif_make_badarg(env);
@@ -23,7 +24,7 @@ static ERL_NIF_TERM
 
     xtt_error_code rc;
     unsigned char server_to_client[1024];
-    unsigned char client_to_server[1024];
+
     // 1) Create client's handshake context
     (struct xtt_client_handshake_context) *client_handshake_ctx =
     (struct xtt_client_handshake_context *) enif_alloc_resource(ctx_type, sizeof(struct xtt_client_handshake_context));;
@@ -54,6 +55,8 @@ xtt_build_client_init(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]){
     }
 
     uint16_t client_init_send_length;
+    unsigned char client_to_server[1024];
+
     rc = xtt_build_client_init(client_to_server,
                                &client_init_send_length,
                                &client_handshake_ctx);
@@ -71,3 +74,11 @@ xtt_build_client_init(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]){
 
     return enif_make_binary(env, ret_bin)
 }
+
+
+static ErlNifFunc nif_funcs[] = {
+    {"xtt_client_handshake_context", 2, xtt_client_handshake_context},
+    {"xtt_build_client_init", 1, xtt_build_client_init}
+};
+
+ERL_NIF_INIT(xtt_nifs, nif_funcs, NULL, NULL, NULL, NULL)
