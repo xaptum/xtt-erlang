@@ -1,4 +1,4 @@
--module('xtt-erlang').
+-module(xtt_erlang).
 
 %% API exports
 -export([xtt_client_handshake/1,
