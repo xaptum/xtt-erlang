@@ -1,7 +1,9 @@
 -module(xtt_erlang).
 
 %% API exports
--export([xtt_client_handshake/1,
+-export([
+  init/0,
+  xtt_client_handshake/1,
   xtt_client_handshake_context/2,
   xtt_initialize_client_group_context/4,
   xtt_build_client_init/1,
@@ -18,7 +20,8 @@
 
 init() ->
   SoName = filename:join([priv_dir(), ?LIBNAME]),
-  erlang:load_nif(SoName, 0).
+  io:format("Loading NIFs from ~p", [SoName]),
+  ok = erlang:load_nif(SoName, 0).
 
 priv_dir() ->
   case code:priv_dir(?APPNAME) of
@@ -97,7 +100,7 @@ initialize_ids(#{})->
 
 initialize_ids(RequestedClientIdFile, IntendedServerIdFile)->
   {ok, RequestedClientId} = file:read_file(RequestedClientIdFile),
-  ?XTT_IDENTITY_SIZE = size(RequestedClientId),
+  true = lists:member(size(RequestedClientId), [1, ?XTT_IDENTITY_SIZE]),
   {ok, IntendedServerId} = file:read_file(IntendedServerIdFile),
   ?XTT_IDENTITY_SIZE = size(IntendedServerId),
   {RequestedClientId, IntendedServerId}.
