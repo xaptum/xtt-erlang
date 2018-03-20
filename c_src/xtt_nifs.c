@@ -3,11 +3,8 @@
 #include <xtt.h>
 #include <erl_nif.h>
 
-#define MAX_MESSAGE_SIZE 1024
-#define MAX_BASENAME_SIZE 1024
-
 static ERL_NIF_TERM
-xtt_client_handshake_context(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]){
+xtt_client_handshake_context(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
     if(argc != 2) {
         return enif_make_badarg(env);
@@ -28,8 +25,6 @@ xtt_client_handshake_context(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]
         return enif_make_badarg(env);
     }
 
-    ERL_NIF_TERM result;
-
     xtt_return_code_type rc = XTT_RETURN_SUCCESS;
 
     // 1) Create client's handshake context
@@ -43,7 +38,7 @@ xtt_client_handshake_context(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]
         return enif_make_int(env, rc);
     }
 
-    result = enif_make_resource(env, &ctx);
+    ERL_NIF_TERM  result = enif_make_resource(env, &ctx);
     enif_release_resource(&ctx);
     return result;
 }
@@ -60,19 +55,19 @@ xtt_initialize_client_group_context(ErlNifEnv* env, int argc, const ERL_NIF_TERM
     xtt_daa_credential_lrsw cred;
     const unsigned char basename;
 
-    if(!enif_get_string(env, argv[0], &gid)) {
+    if(!enif_get_string(env, argv[0], (char *) &gid, sizeof(gid), ERL_NIF_LATIN1 ) ) {
             return enif_make_badarg(env);
     }
 
-    if(!enif_get_string(env, argv[1], &priv_key)) {
+    if(!enif_get_string(env, argv[1], (char *) &priv_key, sizeof(priv_key), ERL_NIF_LATIN1 ) ) {
             return enif_make_badarg(env);
     }
 
-    if(!enif_get_string(env, argv[2], &cred)) {
+    if(!enif_get_string(env, argv[2], (char *) &cred, sizeof(cred), ERL_NIF_LATIN1 ) ) {
                 return enif_make_badarg(env);
     }
 
-    if(!enif_get_string(env, argv[3], &basename)) {
+    if(!enif_get_string(env, argv[3], (char *) &basename, sizeof(basename), ERL_NIF_LATIN1) ) {
         return enif_make_badarg(env);
     }
 
@@ -82,48 +77,12 @@ xtt_initialize_client_group_context(ErlNifEnv* env, int argc, const ERL_NIF_TERM
                                 &gid,
                                 &priv_key,
                                 &cred,
-                                &basename, sizeof(basename))
+                                &basename, sizeof(basename));
 
-    result = enif_make_resource(env, &group_ctx_out);
+    ERL_NIF_TERM result = enif_make_resource(env, &group_ctx_out);
     enif_release_resource(&group_ctx_out);
     return result;
 }
-
-//static ERL_NIF_TERM
-//xtt_build_client_init(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]){
-//
-//    if(argc != 1) {
-//        return enif_make_badarg(env);
-//    }
-//
-//    struct xtt_client_handshake_context client_handshake_ctx;
-//
-//    if(!enif_get_resource(env, argv[0], &client_handshake_ctx)) {
-//        return enif_make_badarg(env);
-//    }
-//
-//    uint16_t client_init_send_length;
-//    unsigned char client_to_server[1024];
-//
-//    xtt_return_code_type rc = xtt_build_client_init(
-//                               client_to_server,
-//                               &client_init_send_length,
-//                               &client_handshake_ctx);
-//
-//    if(rc != 0){
-//        fputs("Error initializing xtt handshake context\n", stderr);
-//            return enif_make_int(env, rc);
-//        }
-//    }
-//
-//    ErlNifBinary ret_bin;
-//
-//    enif_alloc_binary(client_init_send_length, ret_bin); // Size of new binary
-//    memcpy(ret_bin.data, client_to_server, client_init_send_length); // Copying the contents of binary
-//
-//    return enif_make_binary(env, ret_bin)
-//}
-
 
 static ErlNifFunc nif_funcs[] = {
     {"xtt_client_handshake_context", 2, xtt_client_handshake_context},

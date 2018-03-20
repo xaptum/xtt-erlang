@@ -62,7 +62,7 @@ xtt_client_handshake(#{ server := ServerName,
 xtt_client_handshake_context(_XttVersion, _XttSuite)->
   erlang:nif_error(?LINE).
 
-xtt_initialize_client_group_context(Gid, PrivKey, Credential, Basename)->
+xtt_initialize_client_group_context(_Gid, _PrivKey, _Credential, _Basename)->
   erlang:nif_error(?LINE).
 
 xtt_build_client_init(_XttClientHandshakeContext)->
