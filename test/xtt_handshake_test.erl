@@ -23,9 +23,8 @@
 -define(XTT_SERVER_PORT, 4445).
 -define(XTT_SERVER_HOST, "localhost").
 
-
-example_data_file(Filename)->
-  filename:join([xtt_erlang:priv_dir(), ?EXAMPLE_DATA_DIR, Filename]).
+example_data_dir()->
+  filename:join([xtt_erlang:priv_dir(), ?EXAMPLE_DATA_DIR]).
 
 handshake_test()->
   ensure_xtt_server_started(?XTT_SERVER_HOST, ?XTT_SERVER_PORT),
@@ -33,7 +32,8 @@ handshake_test()->
     server => ?XTT_SERVER_HOST,
     port => ?XTT_SERVER_PORT,
     xtt_version => ?XTT_VERSION_ONE,
-    xtt_suite  => ?XTT_X25519_LRSW_ED25519_AES256GCM_SHA512},
+    xtt_suite  => ?XTT_X25519_LRSW_ED25519_AES256GCM_SHA512,
+    data_dir => example_data_dir()},
   xtt_erlang:xtt_client_handshake(Params).
 
 ensure_xtt_server_started(ServerHost, ServerPort)->
