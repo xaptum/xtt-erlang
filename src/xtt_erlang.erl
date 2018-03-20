@@ -141,7 +141,11 @@ initialize_daa(true = _UseTpm, _Basename, #{data_dir := _DataDir} = _ParameterMa
   todo.
 
 initialize_client_group_context(Gid, PrivKey, Credential, Basename)->
-  xtt_initialize_client_group_context(Gid, PrivKey, Credential, Basename).
+  xtt_initialize_client_group_context(
+    binary_to_list(Gid),
+    binary_to_list(PrivKey),
+    binary_to_list(Credential),
+    binary_to_list(Basename)).
 
 
 initialize_certs(_PrametersMap)->ok.

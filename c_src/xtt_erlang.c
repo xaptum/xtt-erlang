@@ -47,6 +47,7 @@ static ERL_NIF_TERM
 xtt_initialize_client_group_context(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]){
 
     if(argc != 4) {
+        fprintf(stderr, "Bad arg error: expected 4 got %d\n", argc);
         return enif_make_badarg(env);
     }
 
@@ -56,18 +57,22 @@ xtt_initialize_client_group_context(ErlNifEnv* env, int argc, const ERL_NIF_TERM
     const unsigned char basename;
 
     if(!enif_get_string(env, argv[0], (char *) &gid, sizeof(gid), ERL_NIF_LATIN1 ) ) {
+            fprintf(stderr, "Bad arg at position 0\n");
             return enif_make_badarg(env);
     }
 
     if(!enif_get_string(env, argv[1], (char *) &priv_key, sizeof(priv_key), ERL_NIF_LATIN1 ) ) {
+            fprintf(stderr, "Bad arg at position 1\n");
             return enif_make_badarg(env);
     }
 
     if(!enif_get_string(env, argv[2], (char *) &cred, sizeof(cred), ERL_NIF_LATIN1 ) ) {
-                return enif_make_badarg(env);
+             fprintf(stderr, "Bad arg at position 2\n");
+             return enif_make_badarg(env);
     }
 
     if(!enif_get_string(env, argv[3], (char *) &basename, sizeof(basename), ERL_NIF_LATIN1) ) {
+        fprintf(stderr, "Bad arg at position 3\n");
         return enif_make_badarg(env);
     }
 
