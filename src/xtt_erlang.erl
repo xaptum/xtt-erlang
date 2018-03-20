@@ -44,8 +44,12 @@ xtt_client_handshake(#{ server := ServerName,
                         xtt_version := XttVersion,
                         xtt_suite := XttSuite} = ParameterMap) ->
 
+  init(),
+
   {RequestedClientId, IntendedServerId} = initialize_ids(ParameterMap),
   GroupContext = initialize_daa(ParameterMap),
+
+  initialize_certs(ParameterMap),
 
   {ok, Socket} = gen_tcp:connect(ServerName, Port, ?TCP_OPTIONS),
   XttHandshakeContext = xtt_client_handshake_context(XttVersion, XttSuite),
@@ -137,4 +141,4 @@ initialize_client_group_context(Gid, PrivKey, Credential, Basename)->
   xtt_initialize_client_group_context(Gid, PrivKey, Credential, Basename).
 
 
-
+initialize_certs(_PrametersMap)->ok.
