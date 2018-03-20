@@ -116,7 +116,6 @@ initialize_daa(#{} = ParameterMap)->
 initialize_daa(UseTpm, #{data_dir := DataDir} = ParameterMap) ->
   BasenameFile = maps:get(base_filename, ParameterMap, filename:join([DataDir, ?BASENAME_FILE])),
   {ok, Basename} = file:read_file(BasenameFile),
-  true = size(Basename) > 0,
   initialize_daa(UseTpm, Basename, ParameterMap).
 
 initialize_daa(false = _UseTpm, Basename, #{data_dir := DataDir} = ParameterMap)->
@@ -125,13 +124,10 @@ initialize_daa(false = _UseTpm, Basename, #{data_dir := DataDir} = ParameterMap)
   PrivKeyFile = maps:get(priv_key_filename, ParameterMap, filename:join([DataDir, ?DAA_SECRETKEY_FILE])),
 
   {ok, Gpk} = file:read_file(GpkFile),
-  ?XTT_DAA_GROUP_PUB_KEY_SIZE = size(Gpk),
 
   {ok, Credential} = file:read_file(CredFile),
-  ?XTT_DAA_CREDENTIAL_SIZE = size(Credential),
 
   {ok, PrivKey} = file:read_file(PrivKeyFile),
-  ?XTT_DAA_PRIV_KEY_SIZE = size(PrivKey),
 
   Gid = crypto:hash(sha256, Gpk),
   ?XTT_GROUP_ID_SIZE = size(Gid),
@@ -141,11 +137,7 @@ initialize_daa(true = _UseTpm, _Basename, #{data_dir := _DataDir} = _ParameterMa
   todo.
 
 initialize_client_group_context(Gid, PrivKey, Credential, Basename)->
-  xtt_initialize_client_group_context(
-    binary_to_list(Gid),
-    binary_to_list(PrivKey),
-    binary_to_list(Credential),
-    binary_to_list(Basename)).
+  xtt_initialize_client_group_context(Gid,PrivKey,Credential, Basename).
 
 
 initialize_certs(_PrametersMap)->ok.
