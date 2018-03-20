@@ -3,6 +3,7 @@
 %% API exports
 -export([xtt_client_handshake/1,
   xtt_client_handshake_context/2,
+  xtt_initialize_client_group_context/4,
   xtt_build_client_init/1,
   xtt_build_error_msg/0]).
 
@@ -61,6 +62,9 @@ xtt_client_handshake(#{ server := ServerName,
 xtt_client_handshake_context(_XttVersion, _XttSuite)->
   erlang:nif_error(?LINE).
 
+xtt_initialize_client_group_context(Gid, PrivKey, Credential, Basename)->
+  erlang:nif_error(?LINE).
+
 xtt_build_client_init(_XttClientHandshakeContext)->
   erlang:nif_error(?LINE).
 
@@ -104,12 +108,14 @@ initialize_daa(#{} = ParameterMap)->
 
 initialize_daa(UseTpm, #{data_dir := DataDir} = ParameterMap) ->
   BasenameFile = maps:get(base_filename, ParameterMap, filename:join([DataDir, ?BASENAME_FILE])),
+  {ok, Basename} = file:read_file(BasenameFile),
+  true = size(Basename) > 0,
+  initialize_daa(UseTpm, Basename, ParameterMap).
+
+initialize_daa(false = _UseTpm, Basename, #{data_dir := DataDir} = ParameterMap)->
   GpkFile = maps:get(gpk_filename, ParameterMap, filename:join([DataDir, ?DAA_GPK_FILE])),
   CredFile = maps:get(cred_filename, ParameterMap, filename:join([DataDir, ?DAA_CRED_FILE])),
   PrivKeyFile = maps:get(priv_key_filename, ParameterMap, filename:join([DataDir, ?DAA_SECRETKEY_FILE])),
-
-  {ok, Basename} = file:read_file(BasenameFile),
-  true = size(Basename) > 0,
 
   {ok, Gpk} = file:read_file(GpkFile),
   ?XTT_DAA_GROUP_PUB_KEY_SIZE = size(Gpk),
@@ -118,4 +124,17 @@ initialize_daa(UseTpm, #{data_dir := DataDir} = ParameterMap) ->
   ?XTT_DAA_CREDENTIAL_SIZE = size(Credential),
 
   {ok, PrivKey} = file:read_file(PrivKeyFile),
-  ?XTT_DAA_PRIV_KEY_SIZE = size(PrivKey).
+  ?XTT_DAA_PRIV_KEY_SIZE = size(PrivKey),
+
+  Gid = crypto:hash(sha256, Gpk),
+  ?XTT_GROUP_ID_SIZE = size(Gid),
+
+  initialize_client_group_context(Gid, PrivKey, Credential, Basename);
+initialize_daa(true = _UseTpm, _Basename, #{data_dir := _DataDir} = _ParameterMap)->
+  todo.
+
+initialize_client_group_context(Gid, PrivKey, Credential, Basename)->
+  xtt_initialize_client_group_context(Gid, PrivKey, Credential, Basename).
+
+
+
