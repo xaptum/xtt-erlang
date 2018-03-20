@@ -12,34 +12,53 @@ xtt_client_handshake_context(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]
     if(argc != 2) {
         return enif_make_badarg(env);
     }
+
+    int version;
+    int suite;
+
     if(!enif_get_int(env, argv[0], &version)) {
         return enif_make_badarg(env);
     }
+
     if(!enif_get_int(env, argv[1], &suite)) {
+        return enif_make_badarg(env);
+    }
+    else if (suite != 1 && suite != 2 && suite != 3 && suite != 4) {
+        fprintf(stderr, "Unknown suite %d\n", suite);
         return enif_make_badarg(env);
     }
 
     ERL_NIF_TERM result;
-    ErlNifResourceType* ctx_type = (ErlNifResourceType*)enif_priv_data(env);
 
-    xtt_error_code rc;
-    unsigned char server_to_client[1024];
+    xtt_return_code_type rc = XTT_RETURN_SUCCESS;
 
     // 1) Create client's handshake context
-    (struct xtt_client_handshake_context) *client_handshake_ctx =
-    (struct xtt_client_handshake_context *) enif_alloc_resource(ctx_type, sizeof(struct xtt_client_handshake_context));;
-    rc = xtt_initialize_client_handshake_context(client_handshake_ctx,
-                                                  version,
-                                                  suite);
+    unsigned char in_buffer[MAX_HANDSHAKE_SERVER_MESSAGE_LENGTH];
+    unsigned char out_buffer[MAX_HANDSHAKE_CLIENT_MESSAGE_LENGTH];
+    struct xtt_client_handshake_context ctx;
 
-    if(rc != 0){
-        fputs("Error initializing xtt handshake context\n", stderr);
-            return enif_make_int(env, rc);
-        }
+    rc = xtt_initialize_client_handshake_context(&ctx, in_buffer, sizeof(in_buffer), out_buffer, sizeof(out_buffer), (xtt_version) version, (xtt_suite_spec) suite);
+    if (XTT_RETURN_SUCCESS != rc) {
+        fprintf(stderr, "Error initializing client handshake context: %d\n", rc);
+        return enif_make_int(env, rc);
     }
 
-    result = enif_make_resource(env, client_handshake_ctx);
-    enif_release_resource(client_handshake_ctx);
+//    ErlNifResourceType* ctx_type = (ErlNifResourceType*)enif_priv_data(env);
+
+//    (struct xtt_client_handshake_context) *client_handshake_ctx =
+//    (struct xtt_client_handshake_context *) enif_alloc_resource(ctx_type, sizeof(struct xtt_client_handshake_context));;
+//    rc = xtt_initialize_client_handshake_context(client_handshake_ctx,
+//                                                  &version,
+//                                                  &suite);
+//
+//    if(rc != 0){
+//        fputs("Error initializing xtt handshake context\n", stderr);
+//            return enif_make_int(env, rc);
+//        }
+//    }
+
+    result = enif_make_resource(env, &tx);
+    enif_release_resource(&ctx);
     return result;
 }
 
@@ -50,6 +69,8 @@ xtt_build_client_init(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]){
         return enif_make_badarg(env);
     }
 
+    struct xtt_client_handshake_context client_handshake_ctx;
+
     if(!enif_get_resource(env, argv[0], &client_handshake_ctx)) {
         return enif_make_badarg(env);
     }
@@ -57,7 +78,8 @@ xtt_build_client_init(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]){
     uint16_t client_init_send_length;
     unsigned char client_to_server[1024];
 
-    rc = xtt_build_client_init(client_to_server,
+    xtt_return_code_type rc = xtt_build_client_init(
+                               client_to_server,
                                &client_init_send_length,
                                &client_handshake_ctx);
 
