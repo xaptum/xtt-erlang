@@ -51,38 +51,49 @@ xtt_initialize_client_group_context(ErlNifEnv* env, int argc, const ERL_NIF_TERM
         return enif_make_badarg(env);
     }
 
-    xtt_group_id gid;
-    xtt_daa_priv_key_lrsw priv_key;
-    xtt_daa_credential_lrsw cred;
-    const unsigned char basename;
+    ErlNifBinary gidBin;
+    ErlNifBinary daaPrivKeyBin;
+    ErlNifBinary daaCredBin;
+    ErlNifBinary basenameBin;
 
-    if(!enif_get_string(env, argv[0], (char *) &gid, sizeof(gid), ERL_NIF_LATIN1 ) ) {
+    if(!enif_inspect_binary(env, argv[0], &gidBin) ) {
             fprintf(stderr, "Bad arg at position 0\n");
             return enif_make_badarg(env);
     }
 
-    if(!enif_get_string(env, argv[1], (char *) &priv_key, sizeof(priv_key), ERL_NIF_LATIN1 ) ) {
+    if(!enif_inspect_binary(env, argv[1], &daaPrivKeyBin) ) {
             fprintf(stderr, "Bad arg at position 1\n");
             return enif_make_badarg(env);
     }
 
-    if(!enif_get_string(env, argv[2], (char *) &cred, sizeof(cred), ERL_NIF_LATIN1 ) ) {
+    if(!enif_inspect_binary(env, argv[2], &daaCredBin) ) {
              fprintf(stderr, "Bad arg at position 2\n");
              return enif_make_badarg(env);
     }
 
-    if(!enif_get_string(env, argv[3], (char *) &basename, sizeof(basename), ERL_NIF_LATIN1) ) {
+    if(!enif_inspect_binary(env, argv[3], &basenameBin) ) {
         fprintf(stderr, "Bad arg at position 3\n");
         return enif_make_badarg(env);
     }
 
 
+    xtt_group_id gid;
+    gid.data = gidBin.data;
+
+    xtt_daa_priv_key_lrsw priv_key;
+    priv_key.data = daaPrivKeyBin.data;
+
+    xtt_daa_credential_lrsw cred;
+    cred.data = daaCredBin.data;
+
     struct xtt_client_group_context group_ctx_out;
+
     xtt_initialize_client_group_context_lrsw(&group_ctx_out,
                                 &gid,
-                                &priv_key,
+                                &priv_key
                                 &cred,
-                                &basename, sizeof(basename));
+                                (const unsigned char) basenameBin.data,
+                                basenameBin.size);
 
     ERL_NIF_TERM result = enif_make_resource(env, &group_ctx_out);
     enif_release_resource(&group_ctx_out);
