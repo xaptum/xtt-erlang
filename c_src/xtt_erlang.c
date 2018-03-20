@@ -61,7 +61,7 @@ xtt_initialize_client_group_context(ErlNifEnv* env, int argc, const ERL_NIF_TERM
             return enif_make_badarg(env);
     }
     else if (gidBin.size != sizeof(xtt_group_id)){
-        fprintf(stderr, "Bad arg at position 0: expecting xtt_group_id size %d got %d\n",
+        fprintf(stderr, "Bad arg at position 0: expecting xtt_group_id size %lu got %d\n",
         sizeof(xtt_group_id), gidBin.size);
         return enif_make_badarg(env);
     }
@@ -71,7 +71,7 @@ xtt_initialize_client_group_context(ErlNifEnv* env, int argc, const ERL_NIF_TERM
             return enif_make_badarg(env);
     }
     else if (daaPrivKeyBin.size != sizeof(xtt_daa_priv_key_lrsw)){
-        fprintf(stderr, "Bad arg at position 1: expecting xtt_daa_priv_key_lrsw size %d got %d\n",
+        fprintf(stderr, "Bad arg at position 1: expecting xtt_daa_priv_key_lrsw size %lu got %d\n",
         sizeof(xtt_daa_priv_key_lrsw), gidBin.size);
         return enif_make_badarg(env);
     }
@@ -81,7 +81,7 @@ xtt_initialize_client_group_context(ErlNifEnv* env, int argc, const ERL_NIF_TERM
              return enif_make_badarg(env);
     }
     else if (daaCredBin.size != sizeof(xtt_daa_credential_lrsw)){
-        fprintf(stderr, "Bad arg at position 2: expecting xtt_daa_credential_lrsw size %d got %d\n",
+        fprintf(stderr, "Bad arg at position 2: expecting xtt_daa_credential_lrsw size %lu got %d\n",
         sizeof(xtt_daa_credential_lrsw), gidBin.size);
         return enif_make_badarg(env);
     }
@@ -91,7 +91,7 @@ xtt_initialize_client_group_context(ErlNifEnv* env, int argc, const ERL_NIF_TERM
         return enif_make_badarg(env);
     }
     else if (sizeof(basenameBin) > MAX_BASENAME_LENGTH){
-        fprintf(stderr, "Bad arg at position 3: size of basename %d more than MAX %d\n", sizeof(basenameBin), MAX_BASENAME_LENGTH);
+        fprintf(stderr, "Bad arg at position 3: size of basename %lu more than MAX %d\n", sizeof(basenameBin), MAX_BASENAME_LENGTH);
         return enif_make_badarg(env);
     }
 
@@ -108,10 +108,10 @@ xtt_initialize_client_group_context(ErlNifEnv* env, int argc, const ERL_NIF_TERM
     struct xtt_client_group_context group_ctx_out;
 
     xtt_initialize_client_group_context_lrsw(&group_ctx_out,
-                                (xtt_group_id *) &(gidBin.data)
-                                (xtt_daa_priv_key_lrsw *) &(daaPrivKeyBin.data)
-                                (xtt_daa_credential_lrsw *) &(daaCredBin.data),
-                                (const unsigned char) &(basenameBin.data),
+                                (xtt_group_id *) gidBin.data
+                                (xtt_daa_priv_key_lrsw *) daaPrivKeyBin.data
+                                (xtt_daa_credential_lrsw *) daaCredBin.data,
+                                (const unsigned char) basenameBin.data,
                                 basenameBin.size);
 
     ERL_NIF_TERM result = enif_make_resource(env, &group_ctx_out);
