@@ -89,4 +89,4 @@ static ErlNifFunc nif_funcs[] = {
     {"xtt_initialize_client_group_context", 4, xtt_initialize_client_group_context}
 };
 
-ERL_NIF_INIT(xtt_nifs, nif_funcs, NULL, NULL, NULL, NULL)
+ERL_NIF_INIT(xtt_erlang, nif_funcs, NULL, NULL, NULL, NULL)

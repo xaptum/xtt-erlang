@@ -14,7 +14,7 @@
 -include("xtt.hrl").
 
 -define(APPNAME, xtt_erlang).
--define(LIBNAME, 'xtt_erlang').
+-define(LIBNAME, 'xtt-erlang').
 
 -define(TCP_OPTIONS, [binary, {packet, 2}, {keepalive, true}]).
 
