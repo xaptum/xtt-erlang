@@ -14,15 +14,11 @@ free_resource(ErlNifEnv* env, void* obj)
 static int
 load(ErlNifEnv* env, void** priv, ERL_NIF_TERM load_info)
 {
-    const char* mod = "xtt";
-    const char* name = "xtt";
-
-    ErlNifResourceFlags flags = ErlNifResourceFlags(
-        ERL_NIF_RT_CREATE | ERL_NIF_RT_TAKEOVER
-    );
+    const char* mod = "xtt_erlang";
+    const char* name = "xtt_erlang";
 
     STRUCT_RESOURCE_TYPE = enif_open_resource_type(
-        env, mod, name, free_resource, flags, NULL
+        env, mod, name, free_resource, ERL_NIF_RT_CREATE | ERL_NIF_RT_TAKEOVER, NULL
     );
 
     if(STRUCT_RESOURCE_TYPE == NULL)
@@ -59,18 +55,18 @@ xtt_client_handshake_context(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]
     // 1) Create client's handshake context
     unsigned char in_buffer[MAX_HANDSHAKE_SERVER_MESSAGE_LENGTH];
     unsigned char out_buffer[MAX_HANDSHAKE_CLIENT_MESSAGE_LENGTH];
-    struct xtt_client_handshake_context ctx = enif_alloc_resource(STRUCT_RESOURCE_TYPE, sizeof(xtt_client_handshake_context));
+    struct xtt_client_handshake_context *ctx = enif_alloc_resource(STRUCT_RESOURCE_TYPE, sizeof(struct xtt_client_handshake_context));
 
     printf("xtt_initialize_client_handshake_context with version %d and suite %d\n", version, suite);
 
-    rc = xtt_initialize_client_handshake_context(&ctx, in_buffer, sizeof(in_buffer), out_buffer, sizeof(out_buffer), (xtt_version) version, (xtt_suite_spec) suite);
+    rc = xtt_initialize_client_handshake_context(ctx, in_buffer, sizeof(in_buffer), out_buffer, sizeof(out_buffer), (xtt_version) version, (xtt_suite_spec) suite);
     if (XTT_RETURN_SUCCESS != rc) {
         fprintf(stderr, "Error initializing client handshake context: %d\n", rc);
         return enif_make_int(env, rc);
     }
 
-    ERL_NIF_TERM  result = enif_make_resource(env, &ctx);
-    enif_release_resource(&ctx);
+    ERL_NIF_TERM  result = enif_make_resource(env, ctx);
+    enif_release_resource(ctx);
     return result;
 }
 
@@ -126,11 +122,11 @@ xtt_initialize_client_group_context(ErlNifEnv* env, int argc, const ERL_NIF_TERM
         return enif_make_badarg(env);
     }
 
-    struct xtt_client_group_context group_ctx_out = enif_alloc_resource(STRUCT_RESOURCE_TYPE, sizeof(xtt_client_group_context));
+    struct xtt_client_group_context *group_ctx_out = enif_alloc_resource(STRUCT_RESOURCE_TYPE, sizeof(struct xtt_client_group_context));
 
     puts("Starting xtt_initialize_client_group_context_lrsw\n");
 
-    xtt_return_code_type rc = xtt_initialize_client_group_context_lrsw(&group_ctx_out,
+    xtt_return_code_type rc = xtt_initialize_client_group_context_lrsw(group_ctx_out,
                                 (xtt_group_id *) gidBin.data,
                                 (xtt_daa_priv_key_lrsw *) daaPrivKeyBin.data,
                                 (xtt_daa_credential_lrsw *) daaCredBin.data,
@@ -144,8 +140,8 @@ xtt_initialize_client_group_context(ErlNifEnv* env, int argc, const ERL_NIF_TERM
             return enif_make_int(env, rc);
     }
 
-    ERL_NIF_TERM result = enif_make_resource(env, &group_ctx_out);
-    enif_release_resource(&group_ctx_out);
+    ERL_NIF_TERM result = enif_make_resource(env, group_ctx_out);
+    enif_release_resource(group_ctx_out);
 
     puts("Returning enif resource with group context\n");
 
@@ -183,9 +179,9 @@ xtt_initialize_server_root_certificate_context(ErlNifEnv* env, int argc, const E
         return enif_make_badarg(env);
     }
 
-    struct xtt_server_root_certificate_context cert_ctx = enif_alloc_resource(STRUCT_RESOURCE_TYPE, sizeof(xtt_server_root_certificate_context));
+    struct xtt_server_root_certificate_context *cert_ctx = enif_alloc_resource(STRUCT_RESOURCE_TYPE, sizeof(struct xtt_server_root_certificate_context));
 
-    xtt_return_code_type rc = xtt_initialize_server_root_certificate_context_ed25519(&cert_ctx,
+    xtt_return_code_type rc = xtt_initialize_server_root_certificate_context_ed25519(cert_ctx,
                                                                 (xtt_certificate_root_id *) certRootIdBin.data,
                                                                 (xtt_ed25519_pub_key *) certRootPubKeyBin.data);
     if (XTT_RETURN_SUCCESS != rc){
@@ -193,8 +189,8 @@ xtt_initialize_server_root_certificate_context(ErlNifEnv* env, int argc, const E
         return enif_make_int(env, rc);
     }
 
-    ERL_NIF_TERM result = enif_make_resource(env, &cert_ctx);
-    enif_release_resource(&cert_ctx);
+    ERL_NIF_TERM result = enif_make_resource(env, cert_ctx);
+    enif_release_resource(cert_ctx);
     return result;
 }
 
@@ -204,4 +200,4 @@ static ErlNifFunc nif_funcs[] = {
     {"xtt_initialize_server_root_certificate_context", 2, xtt_initialize_server_root_certificate_context, ERL_NIF_DIRTY_JOB_CPU_BOUND}
 };
 
-ERL_NIF_INIT(xtt_erlang, nif_funcs, NULL, NULL, NULL, NULL)
+ERL_NIF_INIT(xtt_erlang, nif_funcs, &load, NULL, NULL, NULL)
