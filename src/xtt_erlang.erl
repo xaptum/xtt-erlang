@@ -167,6 +167,8 @@ initialize_certs(false = _UseTpm, DataDir, ParameterMap)->
   {ok, RootId} = file:read_file(RootIdFilename),
   {ok, RootPubKey} = file:read_file(RootPubkeyFilename),
 
+  io:format("Initializing cert db with RootId ~p and RootPubKey ~p~n", [RootId, binary:part(RootPubKey, {0,5})]),
+
   init_cert_db(RootId, RootPubKey);
 initialize_certs(true = _UseTpm, _DataDir, ParameterMap)->
   RootId = read_nvram(root_id),

@@ -31,6 +31,8 @@ load(ErlNifEnv* env, void** priv, ERL_NIF_TERM load_info)
 static ERL_NIF_TERM
 xtt_client_handshake_context(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
+    puts("STARTING xtt_client_handshake_context NIF...\n");
+
     if(argc != 2) {
         return enif_make_badarg(env);
     }
@@ -50,16 +52,16 @@ xtt_client_handshake_context(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]
         return enif_make_badarg(env);
     }
 
-    xtt_return_code_type rc = XTT_RETURN_SUCCESS;
-
     // 1) Create client's handshake context
     unsigned char in_buffer[MAX_HANDSHAKE_SERVER_MESSAGE_LENGTH];
     unsigned char out_buffer[MAX_HANDSHAKE_CLIENT_MESSAGE_LENGTH];
     struct xtt_client_handshake_context *ctx = enif_alloc_resource(STRUCT_RESOURCE_TYPE, sizeof(struct xtt_client_handshake_context));
 
-    printf("xtt_initialize_client_handshake_context with version %d and suite %d\n", version, suite);
+    printf("STARTING xtt_initialize_client_handshake_context with version %d and suite %d\n", version, suite);
 
-    rc = xtt_initialize_client_handshake_context(ctx, in_buffer, sizeof(in_buffer), out_buffer, sizeof(out_buffer), (xtt_version) version, (xtt_suite_spec) suite);
+    xtt_return_code_type rc = xtt_initialize_client_handshake_context(
+        ctx, in_buffer, sizeof(in_buffer), out_buffer, sizeof(out_buffer), (xtt_version) version, (xtt_suite_spec) suite);
+
     if (XTT_RETURN_SUCCESS != rc) {
         fprintf(stderr, "Error initializing client handshake context: %d\n", rc);
         return enif_make_int(env, rc);
@@ -179,6 +181,8 @@ xtt_initialize_server_root_certificate_context(ErlNifEnv* env, int argc, const E
         return enif_make_badarg(env);
     }
 
+    puts("STARTing xtt_initialize_server_root_certificate_context_ed25519.....\n");
+
     struct xtt_server_root_certificate_context *cert_ctx = enif_alloc_resource(STRUCT_RESOURCE_TYPE, sizeof(struct xtt_server_root_certificate_context));
 
     xtt_return_code_type rc = xtt_initialize_server_root_certificate_context_ed25519(cert_ctx,
@@ -188,6 +192,8 @@ xtt_initialize_server_root_certificate_context(ErlNifEnv* env, int argc, const E
         fprintf(stderr, "Error initializing root certificate context: %d\n", rc);
         return enif_make_int(env, rc);
     }
+
+    puts("SUCCESS\n");
 
     ERL_NIF_TERM result = enif_make_resource(env, cert_ctx);
     enif_release_resource(cert_ctx);
