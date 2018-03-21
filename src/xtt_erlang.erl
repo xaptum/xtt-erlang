@@ -97,13 +97,13 @@ convert_to_map(PropertiesBin) when is_binary(PropertiesBin)->
 
 
 initialize_ids(DataDir, ParameterMap)->
-  RequestedClientIdFile = maps:get(requested_client_id_file, ParameterMap, filename:join([DataDir, ?REQUESTED_CLIENT_ID_FILE]),
-  IntendedServerIdFile = maps:get(server_id_file, ParameterMap, filename:join([DataDir, ?SERVER_ID_FILE]),
+  RequestedClientIdFile = maps:get(requested_client_id_file, ParameterMap, filename:join([DataDir, ?REQUESTED_CLIENT_ID_FILE])),
+  IntendedServerIdFile = maps:get(server_id_file, ParameterMap, filename:join([DataDir, ?SERVER_ID_FILE])),
 
   {ok, RequestedClientId} = file:read_file(RequestedClientIdFile),
   %% TODO move check to NIF %% true = lists:member(size(RequestedClientId), [1, ?XTT_IDENTITY_SIZE]),
 
-  {ok, IntendedServerId} = file:read_file(IntendedServerIdFile),
+    {ok, IntendedServerId} = file:read_file(IntendedServerIdFile),
 
  {RequestedClientId, IntendedServerId}.
 
