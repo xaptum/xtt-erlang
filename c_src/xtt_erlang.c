@@ -97,12 +97,17 @@ xtt_initialize_client_group_context(ErlNifEnv* env, int argc, const ERL_NIF_TERM
 
     struct xtt_client_group_context group_ctx_out;
 
-    xtt_initialize_client_group_context_lrsw(&group_ctx_out,
+    xtt_return_code_type rc = xtt_initialize_client_group_context_lrsw(&group_ctx_out,
                                 (xtt_group_id *) gidBin.data,
                                 (xtt_daa_priv_key_lrsw *) daaPrivKeyBin.data,
                                 (xtt_daa_credential_lrsw *) daaCredBin.data,
                                 basenameBin.data,
                                 basenameBin.size);
+
+    if (XTT_RETURN_SUCCESS != rc) {
+            fprintf(stderr, "Error initializing client group context: %d\n", rc);
+            return enif_make_int(env, rc);
+    }
 
     ERL_NIF_TERM result = enif_make_resource(env, &group_ctx_out);
     enif_release_resource(&group_ctx_out);
@@ -140,8 +145,8 @@ xtt_initialize_server_root_certificate_context(ErlNifEnv* env, int argc, const E
         return enif_make_badarg(env);
     }
 
-    xtt_server_root_certificate_context cert_ctx;
-    rc = xtt_initialize_server_root_certificate_context_ed25519(&cert_ctx,
+    struct xtt_server_root_certificate_context *cert_ctx;
+    xtt_return_code_type rc = xtt_initialize_server_root_certificate_context_ed25519(cert_ctx,
                                                                 (xtt_certificate_root_id *) certRootIdBin.data,
                                                                 (xtt_ed25519_pub_key *) certRootPubKeyBin.data);
     if (XTT_RETURN_SUCCESS != rc){
