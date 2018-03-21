@@ -61,7 +61,7 @@ xtt_initialize_client_group_context(ErlNifEnv* env, int argc, const ERL_NIF_TERM
             return enif_make_badarg(env);
     }
     else if (gidBin.size != sizeof(xtt_group_id)){
-        fprintf(stderr, "Bad arg at position 0: expecting xtt_group_id size %lu got %d\n",
+        fprintf(stderr, "Bad arg at position 0: expecting xtt_group_id size %lu got %zu\n",
         sizeof(xtt_group_id), gidBin.size);
         return enif_make_badarg(env);
     }
@@ -71,7 +71,7 @@ xtt_initialize_client_group_context(ErlNifEnv* env, int argc, const ERL_NIF_TERM
             return enif_make_badarg(env);
     }
     else if (daaPrivKeyBin.size != sizeof(xtt_daa_priv_key_lrsw)){
-        fprintf(stderr, "Bad arg at position 1: expecting xtt_daa_priv_key_lrsw size %lu got %d\n",
+        fprintf(stderr, "Bad arg at position 1: expecting xtt_daa_priv_key_lrsw size %lu got %zu\n",
         sizeof(xtt_daa_priv_key_lrsw), gidBin.size);
         return enif_make_badarg(env);
     }
@@ -81,7 +81,7 @@ xtt_initialize_client_group_context(ErlNifEnv* env, int argc, const ERL_NIF_TERM
              return enif_make_badarg(env);
     }
     else if (daaCredBin.size != sizeof(xtt_daa_credential_lrsw)){
-        fprintf(stderr, "Bad arg at position 2: expecting xtt_daa_credential_lrsw size %lu got %d\n",
+        fprintf(stderr, "Bad arg at position 2: expecting xtt_daa_credential_lrsw size %lu got %zu\n",
         sizeof(xtt_daa_credential_lrsw), gidBin.size);
         return enif_make_badarg(env);
     }
@@ -95,23 +95,13 @@ xtt_initialize_client_group_context(ErlNifEnv* env, int argc, const ERL_NIF_TERM
         return enif_make_badarg(env);
     }
 
-
-//    xtt_group_id gid;
-//    gid.data = gidBin.data;
-//
-//    xtt_daa_priv_key_lrsw priv_key;
-//    priv_key.data = daaPrivKeyBin.data;
-//
-//    xtt_daa_credential_lrsw cred;
-//    cred.data = daaCredBin.data;
-
     struct xtt_client_group_context group_ctx_out;
 
     xtt_initialize_client_group_context_lrsw(&group_ctx_out,
-                                (xtt_group_id *) gidBin.data
-                                (xtt_daa_priv_key_lrsw *) daaPrivKeyBin.data
+                                (xtt_group_id *) gidBin.data,
+                                (xtt_daa_priv_key_lrsw *) daaPrivKeyBin.data,
                                 (xtt_daa_credential_lrsw *) daaCredBin.data,
-                                (const unsigned char) basenameBin.data,
+                                basenameBin.data,
                                 basenameBin.size);
 
     ERL_NIF_TERM result = enif_make_resource(env, &group_ctx_out);
@@ -119,9 +109,55 @@ xtt_initialize_client_group_context(ErlNifEnv* env, int argc, const ERL_NIF_TERM
     return result;
 }
 
+static ERL_NIF_TERM
+xtt_initialize_server_root_certificate_context_ed25519(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]){
+
+    if(argc != 2) {
+        fprintf(stderr, "Bad arg error: expected 2 got %d\n", argc);
+        return enif_make_badarg(env);
+    }
+
+    ErlNifBinary certRootIdBin;
+    ErlNifBinary certRootPubKeyBin;
+
+    if(!enif_inspect_binary(env, argv[0], &certRootIdBin) ) {
+        fprintf(stderr, "Bad arg at position 1\n");
+        return enif_make_badarg(env);
+    }
+    else if (certRootIdBin.size != sizeof(xtt_certificate_root_id)){
+        fprintf(stderr, "Bad arg at position 0: expecting xtt_certificate_root_id size %lu got %zu\n",
+        sizeof(xtt_certificate_root_id), certRootIdBin.size);
+        return enif_make_badarg(env);
+    }
+
+    if(!enif_inspect_binary(env, argv[1], &certRootPubKeyBin) ) {
+            fprintf(stderr, "Bad arg at position 1\n");
+            return enif_make_badarg(env);
+    }
+    else if (certRootPubKeyBin.size != sizeof(xtt_ed25519_pub_key)){
+        fprintf(stderr, "Bad arg at position 2: expecting xtt_ed25519_pub_key size %lu got %zu\n",
+        sizeof(xtt_ed25519_pub_key), certRootPubKeyBin.size);
+        return enif_make_badarg(env);
+    }
+
+    xtt_server_root_certificate_context cert_ctx;
+    rc = xtt_initialize_server_root_certificate_context_ed25519(&cert_ctx,
+                                                                (xtt_certificate_root_id *) certRootIdBin.data,
+                                                                (xtt_ed25519_pub_key *) certRootPubKeyBin.data);
+    if (XTT_RETURN_SUCCESS != rc){
+        fprintf(stderr, "Error initializing root certificate context: %d\n", rc);
+        return enif_make_int(env, rc);
+    }
+
+    ERL_NIF_TERM result = enif_make_resource(env, &cert_ctx);
+    enif_release_resource(&cert_ctx);
+    return result;
+}
+
 static ErlNifFunc nif_funcs[] = {
     {"xtt_client_handshake_context", 2, xtt_client_handshake_context},
-    {"xtt_initialize_client_group_context", 4, xtt_initialize_client_group_context}
+    {"xtt_initialize_client_group_context", 4, xtt_initialize_client_group_context},
+    {"xtt_initialize_server_root_certificate_context_ed25519", 2, xtt_initialize_server_root_certificate_context_ed25519}
 };
 
 ERL_NIF_INIT(xtt_erlang, nif_funcs, NULL, NULL, NULL, NULL)

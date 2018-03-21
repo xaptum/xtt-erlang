@@ -6,6 +6,7 @@
   xtt_client_handshake/1,
   xtt_client_handshake_context/2,
   xtt_initialize_client_group_context/4,
+  xtt_initialize_server_root_certificate_context_ed25519/2,
   xtt_build_client_init/1,
   xtt_build_error_msg/0]).
 
@@ -17,6 +18,8 @@
 -define(LIBNAME, 'xtt-erlang').
 
 -define(TCP_OPTIONS, [binary, {packet, 2}, {keepalive, true}]).
+
+-define(DEFAULT_ETS_OPTS, [named_table, set, public, {write_concurrency, true}, {read_concurrency, true}]).
 
 init() ->
   SoName = filename:join([priv_dir(), ?LIBNAME]),
@@ -49,15 +52,18 @@ xtt_client_handshake(#{ server := ServerName,
 
   init(),
 
-  {RequestedClientId, IntendedServerId} = initialize_ids(ParameterMap),
-  GroupContext = initialize_daa(ParameterMap),
+  UseTpm = maps:get(use_tpm, ParameterMap, false),
+  DataDir = maps:get(data_dir, ParameterMap, "."),
 
-  initialize_certs(ParameterMap),
+  {RequestedClientId, IntendedServerId} = initialize_ids(DataDir, ParameterMap),
+
+  GroupContext = initialize_daa(UseTpm, DataDir, ParameterMap),
+
+  initialize_certs(UseTpm, DataDir, ParameterMap),
 
   {ok, Socket} = gen_tcp:connect(ServerName, Port, ?TCP_OPTIONS),
   XttHandshakeContext = xtt_client_handshake_context(XttVersion, XttSuite),
-  OutputBuffer = xtt_build_client_init(XttHandshakeContext),
-  gen_tcp:send(Socket, OutputBuffer),
+  OutputBuffer = do_handshake(Socket, RequestedClientId, IntendedServerId, GroupContext, XttHandshakeContext),
   {ok, RespBuffer} = gen_tcp:recv(Socket, 0),
   io:format("Finished client init!  Received buffer ~p from server ~p", [RespBuffer, ServerName]).
 
@@ -70,6 +76,9 @@ xtt_client_handshake_context(_XttVersion, _XttSuite)->
   erlang:nif_error(?LINE).
 
 xtt_initialize_client_group_context(_Gid, _PrivKey, _Credential, _Basename)->
+  erlang:nif_error(?LINE).
+
+xtt_initialize_server_root_certificate_context_ed25519(_RootId, _RootPubKey)->
   erlang:nif_error(?LINE).
 
 xtt_build_client_init(_XttClientHandshakeContext)->
@@ -87,38 +96,24 @@ convert_to_map(PropertiesBin) when is_binary(PropertiesBin)->
   ok.
 
 
-initialize_ids(#{requested_client_id_file := RequestedClientIdFile, server_id_file := IntendedServerIdFile})->
-  initialize_ids(RequestedClientIdFile, IntendedServerIdFile);
-initialize_ids(#{data_dir := DataDir})->
-  RequestedClientIdFile = filename:join([DataDir, ?REQUESTED_CLIENT_ID_FILE]),
-  IntendedServerIdFile = filename:join([DataDir, ?SERVER_ID_FILE]),
-  initialize_ids(RequestedClientIdFile, IntendedServerIdFile);
-initialize_ids(#{})->
-  RequestedClientIdFile = filename:join([?DEFAULT_DATA_DIR, ?REQUESTED_CLIENT_ID_FILE]),
-  IntendedServerIdFile = filename:join([?DEFAULT_DATA_DIR, ?SERVER_ID_FILE]),
-  initialize_ids(RequestedClientIdFile, IntendedServerIdFile).
+initialize_ids(DataDir, ParameterMap)->
+  RequestedClientIdFile = maps:get(requested_client_id_file, ParameterMap, filename:join([DataDir, ?REQUESTED_CLIENT_ID_FILE]),
+  IntendedServerIdFile = maps:get(server_id_file, ParameterMap, filename:join([DataDir, ?SERVER_ID_FILE]),
 
-initialize_ids(RequestedClientIdFile, IntendedServerIdFile)->
   {ok, RequestedClientId} = file:read_file(RequestedClientIdFile),
-  true = lists:member(size(RequestedClientId), [1, ?XTT_IDENTITY_SIZE]),
+  %% TODO move check to NIF %% true = lists:member(size(RequestedClientId), [1, ?XTT_IDENTITY_SIZE]),
+
   {ok, IntendedServerId} = file:read_file(IntendedServerIdFile),
-  ?XTT_IDENTITY_SIZE = size(IntendedServerId),
-  {RequestedClientId, IntendedServerId}.
+
+ {RequestedClientId, IntendedServerId}.
 
 
-
-initialize_daa(#{use_tpm := UseTpm} = ParameterMap) when is_boolean(UseTpm)->
-  initialize_daa(UseTpm, ParameterMap);
-initialize_daa(#{} = ParameterMap)->
-  initialize_daa(false, ParameterMap).
-
-
-initialize_daa(UseTpm, #{data_dir := DataDir} = ParameterMap) ->
+initialize_daa(UseTpm, DataDir, ParameterMap) ->
   BasenameFile = maps:get(base_filename, ParameterMap, filename:join([DataDir, ?BASENAME_FILE])),
   {ok, Basename} = file:read_file(BasenameFile),
-  initialize_daa(UseTpm, Basename, ParameterMap).
+  initialize_daa(UseTpm, DataDir, Basename, ParameterMap).
 
-initialize_daa(false = _UseTpm, Basename, #{data_dir := DataDir} = ParameterMap)->
+initialize_daa(false = _UseTpm, DataDir, Basename, ParameterMap)->
   GpkFile = maps:get(gpk_filename, ParameterMap, filename:join([DataDir, ?DAA_GPK_FILE])),
   CredFile = maps:get(cred_filename, ParameterMap, filename:join([DataDir, ?DAA_CRED_FILE])),
   PrivKeyFile = maps:get(priv_key_filename, ParameterMap, filename:join([DataDir, ?DAA_SECRETKEY_FILE])),
@@ -129,15 +124,42 @@ initialize_daa(false = _UseTpm, Basename, #{data_dir := DataDir} = ParameterMap)
 
   {ok, PrivKey} = file:read_file(PrivKeyFile),
 
+  initialize_client_group_context(Gpk, PrivKey, Credential, Basename);
+initialize_daa(true = _UseTpm, _DataDir, Basename, _ParameterMap)->
+  {ok, Gpk} = read_nvram(gpk),
+  {ok, Credential} = read_nvram(cred),
+  {ok, PrivKey} = read_nvram(priv_key),
+
+  initialize_client_group_context(Gpk, PrivKey, Credential, Basename).
+
+initialize_client_group_context(Gpk, PrivKey, Credential, Basename)->
   Gid = crypto:hash(sha256, Gpk),
-  ?XTT_GROUP_ID_SIZE = size(Gid),
-
-  initialize_client_group_context(Gid, PrivKey, Credential, Basename);
-initialize_daa(true = _UseTpm, _Basename, #{data_dir := _DataDir} = _ParameterMap)->
-  todo.
-
-initialize_client_group_context(Gid, PrivKey, Credential, Basename)->
   xtt_initialize_client_group_context(Gid,PrivKey,Credential, Basename).
 
+initialize_certs(true = _UseTpm, DataDir, ParameterMap)->
+  RootIdFilename = maps:get(root_id_filename, ParameterMap, filename:join(DataDir, ?ROOT_ID_FILE)),
+  RootPubkeyFilename = maps:get(root_pubkey_filename, ParameterMap, filename:join(DataDir, ?ROOT_PUBKEY_FILE)),
 
-initialize_certs(_PrametersMap)->ok.
+  {ok, RootId} = file:read_file(RootIdFilename),
+  {ok, RootPubKey} = file:read_file(RootPubkeyFilename),
+
+  init_cert_db(RootId, RootPubKey);
+initialize_certs(true = _UseTpm, _DataDir, ParameterMap)->
+  RootId = read_nvram(root_id),
+  RootPubKey = read_nvram(root_pub_key),
+  init_cert_db(RootId, RootPubKey).
+
+init_cert_db(RootId, RootPubkey)->
+  CertContext = xtt_initialize_server_root_certificate_context_ed25519(RootId, RootPubkey),
+  ets:new(cert, ?DEFAULT_ETS_OPTS),
+  ets:insert(cert, RootId, CertContext). %% TODO DB: Should replace file reading stuff with write ets to disk?
+
+%% Should be NIF(s)
+read_nvram(root_id)-> todo;
+read_nvram(root_pub_key)->todo;
+read_nvram(gpk)->todo;
+read_nvram(cred)-> todo;
+read_nvram(priv_key)->todo.
+
+do_handshake(Socket, RequestedClientId, IntendedServerId, GroupCtx, XttClientHandshakeCtx)->
+  ok.
