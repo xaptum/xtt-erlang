@@ -10,7 +10,7 @@
 -author("iguberman").
 
 %% API
--export([]).
+-export([test_params/0, handshake_test/0]).
 
 -include_lib("eunit/include/eunit.hrl").
 -include("xtt.hrl").
@@ -26,14 +26,19 @@
 example_data_dir()->
   filename:join([xtt_erlang:priv_dir(), ?EXAMPLE_DATA_DIR]).
 
-handshake_test()->
-  ensure_xtt_server_started(?XTT_SERVER_HOST, ?XTT_SERVER_PORT),
-  Params = #{
+test_params() ->
+ #{
     server => ?XTT_SERVER_HOST,
     port => ?XTT_SERVER_PORT,
     xtt_version => ?XTT_VERSION_ONE,
     xtt_suite  => ?XTT_X25519_LRSW_ED25519_AES256GCM_SHA512,
-    data_dir => example_data_dir()},
+    data_dir => example_data_dir()
+ }.
+
+
+handshake_test()->
+  ensure_xtt_server_started(?XTT_SERVER_HOST, ?XTT_SERVER_PORT),
+  Params = test_params(),
   xtt_erlang:xtt_client_handshake(Params).
 
 ensure_xtt_server_started(ServerHost, ServerPort)->

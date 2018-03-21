@@ -55,15 +55,28 @@ xtt_client_handshake(#{ server := ServerName,
   UseTpm = maps:get(use_tpm, ParameterMap, false),
   DataDir = maps:get(data_dir, ParameterMap, "."),
 
+  io:format("Performing client handshake with TPM ~p~n", [UseTpm]),
+
   {RequestedClientId, IntendedServerId} = initialize_ids(DataDir, ParameterMap),
+
+  io:format("Initialized RequestedClientId to ~p and IntendedServerId to ~p~n", [RequestedClientId, IntendedServerId]),
 
   GroupContext = initialize_daa(UseTpm, DataDir, ParameterMap),
 
+  io:format("Initialized Group Context ~p~n", [GroupContext]),
+
   initialize_certs(UseTpm, DataDir, ParameterMap),
 
-  {ok, Socket} = gen_tcp:connect(ServerName, Port, ?TCP_OPTIONS),
   XttHandshakeContext = xtt_client_handshake_context(XttVersion, XttSuite),
+
+  io:format("Initialized Handshake Context ~p~n", [XttHandshakeContext]),
+
+  {ok, Socket} = gen_tcp:connect(ServerName, Port, ?TCP_OPTIONS),
+
   OutputBuffer = do_handshake(Socket, RequestedClientId, IntendedServerId, GroupContext, XttHandshakeContext),
+
+  io:format("do_handshake result: ~p~n", [OutputBuffer]),
+
   {ok, RespBuffer} = gen_tcp:recv(Socket, 0),
   io:format("Finished client init!  Received buffer ~p from server ~p", [RespBuffer, ServerName]).
 
@@ -136,7 +149,7 @@ initialize_client_group_context(Gpk, PrivKey, Credential, Basename)->
   Gid = crypto:hash(sha256, Gpk),
   xtt_initialize_client_group_context(Gid,PrivKey,Credential, Basename).
 
-initialize_certs(true = _UseTpm, DataDir, ParameterMap)->
+initialize_certs(false = _UseTpm, DataDir, ParameterMap)->
   RootIdFilename = maps:get(root_id_filename, ParameterMap, filename:join(DataDir, ?ROOT_ID_FILE)),
   RootPubkeyFilename = maps:get(root_pubkey_filename, ParameterMap, filename:join(DataDir, ?ROOT_PUBKEY_FILE)),
 
