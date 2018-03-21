@@ -32,6 +32,8 @@ xtt_client_handshake_context(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]
     unsigned char out_buffer[MAX_HANDSHAKE_CLIENT_MESSAGE_LENGTH];
     struct xtt_client_handshake_context ctx;
 
+    printf("xtt_initialize_client_handshake_context with version %d and suite %d\n", version, suite);
+
     rc = xtt_initialize_client_handshake_context(&ctx, in_buffer, sizeof(in_buffer), out_buffer, sizeof(out_buffer), (xtt_version) version, (xtt_suite_spec) suite);
     if (XTT_RETURN_SUCCESS != rc) {
         fprintf(stderr, "Error initializing client handshake context: %d\n", rc);
@@ -97,12 +99,16 @@ xtt_initialize_client_group_context(ErlNifEnv* env, int argc, const ERL_NIF_TERM
 
     struct xtt_client_group_context group_ctx_out;
 
+    puts("Starting xtt_initialize_client_group_context_lrsw\n");
+
     xtt_return_code_type rc = xtt_initialize_client_group_context_lrsw(&group_ctx_out,
                                 (xtt_group_id *) gidBin.data,
                                 (xtt_daa_priv_key_lrsw *) daaPrivKeyBin.data,
                                 (xtt_daa_credential_lrsw *) daaCredBin.data,
                                 basenameBin.data,
                                 basenameBin.size);
+
+    printf("Finished xtt_initialize_client_group_context_lrsw with rc %d\n", rc);
 
     if (XTT_RETURN_SUCCESS != rc) {
             fprintf(stderr, "Error initializing client group context: %d\n", rc);

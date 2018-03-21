@@ -21,6 +21,8 @@
 
 -define(DEFAULT_ETS_OPTS, [named_table, set, public, {write_concurrency, true}, {read_concurrency, true}]).
 
+-define(CERT_TABLE, cert).
+
 init() ->
   SoName = filename:join([priv_dir(), ?LIBNAME]),
   io:format("Loading NIFs from ~p", [SoName]),
@@ -67,11 +69,15 @@ xtt_client_handshake(#{ server := ServerName,
 
   initialize_certs(UseTpm, DataDir, ParameterMap),
 
+  io:format("Initialized Certificates in ~p: ~p~n", [?CERT_TABLE, ets:tab2list(?CERT_TABLE)]),
+
   XttHandshakeContext = xtt_client_handshake_context(XttVersion, XttSuite),
 
   io:format("Initialized Handshake Context ~p~n", [XttHandshakeContext]),
 
+  io:format("Connecting to ~p:~b.....", [ServerName, Port]),
   {ok, Socket} = gen_tcp:connect(ServerName, Port, ?TCP_OPTIONS),
+  io:format("DONE~n"),
 
   OutputBuffer = do_handshake(Socket, RequestedClientId, IntendedServerId, GroupContext, XttHandshakeContext),
 
@@ -124,6 +130,7 @@ initialize_ids(DataDir, ParameterMap)->
 initialize_daa(UseTpm, DataDir, ParameterMap) ->
   BasenameFile = maps:get(base_filename, ParameterMap, filename:join([DataDir, ?BASENAME_FILE])),
   {ok, Basename} = file:read_file(BasenameFile),
+  io:format("Basename: ~p~n", [Basename]),
   initialize_daa(UseTpm, DataDir, Basename, ParameterMap).
 
 initialize_daa(false = _UseTpm, DataDir, Basename, ParameterMap)->
@@ -137,6 +144,8 @@ initialize_daa(false = _UseTpm, DataDir, Basename, ParameterMap)->
 
   {ok, PrivKey} = file:read_file(PrivKeyFile),
 
+  io:format("Gpk ~p, Cred ~p, PrivKey ~p~n", [Gpk, Credential, PrivKey]),
+
   initialize_client_group_context(Gpk, PrivKey, Credential, Basename);
 initialize_daa(true = _UseTpm, _DataDir, Basename, _ParameterMap)->
   {ok, Gpk} = read_nvram(gpk),
@@ -147,6 +156,7 @@ initialize_daa(true = _UseTpm, _DataDir, Basename, _ParameterMap)->
 
 initialize_client_group_context(Gpk, PrivKey, Credential, Basename)->
   Gid = crypto:hash(sha256, Gpk),
+  io:format("STARTing xtt_initialize_client_group_context(~p, ~p, ~p, ~p)~n", [Gid,PrivKey,Credential, Basename]),
   xtt_initialize_client_group_context(Gid,PrivKey,Credential, Basename).
 
 initialize_certs(false = _UseTpm, DataDir, ParameterMap)->
@@ -164,8 +174,8 @@ initialize_certs(true = _UseTpm, _DataDir, ParameterMap)->
 
 init_cert_db(RootId, RootPubkey)->
   CertContext = xtt_initialize_server_root_certificate_context(RootId, RootPubkey),
-  ets:new(cert, ?DEFAULT_ETS_OPTS),
-  ets:insert(cert, RootId, CertContext). %% TODO DB: Should replace file reading stuff with write ets to disk?
+  ets:new(?CERT_TABLE, ?DEFAULT_ETS_OPTS),
+  ets:insert(?CERT_TABLE, RootId, CertContext). %% TODO DB: Should replace file reading stuff with write ets to disk?
 
 %% Should be NIF(s)
 read_nvram(root_id)-> todo;
