@@ -117,6 +117,7 @@ xtt_initialize_client_group_context(ErlNifEnv* env, int argc, const ERL_NIF_TERM
 
     ERL_NIF_TERM result = enif_make_resource(env, &group_ctx_out);
     enif_release_resource(&group_ctx_out);
+
     return result;
 }
 
