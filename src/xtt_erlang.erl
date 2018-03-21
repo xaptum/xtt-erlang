@@ -6,7 +6,7 @@
   xtt_client_handshake/1,
   xtt_client_handshake_context/2,
   xtt_initialize_client_group_context/4,
-  xtt_initialize_server_root_certificate_context_ed25519/2,
+  xtt_initialize_server_root_certificate_context/2,
   xtt_build_client_init/1,
   xtt_build_error_msg/0]).
 
@@ -78,7 +78,7 @@ xtt_client_handshake_context(_XttVersion, _XttSuite)->
 xtt_initialize_client_group_context(_Gid, _PrivKey, _Credential, _Basename)->
   erlang:nif_error(?LINE).
 
-xtt_initialize_server_root_certificate_context_ed25519(_RootId, _RootPubKey)->
+xtt_initialize_server_root_certificate_context(_RootId, _RootPubKey)->
   erlang:nif_error(?LINE).
 
 xtt_build_client_init(_XttClientHandshakeContext)->
@@ -150,7 +150,7 @@ initialize_certs(true = _UseTpm, _DataDir, ParameterMap)->
   init_cert_db(RootId, RootPubKey).
 
 init_cert_db(RootId, RootPubkey)->
-  CertContext = xtt_initialize_server_root_certificate_context_ed25519(RootId, RootPubkey),
+  CertContext = xtt_initialize_server_root_certificate_context(RootId, RootPubkey),
   ets:new(cert, ?DEFAULT_ETS_OPTS),
   ets:insert(cert, RootId, CertContext). %% TODO DB: Should replace file reading stuff with write ets to disk?
 

@@ -110,7 +110,7 @@ xtt_initialize_client_group_context(ErlNifEnv* env, int argc, const ERL_NIF_TERM
 }
 
 static ERL_NIF_TERM
-xtt_initialize_server_root_certificate_context_ed25519(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]){
+xtt_initialize_server_root_certificate_context(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]){
 
     if(argc != 2) {
         fprintf(stderr, "Bad arg error: expected 2 got %d\n", argc);
@@ -157,7 +157,7 @@ xtt_initialize_server_root_certificate_context_ed25519(ErlNifEnv* env, int argc,
 static ErlNifFunc nif_funcs[] = {
     {"xtt_client_handshake_context", 2, xtt_client_handshake_context},
     {"xtt_initialize_client_group_context", 4, xtt_initialize_client_group_context},
-    {"xtt_initialize_server_root_certificate_context_ed25519", 2, xtt_initialize_server_root_certificate_context_ed25519}
+    {"xtt_initialize_server_root_certificate_context", 2, xtt_initialize_server_root_certificate_context}
 };
 
 ERL_NIF_INIT(xtt_erlang, nif_funcs, NULL, NULL, NULL, NULL)
