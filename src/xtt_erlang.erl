@@ -154,9 +154,10 @@ initialize_daa(true = _UseTpm, _DataDir, Basename, _ParameterMap)->
 
 initialize_client_group_context(Gpk, PrivKey, Credential, Basename)->
   Gid = crypto:hash(sha256, Gpk),
-  io:format("STARTing xtt_initialize_client_group_context(~p, ~p, ~p, ~p)~n", [binary:part(Gid, {0, 5}),binary:part(PrivKey, {0, 5}),Credential, Basename]),
+  io:format("STARTing xtt_initialize_client_group_context(~p, ~p, ~p, ~p)~n",
+    [binary:part(Gid, {0, 5}),binary:part(PrivKey, {0, 5}), binary:part(Credential, {0,5}), Basename]),
   GroupCtx = xtt_initialize_client_group_context(Gid,PrivKey,Credential, Basename),
-  io:format("GroupCtx: ~p~n", [GroupCtx]),
+  io:format("Resulting GroupCtx: ~p~n", [GroupCtx]),
   GroupCtx.
 
 initialize_certs(false = _UseTpm, DataDir, ParameterMap)->

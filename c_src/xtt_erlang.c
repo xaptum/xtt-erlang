@@ -3,6 +3,35 @@
 #include <xtt.h>
 #include <erl_nif.h>
 
+ErlNifResourceType* STRUCT_RESOURCE_TYPE;
+
+void
+free_resource(ErlNifEnv* env, void* obj)
+{
+    free(obj);
+}
+
+static int
+load(ErlNifEnv* env, void** priv, ERL_NIF_TERM load_info)
+{
+    const char* mod = "xtt";
+    const char* name = "xtt";
+
+    ErlNifResourceFlags flags = ErlNifResourceFlags(
+        ERL_NIF_RT_CREATE | ERL_NIF_RT_TAKEOVER
+    );
+
+    STRUCT_RESOURCE_TYPE = enif_open_resource_type(
+        env, mod, name, free_resource, flags, NULL
+    );
+
+    if(STRUCT_RESOURCE_TYPE == NULL)
+        return -1;
+
+    return 0;
+}
+
+
 static ERL_NIF_TERM
 xtt_client_handshake_context(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
@@ -30,7 +59,7 @@ xtt_client_handshake_context(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]
     // 1) Create client's handshake context
     unsigned char in_buffer[MAX_HANDSHAKE_SERVER_MESSAGE_LENGTH];
     unsigned char out_buffer[MAX_HANDSHAKE_CLIENT_MESSAGE_LENGTH];
-    struct xtt_client_handshake_context ctx;
+    struct xtt_client_handshake_context ctx = enif_alloc_resource(STRUCT_RESOURCE_TYPE, sizeof(xtt_client_handshake_context));
 
     printf("xtt_initialize_client_handshake_context with version %d and suite %d\n", version, suite);
 
@@ -97,7 +126,7 @@ xtt_initialize_client_group_context(ErlNifEnv* env, int argc, const ERL_NIF_TERM
         return enif_make_badarg(env);
     }
 
-    struct xtt_client_group_context group_ctx_out;
+    struct xtt_client_group_context group_ctx_out = enif_alloc_resource(STRUCT_RESOURCE_TYPE, sizeof(xtt_client_group_context));
 
     puts("Starting xtt_initialize_client_group_context_lrsw\n");
 
@@ -108,7 +137,7 @@ xtt_initialize_client_group_context(ErlNifEnv* env, int argc, const ERL_NIF_TERM
                                 basenameBin.data,
                                 basenameBin.size);
 
-    printf("Finished xtt_initialize_client_group_context_lrsw with rc %d\n", rc);
+    printf("Finished xtt_initialize_client_group_context_lrsw with return code %d\n", rc);
 
     if (XTT_RETURN_SUCCESS != rc) {
             fprintf(stderr, "Error initializing client group context: %d\n", rc);
@@ -117,6 +146,8 @@ xtt_initialize_client_group_context(ErlNifEnv* env, int argc, const ERL_NIF_TERM
 
     ERL_NIF_TERM result = enif_make_resource(env, &group_ctx_out);
     enif_release_resource(&group_ctx_out);
+
+    puts("Returning enif resource with group context\n");
 
     return result;
 }
@@ -152,8 +183,9 @@ xtt_initialize_server_root_certificate_context(ErlNifEnv* env, int argc, const E
         return enif_make_badarg(env);
     }
 
-    struct xtt_server_root_certificate_context *cert_ctx;
-    xtt_return_code_type rc = xtt_initialize_server_root_certificate_context_ed25519(cert_ctx,
+    struct xtt_server_root_certificate_context cert_ctx = enif_alloc_resource(STRUCT_RESOURCE_TYPE, sizeof(xtt_server_root_certificate_context));
+
+    xtt_return_code_type rc = xtt_initialize_server_root_certificate_context_ed25519(&cert_ctx,
                                                                 (xtt_certificate_root_id *) certRootIdBin.data,
                                                                 (xtt_ed25519_pub_key *) certRootPubKeyBin.data);
     if (XTT_RETURN_SUCCESS != rc){
@@ -167,9 +199,9 @@ xtt_initialize_server_root_certificate_context(ErlNifEnv* env, int argc, const E
 }
 
 static ErlNifFunc nif_funcs[] = {
-    {"xtt_client_handshake_context", 2, xtt_client_handshake_context},
-    {"xtt_initialize_client_group_context", 4, xtt_initialize_client_group_context},
-    {"xtt_initialize_server_root_certificate_context", 2, xtt_initialize_server_root_certificate_context}
+    {"xtt_client_handshake_context", 2, xtt_client_handshake_context, ERL_NIF_DIRTY_JOB_CPU_BOUND},
+    {"xtt_initialize_client_group_context", 4, xtt_initialize_client_group_context, ERL_NIF_DIRTY_JOB_CPU_BOUND},
+    {"xtt_initialize_server_root_certificate_context", 2, xtt_initialize_server_root_certificate_context, ERL_NIF_DIRTY_JOB_CPU_BOUND}
 };
 
 ERL_NIF_INIT(xtt_erlang, nif_funcs, NULL, NULL, NULL, NULL)
