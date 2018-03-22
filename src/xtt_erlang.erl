@@ -188,7 +188,7 @@ initialize_certs(true = _UseTpm, _DataDir, ParameterMap)->
 init_cert_db(RootId, RootPubkey)->
   CertContext = xtt_initialize_server_root_certificate_context(RootId, RootPubkey),
   ets:new(?CERT_TABLE, ?DEFAULT_ETS_OPTS),
-  ets:insert(?CERT_TABLE, RootId, CertContext). %% TODO DB: Should replace file reading stuff with write ets to disk?
+  ets:insert(?CERT_TABLE, {RootId, CertContext}). %% TODO DB: Should replace file reading stuff with write ets to disk?
 
 %% Should be NIF(s)
 read_nvram(root_id)-> todo;

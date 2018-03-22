@@ -20,7 +20,7 @@ static void print_mcheck_statuses()
 void
 free_resource(ErlNifEnv* env, void* obj)
 {
-    sprintf("Freeing obj %p\n", obj);
+    printf("Freeing obj %p\n", obj);
     if(obj != NULL){
         print_mcheck_statuses();
         printf("%d (should be %d)\n", mprobe(obj), MCHECK_OK);
