@@ -2,13 +2,33 @@
 #include <ecdaa.h>
 #include <xtt.h>
 #include <erl_nif.h>
+#include <mcheck.h>
 
 ErlNifResourceType* STRUCT_RESOURCE_TYPE;
+
+static void print_mcheck_statuses()
+{
+    printf("MCHECK STATUSES:\n");
+    printf("MCHECK_DISABLED %d\n", MCHECK_DISABLED);
+    printf("MCHECK_OK %d\n", MCHECK_OK);
+    printf("MCHECK_HEAD %d\n", MCHECK_HEAD);
+    printf("MCHECK_TAIL %d\n", MCHECK_TAIL);
+    printf("MCHECK_FREE %d\n", MCHECK_FREE);
+    printf("\n");
+}
 
 void
 free_resource(ErlNifEnv* env, void* obj)
 {
-    free(obj);
+    sprintf("Freeing obj %p\n", obj);
+    if(obj != NULL){
+        print_mcheck_statuses();
+        printf("%d (should be %d)\n", mprobe(obj), MCHECK_OK);
+        free(obj);
+        printf("Freeing obj %p\n", obj);
+    }
+    else
+        printf("Not freeing NULL pointer %p\n", obj);
 }
 
 static int
@@ -53,21 +73,30 @@ xtt_client_handshake_context(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]
     }
 
     // 1) Create client's handshake context
-    unsigned char in_buffer[MAX_HANDSHAKE_SERVER_MESSAGE_LENGTH];
-    unsigned char out_buffer[MAX_HANDSHAKE_CLIENT_MESSAGE_LENGTH];
+    ErlNifBinary *in_buffer;
+    enif_alloc_binary(MAX_HANDSHAKE_SERVER_MESSAGE_LENGTH, in_buffer);
+    ErlNifBinary *out_buffer;
+    enif_alloc_binary(MAX_HANDSHAKE_CLIENT_MESSAGE_LENGTH, out_buffer);
+
     struct xtt_client_handshake_context *ctx = enif_alloc_resource(STRUCT_RESOURCE_TYPE, sizeof(struct xtt_client_handshake_context));
 
-    printf("STARTING xtt_initialize_client_handshake_context with version %d and suite %d\n", version, suite);
+    printf("STARTING xtt_initialize_client_handshake_context with version %d and suite %d...\n", version, suite);
 
     xtt_return_code_type rc = xtt_initialize_client_handshake_context(
-        ctx, in_buffer, sizeof(in_buffer), out_buffer, sizeof(out_buffer), (xtt_version) version, (xtt_suite_spec) suite);
+        ctx, out_buffer->data, out_buffer->size, out_buffer->data, out_buffer->size, (xtt_version) version, (xtt_suite_spec) suite);
+
+
+    ERL_NIF_TERM  result;
 
     if (XTT_RETURN_SUCCESS != rc) {
         fprintf(stderr, "Error initializing client handshake context: %d\n", rc);
-        return enif_make_int(env, rc);
+        result = enif_make_int(env, rc);
+    }
+    else {
+        puts("SUCCESS\n");
+        result = enif_make_resource(env, ctx);
     }
 
-    ERL_NIF_TERM  result = enif_make_resource(env, ctx);
     enif_release_resource(ctx);
     return result;
 }
@@ -126,7 +155,7 @@ xtt_initialize_client_group_context(ErlNifEnv* env, int argc, const ERL_NIF_TERM
 
     struct xtt_client_group_context *group_ctx_out = enif_alloc_resource(STRUCT_RESOURCE_TYPE, sizeof(struct xtt_client_group_context));
 
-    puts("Starting xtt_initialize_client_group_context_lrsw\n");
+    puts("Starting xtt_initialize_client_group_context_lrsw.....\n");
 
     xtt_return_code_type rc = xtt_initialize_client_group_context_lrsw(group_ctx_out,
                                 (xtt_group_id *) gidBin.data,
@@ -137,15 +166,18 @@ xtt_initialize_client_group_context(ErlNifEnv* env, int argc, const ERL_NIF_TERM
 
     printf("Finished xtt_initialize_client_group_context_lrsw with return code %d\n", rc);
 
+    ERL_NIF_TERM result;
+
     if (XTT_RETURN_SUCCESS != rc) {
             fprintf(stderr, "Error initializing client group context: %d\n", rc);
-            return enif_make_int(env, rc);
+            result = enif_make_int(env, rc);
+    }
+    else{
+        puts("SUCCESS\n");
+        result = enif_make_resource(env, group_ctx_out);
     }
 
-    ERL_NIF_TERM result = enif_make_resource(env, group_ctx_out);
     enif_release_resource(group_ctx_out);
-
-    puts("Returning enif resource with group context\n");
 
     return result;
 }
@@ -181,22 +213,28 @@ xtt_initialize_server_root_certificate_context(ErlNifEnv* env, int argc, const E
         return enif_make_badarg(env);
     }
 
-    puts("STARTing xtt_initialize_server_root_certificate_context_ed25519.....\n");
 
     struct xtt_server_root_certificate_context *cert_ctx = enif_alloc_resource(STRUCT_RESOURCE_TYPE, sizeof(struct xtt_server_root_certificate_context));
+
+    puts("STARTing xtt_initialize_server_root_certificate_context_ed25519.....\n");
 
     xtt_return_code_type rc = xtt_initialize_server_root_certificate_context_ed25519(cert_ctx,
                                                                 (xtt_certificate_root_id *) certRootIdBin.data,
                                                                 (xtt_ed25519_pub_key *) certRootPubKeyBin.data);
+
+    ERL_NIF_TERM result;
+
     if (XTT_RETURN_SUCCESS != rc){
         fprintf(stderr, "Error initializing root certificate context: %d\n", rc);
-        return enif_make_int(env, rc);
+        result = enif_make_int(env, rc);
+    }
+    else{
+        puts("SUCCESS\n");
+        result = enif_make_resource(env, cert_ctx);
     }
 
-    puts("SUCCESS\n");
-
-    ERL_NIF_TERM result = enif_make_resource(env, cert_ctx);
     enif_release_resource(cert_ctx);
+
     return result;
 }
 

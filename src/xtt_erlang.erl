@@ -39,6 +39,9 @@ priv_dir() ->
     Dir -> Dir
   end.
 
+-define(PRINT_BIN_LEN, 5).
+%%-define(PRINT_BIN(Bin), binary:part(Bin, {0, ?PRINT_BIN_LEN})).
+-define(PRINT_BIN(Bin), Bin).
 
 %%====================================================================
 %% API functions
@@ -155,19 +158,26 @@ initialize_daa(true = _UseTpm, _DataDir, Basename, _ParameterMap)->
 initialize_client_group_context(Gpk, PrivKey, Credential, Basename)->
   Gid = crypto:hash(sha256, Gpk),
   io:format("STARTing xtt_initialize_client_group_context(~p, ~p, ~p, ~p)~n",
-    [binary:part(Gid, {0, 5}),binary:part(PrivKey, {0, 5}), binary:part(Credential, {0,5}), Basename]),
+    [print_bin(Gid), print_bin(PrivKey), print_bin(Credential), Basename]),
   GroupCtx = xtt_initialize_client_group_context(Gid,PrivKey,Credential, Basename),
   io:format("Resulting GroupCtx: ~p~n", [GroupCtx]),
   GroupCtx.
+
+print_bin(Bin) when size(Bin) > 5->
+  ?PRINT_BIN(Bin);
+print_bin(Bin) ->
+  Bin.
 
 initialize_certs(false = _UseTpm, DataDir, ParameterMap)->
   RootIdFilename = maps:get(root_id_filename, ParameterMap, filename:join(DataDir, ?ROOT_ID_FILE)),
   RootPubkeyFilename = maps:get(root_pubkey_filename, ParameterMap, filename:join(DataDir, ?ROOT_PUBKEY_FILE)),
 
+  io:format("Getting RootId from  ~p and RootPubKey from ~p~n", [RootIdFilename, RootPubkeyFilename]),
+
   {ok, RootId} = file:read_file(RootIdFilename),
   {ok, RootPubKey} = file:read_file(RootPubkeyFilename),
 
-  io:format("Initializing cert db with RootId ~p and RootPubKey ~p~n", [RootId, binary:part(RootPubKey, {0,5})]),
+  io:format("Initializing cert db with RootId ~p and RootPubKey ~p~n", [RootId, print_bin(RootPubKey)]),
 
   init_cert_db(RootId, RootPubKey);
 initialize_certs(true = _UseTpm, _DataDir, ParameterMap)->
