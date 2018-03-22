@@ -78,7 +78,13 @@ xtt_client_handshake_context(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]
     ErlNifBinary *out_buffer;
     enif_alloc_binary(MAX_HANDSHAKE_CLIENT_MESSAGE_LENGTH, out_buffer);
 
-    struct xtt_client_handshake_context *ctx = enif_alloc_resource(STRUCT_RESOURCE_TYPE, sizeof(struct xtt_client_handshake_context));
+    struct client_state {
+      unsigned char in[MAX_HANDSHAKE_SERVER_MESSAGE_LENGTH];
+      unsigned char out[MAX_HANDSHAKE_CLIENT_MESSAGE_LENGTH];
+      struct xtt_client_handshake_context ctx;
+    }
+
+    client_state *cs = enif_alloc_resource(STRUCT_RESOURCE_TYPE, sizeof(client_state));
 
     printf("STARTING xtt_initialize_client_handshake_context with version %d and suite %d...\n", version, suite);
 
@@ -97,7 +103,7 @@ xtt_client_handshake_context(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]
         result = enif_make_resource(env, ctx);
     }
 
-    enif_release_resource(ctx);
+    enif_release_resource(cs);
     return result;
 }
 
