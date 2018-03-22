@@ -83,7 +83,7 @@ xtt_client_handshake_context(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]
     printf("STARTING xtt_initialize_client_handshake_context with version %d and suite %d...\n", version, suite);
 
     xtt_return_code_type rc = xtt_initialize_client_handshake_context(
-        ctx, out_buffer->data, out_buffer->size, out_buffer->data, out_buffer->size, (xtt_version) version, (xtt_suite_spec) suite);
+        ctx, in_buffer->data, in_buffer->size, out_buffer->data, out_buffer->size, (xtt_version) version, (xtt_suite_spec) suite);
 
 
     ERL_NIF_TERM  result;
