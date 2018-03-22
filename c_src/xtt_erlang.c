@@ -73,38 +73,39 @@ xtt_client_handshake_context(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]
     }
 
     // 1) Create client's handshake context
-    ErlNifBinary *in_buffer;
-    enif_alloc_binary(MAX_HANDSHAKE_SERVER_MESSAGE_LENGTH, in_buffer);
-    ErlNifBinary *out_buffer;
-    enif_alloc_binary(MAX_HANDSHAKE_CLIENT_MESSAGE_LENGTH, out_buffer);
+//    ErlNifBinary *in_buffer;
+//    enif_alloc_binary(MAX_HANDSHAKE_SERVER_MESSAGE_LENGTH, in_buffer);
+//    ErlNifBinary *out_buffer;
+//    enif_alloc_binary(MAX_HANDSHAKE_CLIENT_MESSAGE_LENGTH, out_buffer);
 
-    struct client_state {
-      unsigned char in[MAX_HANDSHAKE_SERVER_MESSAGE_LENGTH];
-      unsigned char out[MAX_HANDSHAKE_CLIENT_MESSAGE_LENGTH];
-      struct xtt_client_handshake_context ctx;
-    }
+     struct client_state {
+          unsigned char in[MAX_HANDSHAKE_SERVER_MESSAGE_LENGTH];
+          unsigned char out[MAX_HANDSHAKE_CLIENT_MESSAGE_LENGTH];
+          struct xtt_client_handshake_context ctx;
+        };
 
-    client_state *cs = enif_alloc_resource(STRUCT_RESOURCE_TYPE, sizeof(client_state));
+     struct client_state *cs = enif_alloc_resource(STRUCT_RESOURCE_TYPE, sizeof(struct client_state));
 
-    printf("STARTING xtt_initialize_client_handshake_context with version %d and suite %d...\n", version, suite);
+     printf("STARTING xtt_initialize_client_handshake_context with version %d and suite %d...\n", version, suite);
 
-    xtt_return_code_type rc = xtt_initialize_client_handshake_context(
-        ctx, in_buffer->data, in_buffer->size, out_buffer->data, out_buffer->size, (xtt_version) version, (xtt_suite_spec) suite);
+     xtt_return_code_type rc = xtt_initialize_client_handshake_context(
+            &(cs->ctx), cs->in, sizeof(cs->in), cs->out, sizeof(cs->out), (xtt_version) version, (xtt_suite_spec) suite);
 
 
-    ERL_NIF_TERM  result;
+     ERL_NIF_TERM  result;
 
-    if (XTT_RETURN_SUCCESS != rc) {
+     if (XTT_RETURN_SUCCESS != rc) {
         fprintf(stderr, "Error initializing client handshake context: %d\n", rc);
         result = enif_make_int(env, rc);
-    }
-    else {
+     }
+     else {
         puts("SUCCESS\n");
-        result = enif_make_resource(env, ctx);
-    }
+        result = enif_make_resource(env, &(cs->ctx));
+     }
 
-    enif_release_resource(cs);
-    return result;
+     enif_release_resource(cs);
+     return result;
+
 }
 
 static ERL_NIF_TERM
