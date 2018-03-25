@@ -4,11 +4,12 @@
 -export([
   init/0,
   xtt_client_handshake/1,
-  xtt_client_handshake_context/2,
-  xtt_initialize_client_group_context/4,
-  xtt_initialize_server_root_certificate_context/2,
-  xtt_build_client_init/1,
-  xtt_build_error_msg/0]).
+  xtt_init_client_handshake_context/2,
+  xtt_init_client_group_context/4,
+  xtt_init_server_root_certificate_context/2,
+  xtt_start_client_handshake/1,
+  xtt_client_handshake/3,
+  xtt_build_error_msg/1]).
 
 -export([priv_dir/0]).
 
@@ -94,19 +95,22 @@ xtt_client_handshake(#{ server := ServerName,
 %% NIFs
 %%====================================================================
 
-xtt_client_handshake_context(_XttVersion, _XttSuite)->
+xtt_init_client_group_context(_Gid, _PrivKey, _Credential, _Basename)->
   erlang:nif_error(?LINE).
 
-xtt_initialize_client_group_context(_Gid, _PrivKey, _Credential, _Basename)->
+xtt_init_server_root_certificate_context(_RootId, _RootPubKey)->
   erlang:nif_error(?LINE).
 
-xtt_initialize_server_root_certificate_context(_RootId, _RootPubKey)->
+xtt_init_client_handshake_context(_XttVersion, _XttSuite)->
   erlang:nif_error(?LINE).
 
-xtt_build_client_init(_XttClientHandshakeContext)->
+xtt_start_client_handshake(_XttClientState)->
   erlang:nif_error(?LINE).
 
-xtt_build_error_msg()->
+xtt_client_handshake(_XttClientState, _BytesWritten, _BytesRead)->
+  erlang:nif_error(?LINE).
+
+xtt_build_error_msg(_XttVersion)->
   erlang:nif_error(?LINE).
 
 
@@ -198,4 +202,6 @@ read_nvram(cred)-> todo;
 read_nvram(priv_key)->todo.
 
 do_handshake(Socket, RequestedClientId, IntendedServerId, GroupCtx, XttClientHandshakeCtx)->
-  ok.
+  Response = xtt_start_client_handshake(XttClientHandshakeCtx).
+
+
