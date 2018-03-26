@@ -10,6 +10,8 @@
   xtt_start_client_handshake/1,
   xtt_client_handshake/3,
   xtt_handshake_preparse_serverattest/1,
+  xtt_handshake_build_idclientattest/5,
+  xtt_handshake_parse_idserverfinished/1,
   xtt_build_error_msg/1]).
 
 -export([priv_dir/0]).
@@ -112,6 +114,12 @@ xtt_client_handshake(_XttClientState, _NumBytesWritten, _BytesRead)->
   erlang:nif_error(?LINE).
 
 xtt_handshake_preparse_serverattest(_HandshakeState) ->
+  erlang:nif_error(?LINE).
+
+xtt_handshake_build_idclientattest(_ServerCert, _RequestedClientId, _IntendedServerId, _GroupContext, _HandshakeState)->
+  erlang:nif_error(?LINE).
+
+xtt_handshake_parse_idserverfinished(_HandsakeState)->
   erlang:nif_error(?LINE).
 
 xtt_build_error_msg(_XttVersion)->
@@ -227,12 +235,42 @@ handshake_advance(Socket, _RequestedClientId, _IntendedServerId, _GroupCtx,
     {error, Reason} ->
       io:format("FAILED: Handshake TCP send error ~p (BinToWrite %p) ~n", [Reason, BinToWrite])
   end;
-handshake_advance(Socket,  _RequestedClientId, _IntendedServerId, _GroupCtx,
+handshake_advance(Socket,  RequestedClientId, IntendedServerId, GroupCtx,
     {?XTT_RETURN_WANT_PREPARSESERVERATTEST, HandshakeState})->
-  Result = xtt_handshake_preparse_serverattest(HandshakeState),  %% TODO create this NIF
-  handshake_advance(Socket, _RequestedClientId, _IntendedServerId, _GroupCtx, Result);
-handshake_advance(Socket,  _RequestedClientId, _IntendedServerId, _GroupCtx,
-    {?XTT_RETURN_WANT_BUILDIDCLIENTATTEST, HandshakeState})->
-  ok.
-  %% TODO ClaimedRootId created in xtt_handshake_preparse_serverattest should be part of HandshakeContext
-%% TODO Finish for other rc
+  Result = xtt_handshake_preparse_serverattest(HandshakeState),
+  handshake_advance(Socket, RequestedClientId, IntendedServerId, GroupCtx, Result);
+handshake_advance(Socket,  RequestedClientId, IntendedServerId, GroupCtx,
+    {?XTT_RETURN_WANT_BUILDIDCLIENTATTEST, ClaimedRootId, HandshakeState})->
+    io:format("Looking up server's certificate from its claimed root_id ~p~n", [ClaimedRootId]),
+    ServerCert = lookup_cert(ClaimedRootId),
+    Result = xtt_handshake_build_idclientattest(ServerCert, RequestedClientId, IntendedServerId, GroupCtx, HandshakeState),
+    handshake_advance(Socket, RequestedClientId, ClaimedRootId, Result);
+handshake_advance(Socket, RequestedClientId, IntendedServerId, GroupCtx,
+    {?XTT_RETURN_WANT_PARSEIDSERVERFINISHED, HandshakeState})->
+    Result = xtt_handshake_parse_idserverfinished(HandshakeState),
+    handshake_advance(Socket, RequestedClientId, IntendedServerId, GroupCtx, Result);
+handshake_advance(_Socket, _RequestedClientId, _IntendedServerId, _GroupCtx,
+    {?XTT_RETURN_HANDSHAKE_FINISHED, _HandshakeState})->
+  io:format("Handshake complete!~n");
+handshake_advance(_Socket, _RequestedClientId, _IntendedServerId, _GroupCtx,
+    {?XTT_RETURN_RECEIVED_ERROR_MSG, _HandshakeState})->
+  io:format("Received error message from server~n");
+handshake_advance(Socket, _RequestedClientId, _IntendedServerId, _GroupCtx,
+    DefaultErrorResult)->
+  io:format("Encountered error during client handshake: ~p~n", [DefaultErrorResult]).
+  %% TODO (void)write(socket, io_ptr, bytes_requested) need a NIF just to get that buffer?
+
+lookup_cert(ClaimedRootId)->
+  case ets:lookup(?CERT_TABLE, ClaimedRootId) of
+    [CertCtx] -> CertCtx;
+    [] -> %% TODO TEMP HACK
+      RootId = ets:last(?CERT_TABLE),  %% TODO verify ClaimedRootId with
+%%int cmp_ret = xtt_crypto_memcmp(certificate_db[i].root_id.data,   %%%% NEED TO UPDATE enacl to have this NIF
+%%claimed_root_id->data,
+%%sizeof(xtt_certificate_root_id));
+%% IF not verified call xtt_build_error_msg NIF and send to server
+      case ets:lookup(?CERT_TABLE, RootId) of
+        [CertCtx] -> CertCtx;
+        _Other -> io:format("ERROR: cert table is empty!~n")
+      end
+  end.
