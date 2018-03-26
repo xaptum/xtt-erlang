@@ -219,8 +219,10 @@ do_handshake(Socket, RequestedClientId, IntendedServerId, GroupCtx, HandshakeSta
 
 handshake_advance(Socket,  _RequestedClientId, _IntendedServerId, _GroupCtx,
     {?XTT_RETURN_WANT_READ, BytesRequested, HandshakeState})->
+  io:format("handshake WANT_READ ~b bytes~n", [BytesRequested]),
   case gen_tcp:recv(Socket, BytesRequested) of
     {ok, Bin} ->
+      io:format("Read ~p~n", [Bin]),
       Result = xtt_client_handshake(HandshakeState, 0, Bin),
       handshake_advance(Socket, _RequestedClientId, _IntendedServerId, _GroupCtx, Result);
     {error, Reason} ->
@@ -228,8 +230,10 @@ handshake_advance(Socket,  _RequestedClientId, _IntendedServerId, _GroupCtx,
   end;
 handshake_advance(Socket, _RequestedClientId, _IntendedServerId, _GroupCtx,
     {?XTT_RETURN_WANT_WRITE, BinToWrite, HandshakeState})->
+  io:format("Handshake WANT_WRITE ~p~n", [BinToWrite]),
   case gen_tcp:send(Socket, BinToWrite) of
     ok ->
+      io:format("Write SUCCESS!~n"),
       Result = xtt_client_handshake(HandshakeState, size(BinToWrite), <<>>),
       handshake_advance(Socket, _RequestedClientId, _IntendedServerId, _GroupCtx, Result);
     {error, Reason} ->
