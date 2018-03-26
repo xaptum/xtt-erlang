@@ -6,7 +6,7 @@
 
 ErlNifResourceType* STRUCT_RESOURCE_TYPE;
 
-typedef struct client_state {
+struct client_state {
           unsigned char in[MAX_HANDSHAKE_SERVER_MESSAGE_LENGTH];
           unsigned char out[MAX_HANDSHAKE_CLIENT_MESSAGE_LENGTH];
           unsigned char *io_ptr;
@@ -39,28 +39,28 @@ load(ErlNifEnv* env, void** priv, ERL_NIF_TERM load_info)
 // *************** INTERNAL FUNCTIONS *****************
 
 static ERL_NIF_TERM
-build_response(ErlNifEnv* env, int rc, struct client_state cs)->
+build_response(ErlNifEnv* env, int rc, struct client_state cs){
 
     ERL_NIF_TERM ret_code = enif_make_int(env, rc);
     ERL_NIF_TERM state = enif_make_resource(env, &cs);
-    enif_release_resource(cs);
+    enif_release_resource(&cs);
 
     switch(rc){
         case XTT_RETURN_WANT_READ:
             return enif_make_tuple3(env, ret_code, enif_make_int(env, cs.bytes_requested), state);
         case XTT_RETURN_WANT_WRITE:
-            printf("Creating write buffer of length %d from %s\n", cs.bytes_requested, cs.ctx->base.out_end)
+            printf("Creating write buffer of length %d from %s\n", cs.bytes_requested, cs.ctx.base.out_end);
             ErlNifBinary *write_bin;
             enif_alloc_binary(cs.bytes_requested, write_bin);
-            memcpy(write_bin->data, cs.ctx->base.out_end, cs.bytes_requested);
+            memcpy(write_bin->data, cs.ctx.base.out_end, cs.bytes_requested);
 
             return XTT_RETURN_WANT_WRITE;
 
             return enif_make_tuple3(env, ret_code, enif_make_binary(env, write_bin), state);
         default:
-            return enif_make_tuple2(env, ret_code, state)
+            return enif_make_tuple2(env, ret_code, state);
     }
-
+}
  // ******************************************************
 
 
@@ -243,7 +243,7 @@ xtt_init_client_handshake_context(ErlNifEnv* env, int argc, const ERL_NIF_TERM a
      }
      else {
         puts("SUCCESS\n");
-        result = enif_make_resource(env, cs));
+        result = enif_make_resource(env, cs);
      }
 
      enif_release_resource(cs);
@@ -263,13 +263,13 @@ xtt_start_client_handshake(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 
     struct client_state *cs;
 
-    if(!enif_get_resource(env, argv[1], STRUCT_RESOURCE_TYPE, (void**) &cs) {
+    if(!enif_get_resource(env, argv[1], STRUCT_RESOURCE_TYPE, (void**) &cs)) {
         return enif_make_badarg(env);
     }
 
-    xtt_return_code_type rc = xtt_handshake_client_start(&(cs->bytes_requested), cs->io_ptr, &(cs->ctx));
+    xtt_return_code_type rc = xtt_handshake_client_start(&(cs->bytes_requested), &(cs->io_ptr), &(cs->ctx));
 
-    return build_response(env, rc, bytes_requested, cs)
+    return build_response(env, rc, *cs);
 }
 
 static ERL_NIF_TERM
@@ -281,50 +281,55 @@ xtt_client_handshake(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]){
 
     struct client_state *cs;
 
-    if(!enif_get_resource(env, argv[0], STRUCT_RESOURCE_TYPE, (void**) &cs) {
+    if(!enif_get_resource(env, argv[0], STRUCT_RESOURCE_TYPE, (void**) &cs)) {
         return enif_make_badarg(env);
     }
 
-    uint16_t bytes_written;
+    int bytes_written;
 
-    if(!enif_get_int(env, argv[1], &bytes_written)) {
+    if(!enif_get_int(env, argv[1],  &bytes_written)) {
             return enif_make_badarg(env);
     }
 
-    uint16_t bytes_read;
+    int bytes_read;
 
     if(!enif_get_int(env, argv[2], &bytes_read)) {
             return enif_make_badarg(env);
     }
 
     xtt_return_code_type rc = xtt_handshake_client_handle_io(
-                               uint16_t bytes_written,
-                               uint16_t bytes_read,
-                               cs->bytes_requested,
-                               cs->io_ptr,
+                               (uint16_t) &bytes_written,
+                               (uint16_t) &bytes_read,
+                               &(cs->bytes_requested),
+                               &(cs->io_ptr),
                                &(cs->ctx));
 
-    return build_response(env, rc, cs);
+    return build_response(env, rc, *cs);
 }
 
 static ERL_NIF_TERM
-build_error_message(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]){
+xtt_build_error_msg(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]){
 
    if(argc != 1) {
            return enif_make_badarg(env);
    }
 
-   uint16_t bytes_requested;
    int version;
 
    if(!enif_get_int(env, argv[0], &version)) {
         return enif_make_badarg(env);
    }
 
-   unsigned char err_buffer[16]; // TODO fix
-   (void)build_error_msg(err_buffer, &bytes_requested, version);
+//   unsigned char err_buffer[16]; // TODO fix
+  // (void)build_error_msg(err_buffer, &bytes_requested, version);
 
-   return err_buffer; // for writing by xtt_erlang.erl
+   uint16_t *err_buff_len = (uint16_t *) 16;
+   ErlNifBinary *err_buffer_bin;
+   enif_alloc_binary((size_t) err_buff_len, err_buffer_bin);
+   (void)build_error_msg(err_buffer_bin->data, err_buff_len, version);
+   //         memcpy(err_buffer_bin->data, err_buffer, sizeof(err_buffer);
+
+   return enif_make_binary(env, err_buffer_bin); // for writing by xtt_erlang.erl
 }
 
 // STEP 2. repeat (SENDING) until XTT_RETURN_WANT_READ returned
@@ -341,7 +346,7 @@ static ErlNifFunc nif_funcs[] = {
     {"xtt_init_client_handshake_context", 2, xtt_init_client_handshake_context, ERL_NIF_DIRTY_JOB_CPU_BOUND},
     {"xtt_start_client_handshake", 1, xtt_start_client_handshake, ERL_NIF_DIRTY_JOB_CPU_BOUND},
     {"xtt_client_handshake", 3, xtt_client_handshake, ERL_NIF_DIRTY_JOB_CPU_BOUND},
-    {"build_error_message", 1, build_error_message, ERL_NIF_DIRTY_JOB_CPU_BOUND},
+    {"xtt_build_error_msg", 1, xtt_build_error_msg, ERL_NIF_DIRTY_JOB_CPU_BOUND},
     {"xtt_init_client_group_context", 4, xtt_init_client_group_context, ERL_NIF_DIRTY_JOB_CPU_BOUND},
     {"xtt_init_server_root_certificate_context", 2, xtt_init_server_root_certificate_context, ERL_NIF_DIRTY_JOB_CPU_BOUND}
 };

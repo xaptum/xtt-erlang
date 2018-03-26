@@ -75,15 +75,15 @@ xtt_client_handshake(#{ server := ServerName,
 
   io:format("Initialized Certificates in ~p: ~p~n", [?CERT_TABLE, ets:tab2list(?CERT_TABLE)]),
 
-  XttHandshakeContext = xtt_client_handshake_context(XttVersion, XttSuite),
+  XttClientHandshakeStatus = xtt_init_client_handshake_context(XttVersion, XttSuite),
 
-  io:format("Initialized Handshake Context ~p~n", [XttHandshakeContext]),
+  io:format("Initialized Handshake Context ~p~n", [XttClientHandshakeStatus]),
 
   io:format("Connecting to ~p:~b.....", [ServerName, Port]),
   {ok, Socket} = gen_tcp:connect(ServerName, Port, ?TCP_OPTIONS),
   io:format("DONE~n"),
 
-  OutputBuffer = do_handshake(Socket, RequestedClientId, IntendedServerId, GroupContext, XttHandshakeContext),
+  OutputBuffer = do_handshake(Socket, RequestedClientId, IntendedServerId, GroupContext, XttClientHandshakeStatus),
 
   io:format("do_handshake result: ~p~n", [OutputBuffer]),
 
@@ -163,7 +163,7 @@ initialize_client_group_context(Gpk, PrivKey, Credential, Basename)->
   Gid = crypto:hash(sha256, Gpk),
   io:format("STARTing xtt_initialize_client_group_context(~p, ~p, ~p, ~p)~n",
     [print_bin(Gid), print_bin(PrivKey), print_bin(Credential), Basename]),
-  GroupCtx = xtt_initialize_client_group_context(Gid,PrivKey,Credential, Basename),
+  GroupCtx = xtt_init_client_group_context(Gid,PrivKey,Credential, Basename),
   io:format("Resulting GroupCtx: ~p~n", [GroupCtx]),
   GroupCtx.
 
@@ -190,7 +190,7 @@ initialize_certs(true = _UseTpm, _DataDir, ParameterMap)->
   init_cert_db(RootId, RootPubKey).
 
 init_cert_db(RootId, RootPubkey)->
-  CertContext = xtt_initialize_server_root_certificate_context(RootId, RootPubkey),
+  CertContext = xtt_init_server_root_certificate_context(RootId, RootPubkey),
   ets:new(?CERT_TABLE, ?DEFAULT_ETS_OPTS),
   ets:insert(?CERT_TABLE, {RootId, CertContext}). %% TODO DB: Should replace file reading stuff with write ets to disk?
 
@@ -201,7 +201,7 @@ read_nvram(gpk)->todo;
 read_nvram(cred)-> todo;
 read_nvram(priv_key)->todo.
 
-do_handshake(Socket, RequestedClientId, IntendedServerId, GroupCtx, XttClientHandshakeCtx)->
-  Response = xtt_start_client_handshake(XttClientHandshakeCtx).
+do_handshake(Socket, RequestedClientId, IntendedServerId, GroupCtx, XttClientHandshakeStatus)->
+  Response = xtt_start_client_handshake(XttClientHandshakeStatus).
 
 
