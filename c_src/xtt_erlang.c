@@ -66,7 +66,7 @@ build_response(ErlNifEnv* env, int rc, struct client_state cs){
             //typedef struct {unsigned char data[16];} xtt_certificate_root_id;
             ErlNifBinary *claimed_root_id_bin;
             enif_alloc_binary(sizeof(xtt_certificate_root_id), claimed_root_id_bin);
-            memcpy(claimed_root_id_bin->data, cs.claimed_root_id, sizeof(xtt_certificate_root_id));
+            memcpy(claimed_root_id_bin->data, &(cs.claimed_root_id), sizeof(xtt_certificate_root_id));
             return enif_make_tuple3(env, ret_code, enif_make_binary(env, claimed_root_id_bin), state);
         default:
             printf("Building default response for %d\n", rc);
@@ -312,7 +312,7 @@ xtt_client_handshake(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]){
     }
 
     if(received_bin.size > 0 && bytes_written == 0){
-        printf("Appending received binary of size %d to io_ptr...\n", received_bin.size);
+        printf("Appending received binary of size %lu to io_ptr...\n", received_bin.size);
         memcpy(cs->io_ptr, received_bin.data, received_bin.size);
         puts("DONE\n");
     }
@@ -340,7 +340,7 @@ xtt_handshake_preparse_serverattest(ErlNifEnv* env, int argc, const ERL_NIF_TERM
         return enif_make_badarg(env);
     }
 
-    rc = xtt_handshake_client_preparse_serverattest(&(cs->claimed_root_id),
+    xtt_return_code_type rc = xtt_handshake_client_preparse_serverattest(&(cs->claimed_root_id),
                                                     &(cs->bytes_requested),
                                                     &(cs->io_ptr),
                                                     &(cs->ctx));
@@ -354,41 +354,36 @@ xtt_handshake_build_idclientattest(ErlNifEnv* env, int argc, const ERL_NIF_TERM 
         return enif_make_badarg(env);
     }
 
-    ErlNifBinary *server_cert;
+    struct xtt_server_root_certificate_context *server_cert;
     //typedef struct {unsigned char data[16];} xtt_identity_type;
-    ErlNifBinary *requested_client_id,
-    ErlNifBinary *intended_server_id,
+    ErlNifBinary *requested_client_id;
+    ErlNifBinary *intended_server_id;
     struct xtt_client_group_context *group_ctx;
     struct client_state *cs;
 
 
-     if(!enif_inspect_binary(env, argv[0], &server_cert) ) {
-            fprintf(stderr, "Bad arg at position 0\n");
-            return enif_make_badarg(env);
-      }
-      else if (server_cert.size != sizeof(struct xtt_server_root_certificate_context)){
-            fprintf(stderr, "Bad arg at position 0: expecting server_cert size %lu got %zu\n",
-            sizeof(xtt_server_root_certificate_context), server_cert.size);
-            return enif_make_badarg(env);
-      }
+    if(!enif_get_resource(env, argv[0], STRUCT_RESOURCE_TYPE, (void**) &server_cert)) {
+    	return enif_make_badarg(env);
+    }
 
-      if(!enif_inspect_binary(env, argv[1], &requested_client_id) ) {
+
+    if(!enif_inspect_binary(env, argv[1], requested_client_id) ) {
         fprintf(stderr, "Bad arg at position 1\n");
         return enif_make_badarg(env);
-      }
-      else if (server_cert.size != sizeof(xtt_identity_type)){
+    }
+    else if (requested_client_id->size != sizeof(xtt_identity_type)){
             fprintf(stderr, "Bad arg at position 1: expecting requested_client_id size %lu got %zu\n",
-            sizeof(xtt_identity_type), requested_client_id.size);
+            sizeof(xtt_identity_type), requested_client_id->size);
             return enif_make_badarg(env);
      }
 
-     if(!enif_inspect_binary(env, argv[2], &intended_server_id) ) {
+     if(!enif_inspect_binary(env, argv[2], intended_server_id) ) {
             fprintf(stderr, "Bad arg at position 1\n");
             return enif_make_badarg(env);
      }
-     else if (server_cert.size != sizeof(xtt_identity_type)){
+     else if (intended_server_id->size != sizeof(xtt_identity_type)){
             fprintf(stderr, "Bad arg at position 1: expecting requested_client_id size %lu got %zu\n",
-            sizeof(xtt_identity_type), intended_server_id.size);
+            sizeof(xtt_identity_type), intended_server_id->size);
             return enif_make_badarg(env);
      }
 
@@ -400,18 +395,19 @@ xtt_handshake_build_idclientattest(ErlNifEnv* env, int argc, const ERL_NIF_TERM 
             return enif_make_badarg(env);
     }
 
-    rc = xtt_handshake_client_build_idclientattest(&(cs->bytes_requested),
+    xtt_return_code_type rc = xtt_handshake_client_build_idclientattest(&(cs->bytes_requested),
                                                    &(cs->io_ptr),
-                                                   (struct xtt_server_root_certificate_context *) &(server_cert->data),
-                                                   (xtt_identity_type *) &(requested_client_id->data),
+                                                   server_cert,
+						   (xtt_identity_type *) &(requested_client_id->data),
                                                    (xtt_identity_type *) &(intended_server_id->data),
                                                    group_ctx,
                                                    &(cs->ctx));
 
     return build_response(env, rc, *cs);
 }
+
 static ERL_NIF_TERM
-xtt_handshake_parse_idserverfinished((ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]){
+xtt_handshake_parse_idserverfinished(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]){
 
     if(argc != 1){
         return enif_make_badarg(env);
@@ -423,7 +419,7 @@ xtt_handshake_parse_idserverfinished((ErlNifEnv* env, int argc, const ERL_NIF_TE
         return enif_make_badarg(env);
     }
 
-    rc = xtt_handshake_client_parse_idserverfinished(&(cs->bytes_requested),
+    xtt_return_code_type rc = xtt_handshake_client_parse_idserverfinished(&(cs->bytes_requested),
                                                      &(cs->io_ptr),
                                                      &(cs->ctx));
     return build_response(env, rc, *cs);
@@ -470,7 +466,7 @@ static ErlNifFunc nif_funcs[] = {
     {"xtt_client_handshake", 3, xtt_client_handshake, ERL_NIF_DIRTY_JOB_CPU_BOUND},
     {"xtt_handshake_preparse_serverattest", 1, xtt_handshake_preparse_serverattest, ERL_NIF_DIRTY_JOB_CPU_BOUND},
     {"xtt_handshake_build_idclientattest", 5, xtt_handshake_build_idclientattest, ERL_NIF_DIRTY_JOB_CPU_BOUND},
-    {"xtt_handshake_parse_idserverfinished", xtt_handshake_parse_idserverfinished, ERL_NIF_DIRTY_JOB_CPU_BOUND},
+    {"xtt_handshake_parse_idserverfinished", 1, xtt_handshake_parse_idserverfinished, ERL_NIF_DIRTY_JOB_CPU_BOUND},
     {"xtt_build_error_msg", 1, xtt_build_error_msg, ERL_NIF_DIRTY_JOB_CPU_BOUND},
     {"xtt_init_client_group_context", 4, xtt_init_client_group_context, ERL_NIF_DIRTY_JOB_CPU_BOUND},
     {"xtt_init_server_root_certificate_context", 2, xtt_init_server_root_certificate_context, ERL_NIF_DIRTY_JOB_CPU_BOUND}

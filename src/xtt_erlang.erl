@@ -244,7 +244,7 @@ handshake_advance(Socket,  RequestedClientId, IntendedServerId, GroupCtx,
     io:format("Looking up server's certificate from its claimed root_id ~p~n", [ClaimedRootId]),
     ServerCert = lookup_cert(ClaimedRootId),
     Result = xtt_handshake_build_idclientattest(ServerCert, RequestedClientId, IntendedServerId, GroupCtx, HandshakeState),
-    handshake_advance(Socket, RequestedClientId, ClaimedRootId, Result);
+    handshake_advance(Socket, RequestedClientId, ClaimedRootId, GroupCtx, Result);
 handshake_advance(Socket, RequestedClientId, IntendedServerId, GroupCtx,
     {?XTT_RETURN_WANT_PARSEIDSERVERFINISHED, HandshakeState})->
     Result = xtt_handshake_parse_idserverfinished(HandshakeState),
@@ -255,7 +255,7 @@ handshake_advance(_Socket, _RequestedClientId, _IntendedServerId, _GroupCtx,
 handshake_advance(_Socket, _RequestedClientId, _IntendedServerId, _GroupCtx,
     {?XTT_RETURN_RECEIVED_ERROR_MSG, _HandshakeState})->
   io:format("Received error message from server~n");
-handshake_advance(Socket, _RequestedClientId, _IntendedServerId, _GroupCtx,
+handshake_advance(_Socket, _RequestedClientId, _IntendedServerId, _GroupCtx,
     DefaultErrorResult)->
   io:format("Encountered error during client handshake: ~p~n", [DefaultErrorResult]).
   %% TODO (void)write(socket, io_ptr, bytes_requested) need a NIF just to get that buffer?
