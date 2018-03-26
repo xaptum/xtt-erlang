@@ -9,6 +9,7 @@
   xtt_init_server_root_certificate_context/2,
   xtt_start_client_handshake/1,
   xtt_client_handshake/3,
+  xtt_handshake_preparse_serverattest/1,
   xtt_build_error_msg/1]).
 
 -export([priv_dir/0]).
@@ -107,7 +108,10 @@ xtt_init_client_handshake_context(_XttVersion, _XttSuite)->
 xtt_start_client_handshake(_XttClientState)->
   erlang:nif_error(?LINE).
 
-xtt_client_handshake(_XttClientState, _BytesWritten, _BytesRead)->
+xtt_client_handshake(_XttClientState, _NumBytesWritten, _BytesRead)->
+  erlang:nif_error(?LINE).
+
+xtt_handshake_preparse_serverattest(_HandshakeState) ->
   erlang:nif_error(?LINE).
 
 xtt_build_error_msg(_XttVersion)->
@@ -201,7 +205,34 @@ read_nvram(gpk)->todo;
 read_nvram(cred)-> todo;
 read_nvram(priv_key)->todo.
 
-do_handshake(Socket, RequestedClientId, IntendedServerId, GroupCtx, XttClientHandshakeStatus)->
-  Response = xtt_start_client_handshake(XttClientHandshakeStatus).
+do_handshake(Socket, RequestedClientId, IntendedServerId, GroupCtx, HandshakeState)->
+  Result = xtt_start_client_handshake(HandshakeState),
+  handshake_advance(Socket, RequestedClientId, IntendedServerId, GroupCtx, Result).
 
-
+handshake_advance(Socket,  _RequestedClientId, _IntendedServerId, _GroupCtx,
+    {?XTT_RETURN_WANT_READ, BytesRequested, HandshakeState})->
+  case gen_tcp:recv(Socket, BytesRequested) of
+    {ok, Bin} ->
+      Result = xtt_client_handshake(HandshakeState, 0, Bin),
+      handshake_advance(Socket, _RequestedClientId, _IntendedServerId, _GroupCtx, Result);
+    {error, Reason} ->
+      io:format("FAILED: Handshake TCP receive error ~p (BytesRequested: ~p)~n", [Reason, BytesRequested])
+  end;
+handshake_advance(Socket, _RequestedClientId, _IntendedServerId, _GroupCtx,
+    {?XTT_RETURN_WANT_WRITE, BinToWrite, HandshakeState})->
+  case gen_tcp:send(Socket, BinToWrite) of
+    ok ->
+      Result = xtt_client_handshake(HandshakeState, size(BinToWrite), <<>>),
+      handshake_advance(Socket, _RequestedClientId, _IntendedServerId, _GroupCtx, Result);
+    {error, Reason} ->
+      io:format("FAILED: Handshake TCP send error ~p (BinToWrite %p) ~n", [Reason, BinToWrite])
+  end;
+handshake_advance(Socket,  _RequestedClientId, _IntendedServerId, _GroupCtx,
+    {?XTT_RETURN_WANT_PREPARSESERVERATTEST, HandshakeState})->
+  Result = xtt_handshake_preparse_serverattest(HandshakeState),  %% TODO create this NIF
+  handshake_advance(Socket, _RequestedClientId, _IntendedServerId, _GroupCtx, Result);
+handshake_advance(Socket,  _RequestedClientId, _IntendedServerId, _GroupCtx,
+    {?XTT_RETURN_WANT_BUILDIDCLIENTATTEST, HandshakeState})->
+  ok.
+  %% TODO ClaimedRootId created in xtt_handshake_preparse_serverattest should be part of HandshakeContext
+%% TODO Finish for other rc

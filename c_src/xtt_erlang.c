@@ -11,6 +11,7 @@ struct client_state {
           unsigned char out[MAX_HANDSHAKE_CLIENT_MESSAGE_LENGTH];
           unsigned char *io_ptr;
           uint16_t bytes_requested;
+          xtt_certificate_root_id claimed_root_id;
           struct xtt_client_handshake_context ctx;
         };
 
@@ -47,8 +48,10 @@ build_response(ErlNifEnv* env, int rc, struct client_state cs){
 
     switch(rc){
         case XTT_RETURN_WANT_READ:
+            puts("Building response for XTT_RETURN_WANT_READ\n");
             return enif_make_tuple3(env, ret_code, enif_make_int(env, cs.bytes_requested), state);
         case XTT_RETURN_WANT_WRITE:
+            puts("Building response for XTT_RETURN_WANT_WRITE\n");
             printf("Creating write buffer of length %d from %s\n", cs.bytes_requested, cs.ctx.base.out_end);
             ErlNifBinary *write_bin;
             enif_alloc_binary(cs.bytes_requested, write_bin);
@@ -58,6 +61,7 @@ build_response(ErlNifEnv* env, int rc, struct client_state cs){
 
             return enif_make_tuple3(env, ret_code, enif_make_binary(env, write_bin), state);
         default:
+            printf("Building default response for %d\n", rc);
             return enif_make_tuple2(env, ret_code, state);
     }
 }
@@ -263,11 +267,13 @@ xtt_start_client_handshake(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 
     struct client_state *cs;
 
-    if(!enif_get_resource(env, argv[1], STRUCT_RESOURCE_TYPE, (void**) &cs)) {
+    if(!enif_get_resource(env, argv[0], STRUCT_RESOURCE_TYPE, (void**) &cs)) {
         return enif_make_badarg(env);
     }
 
     xtt_return_code_type rc = xtt_handshake_client_start(&(cs->bytes_requested), &(cs->io_ptr), &(cs->ctx));
+
+    printf("Result of xtt_handshake_test %d\n", rc);
 
     return build_response(env, rc, *cs);
 }
@@ -291,19 +297,45 @@ xtt_client_handshake(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]){
             return enif_make_badarg(env);
     }
 
-    int bytes_read;
+    ErlNifBinary received_bin;
 
-    if(!enif_get_int(env, argv[2], &bytes_read)) {
+    if(!enif_inspect_binary(env, argv[2], &received_bin)) {
             return enif_make_badarg(env);
+    }
+
+    if(received_bin.size > 0 && bytes_written == 0){
+        printf("Appending received binary of size %d to io_ptr...\n", received_bin.size);
+        memcpy(cs->io_ptr, received_bin.data, received_bin.size);
+        puts("DONE\n");
     }
 
     xtt_return_code_type rc = xtt_handshake_client_handle_io(
                                (uint16_t) &bytes_written,
-                               (uint16_t) &bytes_read,
+                               (uint16_t) &(received_bin.size),
                                &(cs->bytes_requested),
                                &(cs->io_ptr),
                                &(cs->ctx));
 
+    return build_response(env, rc, *cs);
+}
+
+static ERL_NIF_TERM
+xtt_handshake_preparse_serverattest(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]){
+
+    if(argc != 1){
+        return enif_make_badarg(env);
+    }
+
+    struct client_state *cs;
+
+    if(!enif_get_resource(env, argv[0], STRUCT_RESOURCE_TYPE, (void**) &cs)) {
+        return enif_make_badarg(env);
+    }
+
+    rc = xtt_handshake_client_preparse_serverattest(&(cs->claimed_root_id),
+                                                    &(cs->bytes_requested),
+                                                    &(cs->io_ptr),
+                                                    &(cs->ctx));
     return build_response(env, rc, *cs);
 }
 
@@ -346,6 +378,7 @@ static ErlNifFunc nif_funcs[] = {
     {"xtt_init_client_handshake_context", 2, xtt_init_client_handshake_context, ERL_NIF_DIRTY_JOB_CPU_BOUND},
     {"xtt_start_client_handshake", 1, xtt_start_client_handshake, ERL_NIF_DIRTY_JOB_CPU_BOUND},
     {"xtt_client_handshake", 3, xtt_client_handshake, ERL_NIF_DIRTY_JOB_CPU_BOUND},
+    {"xtt_handshake_preparse_serverattest", 1, xtt_handshake_preparse_serverattest, ERL_NIF_DIRTY_JOB_CPU_BOUND},
     {"xtt_build_error_msg", 1, xtt_build_error_msg, ERL_NIF_DIRTY_JOB_CPU_BOUND},
     {"xtt_init_client_group_context", 4, xtt_init_client_group_context, ERL_NIF_DIRTY_JOB_CPU_BOUND},
     {"xtt_init_server_root_certificate_context", 2, xtt_init_server_root_certificate_context, ERL_NIF_DIRTY_JOB_CPU_BOUND}
