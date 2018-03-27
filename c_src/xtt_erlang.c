@@ -4,7 +4,9 @@
 #include <erl_nif.h>
 #include <mcheck.h>
 
-ErlNifResourceType* STRUCT_RESOURCE_TYPE;
+ErlNifResourceType* CLIENT_STATE_RESOURCE_TYPE;
+ErlNifResourceType* GROUP_CONTEXT_RESOURCE_TYPE;
+ErlNifResourceTYpe* SERVER_ROOT_CERT_RESOURCE_TYPE;
 
 struct client_state {
           unsigned char in[MAX_HANDSHAKE_SERVER_MESSAGE_LENGTH];
@@ -25,13 +27,29 @@ static int
 load(ErlNifEnv* env, void** priv, ERL_NIF_TERM load_info)
 {
     const char* mod = "xtt_erlang";
-    const char* name = "xtt_erlang";
+    const char* cs_name = "struct client_state";
+    const char* gc_name = "struct xtt_client_group_context";
+    const char* srcc_name = "struct xtt_server_root_certificate_context";
 
-    STRUCT_RESOURCE_TYPE = enif_open_resource_type(
-        env, mod, name, free_resource, ERL_NIF_RT_CREATE | ERL_NIF_RT_TAKEOVER, NULL
+    CLIENT_STATE_RESOURCE_TYPE = enif_open_resource_type(
+        env, mod, cs_name, free_resource, ERL_NIF_RT_CREATE | ERL_NIF_RT_TAKEOVER, NULL
     );
 
-    if(STRUCT_RESOURCE_TYPE == NULL)
+    if(CLIENT_STATE_RESOURCE_TYPE == NULL)
+        return -1;
+
+    GROUP_CONTEXT_RESOURCE_TYPE = enif_open_resource_type(
+            env, mod, gc_name, free_resource, ERL_NIF_RT_CREATE | ERL_NIF_RT_TAKEOVER, NULL
+    );
+
+    if(GROUP_CONTEXT_RESOURCE_TYPE == NULL)
+        return -1;
+
+    SERVER_ROOT_CERT_RESOURCE_TYPE = enif_open_resource_type(
+        env, mod, srcc_name, free_resource, ERL_NIF_RT_CREATE | ERL_NIF_RT_TAKEOVER, NULL
+    );
+
+    if(SERVER_ROOT_CERT_RESOURCE_TYPE == NULL)
         return -1;
 
     return 0;
@@ -129,12 +147,12 @@ xtt_init_client_group_context(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[
         fprintf(stderr, "Bad arg at position 3\n");
         return enif_make_badarg(env);
     }
-    else if (sizeof(basenameBin) > MAX_BASENAME_LENGTH){
-        fprintf(stderr, "Bad arg at position 3: size of basename %lu more than MAX %d\n", sizeof(basenameBin), MAX_BASENAME_LENGTH);
+    else if (basenameBin.size > MAX_BASENAME_LENGTH){
+        fprintf(stderr, "Bad arg at position 3: size of basename %lu more than MAX %d\n", basenameBin.size, MAX_BASENAME_LENGTH);
         return enif_make_badarg(env);
     }
 
-    struct xtt_client_group_context *group_ctx_out = enif_alloc_resource(STRUCT_RESOURCE_TYPE, sizeof(struct xtt_client_group_context));
+    struct xtt_client_group_context *group_ctx_out = enif_alloc_resource(GROUP_CONTEXT_RESOURCE_TYPE, sizeof(struct xtt_client_group_context));
 
     puts("Starting xtt_initialize_client_group_context_lrsw.....\n");
 
@@ -199,7 +217,7 @@ xtt_init_server_root_certificate_context(ErlNifEnv* env, int argc, const ERL_NIF
 
     puts("enif_alloc_resource xtt_server_root_certificate_context\n");
 
-    struct xtt_server_root_certificate_context *cert_ctx = enif_alloc_resource(STRUCT_RESOURCE_TYPE, sizeof(struct xtt_server_root_certificate_context));
+    struct xtt_server_root_certificate_context *cert_ctx = enif_alloc_resource(SERVER_ROOT_CERT_RESOURCE_TYPE, sizeof(struct xtt_server_root_certificate_context));
 
     puts("STARTing xtt_initialize_server_root_certificate_context_ed25519.....\n");
 
@@ -247,7 +265,7 @@ xtt_init_client_handshake_context(ErlNifEnv* env, int argc, const ERL_NIF_TERM a
         return enif_make_badarg(env);
     }
 
-     struct client_state *cs = enif_alloc_resource(STRUCT_RESOURCE_TYPE, sizeof(struct client_state));
+     struct client_state *cs = enif_alloc_resource(CLIENT_STATE_RESOURCE_TYPE, sizeof(struct client_state));
 
      cs->io_ptr = NULL;
 
@@ -288,7 +306,7 @@ xtt_start_client_handshake(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 
     ERL_NIF_TERM cs_term = argv[0];
 
-    if(!enif_get_resource(env, cs_term, STRUCT_RESOURCE_TYPE, (void**) &cs)) {
+    if(!enif_get_resource(env, cs_term, CLIENT_STATE_RESOURCE_TYPE, (void**) &cs)) {
         return enif_make_badarg(env);
     }
 
@@ -312,7 +330,7 @@ xtt_client_handshake(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]){
 
     ERL_NIF_TERM cs_term = argv[0];
 
-    if(!enif_get_resource(env, cs_term, STRUCT_RESOURCE_TYPE, (void**) &cs)) {
+    if(!enif_get_resource(env, cs_term, CLIENT_STATE_RESOURCE_TYPE, (void**) &cs)) {
         return enif_make_badarg(env);
     }
 
@@ -357,7 +375,7 @@ xtt_handshake_preparse_serverattest(ErlNifEnv* env, int argc, const ERL_NIF_TERM
 
     ERL_NIF_TERM cs_term = argv[0];
 
-    if(!enif_get_resource(env, cs_term, STRUCT_RESOURCE_TYPE, (void**) &cs)) {
+    if(!enif_get_resource(env, cs_term, CLIENT_STATE_RESOURCE_TYPE, (void**) &cs)) {
         return enif_make_badarg(env);
     }
 
@@ -385,7 +403,7 @@ xtt_handshake_build_idclientattest(ErlNifEnv* env, int argc, const ERL_NIF_TERM 
     struct client_state *cs;
 
 
-    if(!enif_get_resource(env, argv[0], STRUCT_RESOURCE_TYPE, (void**) &server_cert)) {
+    if(!enif_get_resource(env, argv[0], SERVER_ROOT_CERT_RESOURCE_TYPE, (void**) &server_cert)) {
     	return enif_make_badarg(env);
     }
 
@@ -410,13 +428,13 @@ xtt_handshake_build_idclientattest(ErlNifEnv* env, int argc, const ERL_NIF_TERM 
             return enif_make_badarg(env);
      }
 
-    if(!enif_get_resource(env, argv[3], STRUCT_RESOURCE_TYPE, (void**) &group_ctx)) {
+    if(!enif_get_resource(env, argv[3], GROUP_CONTEXT_RESOURCE_TYPE, (void**) &group_ctx)) {
                 return enif_make_badarg(env);
     }
 
     ERL_NIF_TERM cs_term = argv[4];
 
-    if(!enif_get_resource(env, cs_term, STRUCT_RESOURCE_TYPE, (void**) &cs)) {
+    if(!enif_get_resource(env, cs_term, CLIENT_STATE_RESOURCE_TYPE, (void**) &cs)) {
             return enif_make_badarg(env);
     }
 
@@ -444,7 +462,7 @@ xtt_handshake_parse_idserverfinished(ErlNifEnv* env, int argc, const ERL_NIF_TER
 
     ERL_NIF_TERM cs_term = argv[0];
 
-    if(!enif_get_resource(env, cs_term, STRUCT_RESOURCE_TYPE, (void**) &cs)) {
+    if(!enif_get_resource(env, cs_term, CLIENT_STATE_RESOURCE_TYPE, (void**) &cs)) {
         return enif_make_badarg(env);
     }
 
