@@ -27,9 +27,9 @@ static int
 load(ErlNifEnv* env, void** priv, ERL_NIF_TERM load_info)
 {
     const char* mod = "xtt_erlang";
-    const char* cs_name = "struct client_state";
-    const char* gc_name = "struct xtt_client_group_context";
-    const char* srcc_name = "struct xtt_server_root_certificate_context";
+    const char* cs_name = "client_state";
+    const char* gc_name = "xtt_client_group_context";
+    const char* srcc_name = "xtt_server_root_certificate_context";
 
     CLIENT_STATE_RESOURCE_TYPE = enif_open_resource_type(
         env, mod, cs_name, free_resource, ERL_NIF_RT_CREATE | ERL_NIF_RT_TAKEOVER, NULL
@@ -58,7 +58,7 @@ load(ErlNifEnv* env, void** priv, ERL_NIF_TERM load_info)
 // *************** INTERNAL FUNCTIONS *****************
 
 static ERL_NIF_TERM
-build_response(ErlNifEnv* env, int rc, ERL_NIF_TERM state, struct client_state *cs){
+build_response(ErlNifEnv* env, int rc, ERL_NIF_TERM *state, struct client_state *cs){
 
     printf("Building response with ret code %d\n", rc);
 
@@ -69,17 +69,17 @@ build_response(ErlNifEnv* env, int rc, ERL_NIF_TERM state, struct client_state *
     switch(rc){
         case XTT_RETURN_WANT_READ:
             puts("Building response for XTT_RETURN_WANT_READ\n");
-            return enif_make_tuple3(env, ret_code, enif_make_int(env, cs->bytes_requested), state);
+            return enif_make_tuple3(env, ret_code, enif_make_int(env, cs->bytes_requested), *state);
         case XTT_RETURN_WANT_WRITE:
             puts("Building response for XTT_RETURN_WANT_WRITE\n");
-            printf("Creating write buffer of length %d from %s\n", cs->bytes_requested, cs->ctx.base.out_end);
+            printf("Creating write buffer of length %d from %s\n", cs->bytes_requested, cs->io_ptr);
             ErlNifBinary *write_bin;
             enif_alloc_binary(cs->bytes_requested, write_bin);
-            memcpy(write_bin->data, cs->ctx.base.out_end, cs->bytes_requested);
+            memcpy(write_bin->data, cs->io_ptr, cs->bytes_requested);
 
             return XTT_RETURN_WANT_WRITE;
 
-            return enif_make_tuple3(env, ret_code, enif_make_binary(env, write_bin), state);
+            return enif_make_tuple3(env, ret_code, enif_make_binary(env, write_bin), *state);
         case XTT_RETURN_WANT_BUILDIDCLIENTATTEST:
             puts("Building response for XTT_RETURN_WANT_BUILDIDCLIENTATTEST\n");
 
@@ -87,10 +87,10 @@ build_response(ErlNifEnv* env, int rc, ERL_NIF_TERM state, struct client_state *
             ErlNifBinary *claimed_root_id_bin;
             enif_alloc_binary(sizeof(xtt_certificate_root_id), claimed_root_id_bin);
             memcpy(claimed_root_id_bin->data, &(cs->claimed_root_id), sizeof(xtt_certificate_root_id));
-            return enif_make_tuple3(env, ret_code, enif_make_binary(env, claimed_root_id_bin), state);
+            return enif_make_tuple3(env, ret_code, enif_make_binary(env, claimed_root_id_bin), *state);
         default:
             printf("Building default response for %d\n", rc);
-            return enif_make_tuple2(env, ret_code, state);
+            return enif_make_tuple2(env, ret_code, *state);
     }
 }
 
@@ -328,9 +328,9 @@ xtt_start_client_handshake(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 
     xtt_return_code_type rc = xtt_handshake_client_start(&(cs->bytes_requested), &(cs->io_ptr), &(cs->ctx));
 
-    printf("Result of xtt_handshake_test %d\n", rc);
+    printf("Result of xtt_handshake_client_start %d\n", rc);
 
-    return build_response(env, rc, cs_term, cs);
+    return build_response(env, rc, &cs_term, cs);
 }
 
 static ERL_NIF_TERM
@@ -375,7 +375,7 @@ xtt_client_handshake(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]){
                                &(cs->io_ptr),
                                &(cs->ctx));
 
-    return build_response(env, rc, cs_term, cs);
+    return build_response(env, rc, &cs_term, cs);
 }
 
 static ERL_NIF_TERM
@@ -399,7 +399,7 @@ xtt_handshake_preparse_serverattest(ErlNifEnv* env, int argc, const ERL_NIF_TERM
                                                     &(cs->bytes_requested),
                                                     &(cs->io_ptr),
                                                     &(cs->ctx));
-    return build_response(env, rc, cs_term, cs);
+    return build_response(env, rc, &cs_term, cs);
 }
 
 static ERL_NIF_TERM
@@ -462,7 +462,7 @@ xtt_handshake_build_idclientattest(ErlNifEnv* env, int argc, const ERL_NIF_TERM 
                                                    group_ctx,
                                                    &(cs->ctx));
 
-    return build_response(env, rc, cs_term, cs);
+    return build_response(env, rc, &cs_term, cs);
 }
 
 static ERL_NIF_TERM
@@ -485,7 +485,7 @@ xtt_handshake_parse_idserverfinished(ErlNifEnv* env, int argc, const ERL_NIF_TER
     xtt_return_code_type rc = xtt_handshake_client_parse_idserverfinished(&(cs->bytes_requested),
                                                      &(cs->io_ptr),
                                                      &(cs->ctx));
-    return build_response(env, rc, cs_term, cs);
+    return build_response(env, rc, &cs_term, cs);
 }
 
 static ERL_NIF_TERM
