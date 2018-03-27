@@ -72,7 +72,7 @@ build_response(ErlNifEnv* env, int rc, ERL_NIF_TERM *state, struct client_state 
             return enif_make_tuple3(env, ret_code, enif_make_int(env, cs->bytes_requested), *state);
         case XTT_RETURN_WANT_WRITE:
             puts("Building response for XTT_RETURN_WANT_WRITE\n");
-            printf("Creating write buffer of length %d from %s\n", cs->bytes_requested, cs->io_ptr);
+            printf("Creating write buffer of length %d from %p\n", cs->bytes_requested, cs->io_ptr);
             ErlNifBinary *write_bin;
             enif_alloc_binary(cs->bytes_requested, write_bin);
             memcpy(write_bin->data, cs->io_ptr, cs->bytes_requested);
@@ -108,18 +108,18 @@ xtt_init_client_group_context(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[
         return enif_make_badarg(env);
     }
 
-    ErlNifBinary gidBin;
+    ErlNifBinary gpkBin;
     ErlNifBinary daaPrivKeyBin;
     ErlNifBinary daaCredBin;
     ErlNifBinary basenameBin;
 
-    if(!enif_inspect_binary(env, argv[0], &gidBin) ) {
+    if(!enif_inspect_binary(env, argv[0], &gpkBin) ) {
             fprintf(stderr, "Bad arg at position 0\n");
             return enif_make_badarg(env);
     }
-    else if (gidBin.size != sizeof(xtt_group_id)){
-        fprintf(stderr, "Bad arg at position 0: expecting xtt_group_id size %lu got %zu\n",
-        sizeof(xtt_group_id), gidBin.size);
+    else if (gpkBin.size != sizeof(xtt_daa_group_pub_key_lrsw)){
+        fprintf(stderr, "Bad arg at position 0: expecting xtt_daa_group_pub_key_lrsw size %lu got %zu\n",
+        sizeof(xtt_daa_group_pub_key_lrsw), gpkBin.size);
         return enif_make_badarg(env);
     }
 
@@ -159,23 +159,24 @@ xtt_init_client_group_context(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[
         return enif_make_badarg(env);
     }
 
-    puts("Starting xtt_initialize_client_group_context_lrsw.....\n");
+    puts("Starting xtt_initialize_client_group_context_lrsw with args:\n");
 
-    xtt_group_id * group_id;
-    memcpy(group_id, gidBin.data, gidBin.size);
+    xtt_group_id *gid;
+    int hash_ret = crypto_hash_sha256(gid->data, gpkBin.data, gpkBin.size);
+    if (0 != hash_ret)
+        return enif_make_int(-1);
 
-    xtt_daa_priv_key_lrsw * priv_key;
-    memcpy(priv_key, daaPrivKeyBin.data, daaPrivKeyBin.size);
-
-    xtt_daa_credential_lrsw * daa_cred;
-    memcpy(daa_cred, daaCredBin.data, daaCredBin.size);
+    printf("gid: %s (size %d)\n", *gid, sizeof(*gid));
+    printf("daaPrivKey: %s (size %d)\n", daaPrivKeyBin.data, daaPrivKeyBin.size);
+    printf("daaCredBin: %s (size %d)\n", daaCredBin.data, daacredBin.size);
+    printf("basename: %s (size %d)\n", basenameBin.data, basenameBin.size);
 
     xtt_return_code_type rc = xtt_initialize_client_group_context_lrsw(group_ctx_out,
-                                group_id,
-                                priv_key,
-                                daa_cred,
-                                basenameBin.data,
-                                basenameBin.size);
+                                  gid,
+                                  (xtt_daa_priv_key_lrsw *) &(daaPrivKeyBin.data),
+                                  (xtt_daa_credential_lrsw *) &(daaCredBin.data),
+                                  basenameBin.data,
+                                  basenameBin.size);
 
     printf("Finished xtt_initialize_client_group_context_lrsw with return code %d\n", rc);
 
