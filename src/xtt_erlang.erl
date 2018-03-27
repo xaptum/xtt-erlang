@@ -237,7 +237,7 @@ handshake_advance(Socket, _RequestedClientId, _IntendedServerId, _GroupCtx,
       Result = xtt_client_handshake(HandshakeState, size(BinToWrite), <<>>),
       handshake_advance(Socket, _RequestedClientId, _IntendedServerId, _GroupCtx, Result);
     {error, Reason} ->
-      io:format("FAILED: Handshake TCP send error ~p (BinToWrite %p) ~n", [Reason, BinToWrite])
+      io:format("FAILED: Handshake TCP send error ~p (BinToWrite ~p) ~n", [Reason, BinToWrite])
   end;
 handshake_advance(Socket,  RequestedClientId, IntendedServerId, GroupCtx,
     {?XTT_RETURN_WANT_PREPARSESERVERATTEST, HandshakeState})->

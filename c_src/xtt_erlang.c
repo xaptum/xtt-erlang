@@ -6,7 +6,7 @@
 
 ErlNifResourceType* CLIENT_STATE_RESOURCE_TYPE;
 ErlNifResourceType* GROUP_CONTEXT_RESOURCE_TYPE;
-ErlNifResourceTYpe* SERVER_ROOT_CERT_RESOURCE_TYPE;
+ErlNifResourceType* SERVER_ROOT_CERT_RESOURCE_TYPE;
 
 struct client_state {
           unsigned char in[MAX_HANDSHAKE_SERVER_MESSAGE_LENGTH];
@@ -154,6 +154,11 @@ xtt_init_client_group_context(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[
 
     struct xtt_client_group_context *group_ctx_out = enif_alloc_resource(GROUP_CONTEXT_RESOURCE_TYPE, sizeof(struct xtt_client_group_context));
 
+    if(group_ctx_out == NULL){
+        puts("Failed to allocate xtt_client_group_context group_ctx_out!\n");
+        return enif_make_badarg(env);
+    }
+
     puts("Starting xtt_initialize_client_group_context_lrsw.....\n");
 
     xtt_return_code_type rc = xtt_initialize_client_group_context_lrsw(group_ctx_out,
@@ -219,6 +224,11 @@ xtt_init_server_root_certificate_context(ErlNifEnv* env, int argc, const ERL_NIF
 
     struct xtt_server_root_certificate_context *cert_ctx = enif_alloc_resource(SERVER_ROOT_CERT_RESOURCE_TYPE, sizeof(struct xtt_server_root_certificate_context));
 
+    if(cert_ctx == NULL){
+        puts("Failed to allocate xtt_server_root_certificate_context cert_ctx!\n");
+        return enif_make_badarg(env);
+    }
+
     puts("STARTing xtt_initialize_server_root_certificate_context_ed25519.....\n");
 
     xtt_return_code_type rc = xtt_initialize_server_root_certificate_context_ed25519(cert_ctx,
@@ -266,6 +276,12 @@ xtt_init_client_handshake_context(ErlNifEnv* env, int argc, const ERL_NIF_TERM a
     }
 
      struct client_state *cs = enif_alloc_resource(CLIENT_STATE_RESOURCE_TYPE, sizeof(struct client_state));
+
+     if(cs == NULL){
+        puts("Failed to allocate client_state cs!\n");
+        return enif_make_badarg(env);
+     }
+
 
      cs->io_ptr = NULL;
 
