@@ -129,7 +129,7 @@ xtt_init_client_group_context(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[
     }
     else if (daaPrivKeyBin.size != sizeof(xtt_daa_priv_key_lrsw)){
         fprintf(stderr, "Bad arg at position 1: expecting xtt_daa_priv_key_lrsw size %lu got %zu\n",
-        sizeof(xtt_daa_priv_key_lrsw), gidBin.size);
+        sizeof(xtt_daa_priv_key_lrsw), daaPrivKeyBin.size);
         return enif_make_badarg(env);
     }
 
@@ -139,7 +139,7 @@ xtt_init_client_group_context(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[
     }
     else if (daaCredBin.size != sizeof(xtt_daa_credential_lrsw)){
         fprintf(stderr, "Bad arg at position 2: expecting xtt_daa_credential_lrsw size %lu got %zu\n",
-        sizeof(xtt_daa_credential_lrsw), gidBin.size);
+        sizeof(xtt_daa_credential_lrsw), daaCredBin.size);
         return enif_make_badarg(env);
     }
 
@@ -161,18 +161,18 @@ xtt_init_client_group_context(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[
 
     puts("Starting xtt_initialize_client_group_context_lrsw with args:\n");
 
-    xtt_group_id *gid;
-    int hash_ret = crypto_hash_sha256(gid->data, gpkBin.data, gpkBin.size);
+    xtt_group_id gid;
+    int hash_ret = crypto_hash_sha256(gid.data, gpkBin.data, gpkBin.size);
     if (0 != hash_ret)
-        return enif_make_int(-1);
+        return enif_make_int(env, -1);
 
-    printf("gid: %s (size %d)\n", *gid, sizeof(*gid));
+    printf("gid: %s (size %d)\n", gid, sizeof(gid));
     printf("daaPrivKey: %s (size %d)\n", daaPrivKeyBin.data, daaPrivKeyBin.size);
-    printf("daaCredBin: %s (size %d)\n", daaCredBin.data, daacredBin.size);
+    printf("daaCredBin: %s (size %d)\n", daaCredBin.data, daaCredBin.size);
     printf("basename: %s (size %d)\n", basenameBin.data, basenameBin.size);
 
     xtt_return_code_type rc = xtt_initialize_client_group_context_lrsw(group_ctx_out,
-                                  gid,
+                                  &gid,
                                   (xtt_daa_priv_key_lrsw *) &(daaPrivKeyBin.data),
                                   (xtt_daa_credential_lrsw *) &(daaCredBin.data),
                                   basenameBin.data,

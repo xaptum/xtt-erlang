@@ -215,6 +215,7 @@ read_nvram(priv_key)->todo.
 
 do_handshake(Socket, RequestedClientId, IntendedServerId, GroupCtx, HandshakeState)->
   Result = xtt_start_client_handshake(HandshakeState),
+  io:format("Result of start_client_handshake ~p~n", [Result]),
   handshake_advance(Socket, RequestedClientId, IntendedServerId, GroupCtx, Result).
 
 handshake_advance(Socket,  _RequestedClientId, _IntendedServerId, _GroupCtx,

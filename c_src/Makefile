@@ -51,12 +51,12 @@ link_verbose = $(link_verbose_$(V))
 SOURCES := $(shell find $(C_SRC_DIR) -type f \( -name "*.c" -o -name "*.C" -o -name "*.cc" -o -name "*.cpp" \))
 OBJECTS = $(addsuffix .o, $(basename $(SOURCES)))
 
-COMPILE_C = $(c_verbose) $(CC) $(CFLAGS) $(CPPFLAGS) -c
+COMPILE_C = $(c_verbose) $(CC) -ggdb $(CFLAGS) $(CPPFLAGS) -c
 COMPILE_CPP = $(cpp_verbose) $(CXX) $(CXXFLAGS) $(CPPFLAGS) -c
 
 $(C_SRC_OUTPUT): $(OBJECTS)
 	@mkdir -p $(BASEDIR)/priv/
-	$(link_verbose) $(CC) $(OBJECTS) $(LDFLAGS) $(LDLIBS) -o $(C_SRC_OUTPUT)
+	$(link_verbose) $(CC) -ggdb $(OBJECTS) $(LDFLAGS) $(LDLIBS) -o $(C_SRC_OUTPUT)
 
 %.o: %.c
 	$(COMPILE_C) $(OUTPUT_OPTION) $<
