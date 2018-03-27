@@ -161,10 +161,19 @@ xtt_init_client_group_context(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[
 
     puts("Starting xtt_initialize_client_group_context_lrsw.....\n");
 
+    xtt_group_id * group_id;
+    memcpy(group_id, gidBin.data, gidBin.size);
+
+    xtt_daa_priv_key_lrsw * priv_key;
+    memcpy(priv_key, daaPrivKeyBin.data, daaPrivKeyBin.size);
+
+    xtt_daa_credential_lrsw * daa_cred;
+    memcpy(daa_cred, daaCredBin.data, daaCredBin.size);
+
     xtt_return_code_type rc = xtt_initialize_client_group_context_lrsw(group_ctx_out,
-                                (xtt_group_id *) gidBin.data,
-                                (xtt_daa_priv_key_lrsw *) daaPrivKeyBin.data,
-                                (xtt_daa_credential_lrsw *) daaCredBin.data,
+                                group_id,
+                                priv_key,
+                                daa_cred,
                                 basenameBin.data,
                                 basenameBin.size);
 
