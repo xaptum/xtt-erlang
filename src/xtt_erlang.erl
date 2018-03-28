@@ -21,7 +21,7 @@
 -define(APPNAME, xtt_erlang).
 -define(LIBNAME, 'xtt-erlang').
 
--define(TCP_OPTIONS, [binary, {packet, 2}, {keepalive, true}]).
+-define(TCP_OPTIONS, [binary, {packet, 0}, {keepalive, true}, {active, false}]).
 
 -define(DEFAULT_ETS_OPTS, [named_table, set, public, {write_concurrency, true}, {read_concurrency, true}]).
 
@@ -220,7 +220,7 @@ do_handshake(Socket, RequestedClientId, IntendedServerId, GroupCtx, HandshakeSta
 
 handshake_advance(Socket,  _RequestedClientId, _IntendedServerId, _GroupCtx,
     {?XTT_RETURN_WANT_READ, BytesRequested, HandshakeState})->
-  io:format("handshake WANT_READ ~b bytes~n", [BytesRequested]),
+  io:format("handshake_advance at XTT_RETURN_WANT_READ ~b bytes~n", [BytesRequested]),
   case gen_tcp:recv(Socket, BytesRequested) of
     {ok, Bin} ->
       io:format("Read ~p~n", [Bin]),
@@ -231,7 +231,7 @@ handshake_advance(Socket,  _RequestedClientId, _IntendedServerId, _GroupCtx,
   end;
 handshake_advance(Socket, _RequestedClientId, _IntendedServerId, _GroupCtx,
     {?XTT_RETURN_WANT_WRITE, BinToWrite, HandshakeState})->
-  io:format("Handshake WANT_WRITE ~p~n", [BinToWrite]),
+  io:format("handshake_advance at XTT_RETURN_WANT_WRITE ~p~n", [BinToWrite]),
   case gen_tcp:send(Socket, BinToWrite) of
     ok ->
       io:format("Write SUCCESS!~n"),
@@ -242,18 +242,20 @@ handshake_advance(Socket, _RequestedClientId, _IntendedServerId, _GroupCtx,
   end;
 handshake_advance(Socket,  RequestedClientId, IntendedServerId, GroupCtx,
     {?XTT_RETURN_WANT_PREPARSESERVERATTEST, HandshakeState})->
-  io:format("XTT_RETURN_WANT_PREPARSESERVERATTEST~n"),
+  io:format("handshake_advance at XTT_RETURN_WANT_PREPARSESERVERATTEST~n"),
   Result = xtt_handshake_preparse_serverattest(HandshakeState),
   handshake_advance(Socket, RequestedClientId, IntendedServerId, GroupCtx, Result);
 handshake_advance(Socket,  RequestedClientId, IntendedServerId, GroupCtx,
     {?XTT_RETURN_WANT_BUILDIDCLIENTATTEST, ClaimedRootId, HandshakeState})->
+    io:format("handshake_advance at XTT_RETURN_WANT_BUILDIDCLIENTATTEST~n"),
     io:format("Looking up server's certificate from its claimed root_id ~p~n", [ClaimedRootId]),
-    ServerCert = lookup_cert(ClaimedRootId),
+    {ClaimedRootId, ServerCert} = lookup_cert(ClaimedRootId),
+    io:format("Running xtt_handshake_build_idclientattest(~p, ~p, ~p, ~p, ~p)~n", [ServerCert, RequestedClientId, IntendedServerId, GroupCtx, HandshakeState]),
     Result = xtt_handshake_build_idclientattest(ServerCert, RequestedClientId, IntendedServerId, GroupCtx, HandshakeState),
     handshake_advance(Socket, RequestedClientId, ClaimedRootId, GroupCtx, Result);
 handshake_advance(Socket, RequestedClientId, IntendedServerId, GroupCtx,
     {?XTT_RETURN_WANT_PARSEIDSERVERFINISHED, HandshakeState})->
-    io:format("XTT_RETURN_WANT_PARSEIDSERVERFINISHED~n"),
+    io:format("handshake_advance at XTT_RETURN_WANT_PARSEIDSERVERFINISHED~n"),
     Result = xtt_handshake_parse_idserverfinished(HandshakeState),
     handshake_advance(Socket, RequestedClientId, IntendedServerId, GroupCtx, Result);
 handshake_advance(_Socket, _RequestedClientId, _IntendedServerId, _GroupCtx,
