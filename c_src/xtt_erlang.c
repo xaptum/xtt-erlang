@@ -4,6 +4,8 @@
 #include <erl_nif.h>
 #include <mcheck.h>
 
+#define USE_TPM
+
 ErlNifResourceType* CLIENT_STATE_RESOURCE_TYPE;
 ErlNifResourceType* GROUP_CONTEXT_RESOURCE_TYPE;
 ErlNifResourceType* SERVER_ROOT_CERT_RESOURCE_TYPE;
@@ -58,7 +60,7 @@ load(ErlNifEnv* env, void** priv, ERL_NIF_TERM load_info)
 // *************** INTERNAL FUNCTIONS *****************
 
 static ERL_NIF_TERM
-build_response(ErlNifEnv* env, int rc, ERL_NIF_TERM *state, struct client_state *cs){
+build_response(ErlNifEnv* env, int rc, ERL_NIF_TERM *state, struct client_state *cs, ErlNifBinary *write_bin){
 
     printf("Building response with ret code %d\n", rc);
 
@@ -73,7 +75,6 @@ build_response(ErlNifEnv* env, int rc, ERL_NIF_TERM *state, struct client_state 
         case XTT_RETURN_WANT_WRITE:
             puts("Building response for XTT_RETURN_WANT_WRITE\n");
             printf("Creating write buffer of length %d from %p\n", cs->bytes_requested, cs->io_ptr);
-            ErlNifBinary *write_bin;
             enif_alloc_binary(cs->bytes_requested, write_bin);
             memcpy(write_bin->data, cs->io_ptr, cs->bytes_requested);
 
@@ -166,7 +167,7 @@ xtt_init_client_group_context(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[
     if (0 != hash_ret)
         return enif_make_int(env, -1);
 
-    printf("gid: %s (size %d)\n", gid, sizeof(gid));
+    printf("gid: %s (size %d)\n", gid.data, sizeof(gid));
     printf("daaPrivKey: %s (size %d)\n", daaPrivKeyBin.data, daaPrivKeyBin.size);
     printf("daaCredBin: %s (size %d)\n", daaCredBin.data, daaCredBin.size);
     printf("basename: %s (size %d)\n", basenameBin.data, basenameBin.size);
@@ -340,7 +341,8 @@ xtt_start_client_handshake(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 
     printf("Result of xtt_handshake_client_start %d\n", rc);
 
-    return build_response(env, rc, &cs_term, cs);
+    ErlNifBinary write_bin;
+    return build_response(env, rc, &cs_term, cs, &write_bin);
 }
 
 static ERL_NIF_TERM
@@ -385,7 +387,8 @@ xtt_client_handshake(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]){
                                &(cs->io_ptr),
                                &(cs->ctx));
 
-    return build_response(env, rc, &cs_term, cs);
+    ErlNifBinary write_bin;
+    return build_response(env, rc, &cs_term, cs, &write_bin);
 }
 
 static ERL_NIF_TERM
@@ -409,7 +412,9 @@ xtt_handshake_preparse_serverattest(ErlNifEnv* env, int argc, const ERL_NIF_TERM
                                                     &(cs->bytes_requested),
                                                     &(cs->io_ptr),
                                                     &(cs->ctx));
-    return build_response(env, rc, &cs_term, cs);
+
+    ErlNifBinary write_bin;
+    return build_response(env, rc, &cs_term, cs, &write_bin);
 }
 
 static ERL_NIF_TERM
@@ -472,7 +477,8 @@ xtt_handshake_build_idclientattest(ErlNifEnv* env, int argc, const ERL_NIF_TERM 
                                                    group_ctx,
                                                    &(cs->ctx));
 
-    return build_response(env, rc, &cs_term, cs);
+    ErlNifBinary write_bin;
+    return build_response(env, rc, &cs_term, cs, &write_bin);
 }
 
 static ERL_NIF_TERM
@@ -495,7 +501,8 @@ xtt_handshake_parse_idserverfinished(ErlNifEnv* env, int argc, const ERL_NIF_TER
     xtt_return_code_type rc = xtt_handshake_client_parse_idserverfinished(&(cs->bytes_requested),
                                                      &(cs->io_ptr),
                                                      &(cs->ctx));
-    return build_response(env, rc, &cs_term, cs);
+    ErlNifBinary write_bin;
+    return build_response(env, rc, &cs_term, cs, &write_bin);
 }
 
 static ERL_NIF_TERM
