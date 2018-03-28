@@ -242,6 +242,7 @@ handshake_advance(Socket, _RequestedClientId, _IntendedServerId, _GroupCtx,
   end;
 handshake_advance(Socket,  RequestedClientId, IntendedServerId, GroupCtx,
     {?XTT_RETURN_WANT_PREPARSESERVERATTEST, HandshakeState})->
+  io:format("XTT_RETURN_WANT_PREPARSESERVERATTEST~n"),
   Result = xtt_handshake_preparse_serverattest(HandshakeState),
   handshake_advance(Socket, RequestedClientId, IntendedServerId, GroupCtx, Result);
 handshake_advance(Socket,  RequestedClientId, IntendedServerId, GroupCtx,
@@ -252,11 +253,12 @@ handshake_advance(Socket,  RequestedClientId, IntendedServerId, GroupCtx,
     handshake_advance(Socket, RequestedClientId, ClaimedRootId, GroupCtx, Result);
 handshake_advance(Socket, RequestedClientId, IntendedServerId, GroupCtx,
     {?XTT_RETURN_WANT_PARSEIDSERVERFINISHED, HandshakeState})->
+    io:format("XTT_RETURN_WANT_PARSEIDSERVERFINISHED~n"),
     Result = xtt_handshake_parse_idserverfinished(HandshakeState),
     handshake_advance(Socket, RequestedClientId, IntendedServerId, GroupCtx, Result);
 handshake_advance(_Socket, _RequestedClientId, _IntendedServerId, _GroupCtx,
     {?XTT_RETURN_HANDSHAKE_FINISHED, _HandshakeState})->
-  io:format("Handshake complete!~n");
+  io:format("Handshake FINISHED!~n");
 handshake_advance(_Socket, _RequestedClientId, _IntendedServerId, _GroupCtx,
     {?XTT_RETURN_RECEIVED_ERROR_MSG, _HandshakeState})->
   io:format("Received error message from server~n");

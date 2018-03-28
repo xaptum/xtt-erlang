@@ -65,8 +65,6 @@ build_response(ErlNifEnv* env, int rc, ERL_NIF_TERM *state, struct client_state 
     printf("Building response with ret code %d\n", rc);
 
     ERL_NIF_TERM ret_code = enif_make_int(env, rc);
-//    ERL_NIF_TERM state = enif_make_resource(env, &cs);
-//    enif_release_resource(&cs);
 
     switch(rc){
         case XTT_RETURN_WANT_READ:
@@ -77,8 +75,6 @@ build_response(ErlNifEnv* env, int rc, ERL_NIF_TERM *state, struct client_state 
             printf("Creating write buffer of length %d from %p\n", cs->bytes_requested, cs->io_ptr);
             enif_alloc_binary(cs->bytes_requested, temp_bin);
             memcpy(temp_bin->data, cs->io_ptr, cs->bytes_requested);
-
-            return XTT_RETURN_WANT_WRITE;
 
             return enif_make_tuple3(env, ret_code, enif_make_binary(env, temp_bin), *state);
         case XTT_RETURN_WANT_BUILDIDCLIENTATTEST:
@@ -343,32 +339,30 @@ xtt_start_client_handshake(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
     ErlNifBinary temp_bin;
     ERL_NIF_TERM ret_code = enif_make_int(env, rc);
 
-    switch(rc){
-            case XTT_RETURN_WANT_READ:
-                puts("Building response for XTT_RETURN_WANT_READ\n");
-                return enif_make_tuple3(env, ret_code, enif_make_int(env, cs->bytes_requested), cs_term);
-            case XTT_RETURN_WANT_WRITE:
-                puts("Building response for XTT_RETURN_WANT_WRITE\n");
-                printf("Creating write buffer of length %d from %p\n", cs->bytes_requested, cs->io_ptr);
-                enif_alloc_binary(cs->bytes_requested, &temp_bin);
-                memcpy(temp_bin.data, cs->io_ptr, cs->bytes_requested);
+//    switch(rc){
+//            case XTT_RETURN_WANT_READ:
+//                puts("Building response for XTT_RETURN_WANT_READ\n");
+//                return enif_make_tuple3(env, ret_code, enif_make_int(env, cs->bytes_requested), cs_term);
+//            case XTT_RETURN_WANT_WRITE:
+//                puts("Building response for XTT_RETURN_WANT_WRITE\n");
+//                printf("Creating write buffer of length %d from %p\n", cs->bytes_requested, cs->io_ptr);
+//                enif_alloc_binary(cs->bytes_requested, &temp_bin);
+//                memcpy(temp_bin.data, cs->io_ptr, cs->bytes_requested);
+//
+//                return enif_make_tuple3(env, ret_code, enif_make_binary(env, &temp_bin), cs_term);
+//            case XTT_RETURN_WANT_BUILDIDCLIENTATTEST:
+//                puts("Building response for XTT_RETURN_WANT_BUILDIDCLIENTATTEST\n");
+//
+//                //typedef struct {unsigned char data[16];} xtt_certificate_root_id;
+//                enif_alloc_binary(sizeof(xtt_certificate_root_id), &temp_bin);
+//                memcpy(temp_bin.data, &(cs->claimed_root_id), sizeof(xtt_certificate_root_id));
+//                return enif_make_tuple3(env, ret_code, enif_make_binary(env, &temp_bin), cs_term);
+//            default:
+//                printf("Building default response for %d\n", rc);
+//                return enif_make_tuple2(env, ret_code, cs_term);
+//    }
 
-                return XTT_RETURN_WANT_WRITE;
-
-                return enif_make_tuple3(env, ret_code, enif_make_binary(env, &temp_bin), cs_term);
-            case XTT_RETURN_WANT_BUILDIDCLIENTATTEST:
-                puts("Building response for XTT_RETURN_WANT_BUILDIDCLIENTATTEST\n");
-
-                //typedef struct {unsigned char data[16];} xtt_certificate_root_id;
-                enif_alloc_binary(sizeof(xtt_certificate_root_id), &temp_bin);
-                memcpy(temp_bin.data, &(cs->claimed_root_id), sizeof(xtt_certificate_root_id));
-                return enif_make_tuple3(env, ret_code, enif_make_binary(env, &temp_bin), cs_term);
-            default:
-                printf("Building default response for %d\n", rc);
-                return enif_make_tuple2(env, ret_code, cs_term);
-    }
-
-    //return build_response(env, rc, &cs_term, cs, &temp_bin);
+    return build_response(env, rc, ret_code, &cs_term, cs, &temp_bin);
 }
 
 static ERL_NIF_TERM
@@ -414,34 +408,8 @@ xtt_client_handshake(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]){
                                &(cs->ctx));
 
         ErlNifBinary *temp_bin;
-        ERL_NIF_TERM ret_code = enif_make_int(env, rc);
 
-        switch(rc){
-                case XTT_RETURN_WANT_READ:
-                    puts("Building response for XTT_RETURN_WANT_READ\n");
-                    return enif_make_tuple3(env, ret_code, enif_make_int(env, cs->bytes_requested), cs_term);
-                case XTT_RETURN_WANT_WRITE:
-                    puts("Building response for XTT_RETURN_WANT_WRITE\n");
-                    printf("Creating write buffer of length %d from %p\n", cs->bytes_requested, cs->io_ptr);
-                    enif_alloc_binary(cs->bytes_requested, temp_bin);
-                    memcpy(temp_bin->data, cs->io_ptr, cs->bytes_requested);
-
-                    return XTT_RETURN_WANT_WRITE;
-
-                    return enif_make_tuple3(env, ret_code, enif_make_binary(env, temp_bin), cs_term);
-                case XTT_RETURN_WANT_BUILDIDCLIENTATTEST:
-                    puts("Building response for XTT_RETURN_WANT_BUILDIDCLIENTATTEST\n");
-
-                    //typedef struct {unsigned char data[16];} xtt_certificate_root_id;
-                    enif_alloc_binary(sizeof(xtt_certificate_root_id), temp_bin);
-                    memcpy(temp_bin->data, &(cs->claimed_root_id), sizeof(xtt_certificate_root_id));
-                    return enif_make_tuple3(env, ret_code, enif_make_binary(env, temp_bin), cs_term);
-                default:
-                    printf("Building default response for %d\n", rc);
-                    return enif_make_tuple2(env, ret_code, cs_term);
-        }
-
-   // return build_response(env, rc, &cs_term, cs, &temp_bin);
+        return build_response(env, rc, &cs_term, cs, &temp_bin);
 }
 
 static ERL_NIF_TERM
@@ -467,33 +435,8 @@ xtt_handshake_preparse_serverattest(ErlNifEnv* env, int argc, const ERL_NIF_TERM
                                                     &(cs->ctx));
 
     ErlNifBinary *temp_bin;
-    ERL_NIF_TERM ret_code = enif_make_int(env, rc);
 
-        switch(rc){
-                case XTT_RETURN_WANT_READ:
-                    puts("Building response for XTT_RETURN_WANT_READ\n");
-                    return enif_make_tuple3(env, ret_code, enif_make_int(env, cs->bytes_requested), cs_term);
-                case XTT_RETURN_WANT_WRITE:
-                    puts("Building response for XTT_RETURN_WANT_WRITE\n");
-                    printf("Creating write buffer of length %d from %p\n", cs->bytes_requested, cs->io_ptr);
-                    enif_alloc_binary(cs->bytes_requested, temp_bin);
-                    memcpy(temp_bin->data, cs->io_ptr, cs->bytes_requested);
-
-                    return XTT_RETURN_WANT_WRITE;
-
-                    return enif_make_tuple3(env, ret_code, enif_make_binary(env, temp_bin), cs_term);
-                case XTT_RETURN_WANT_BUILDIDCLIENTATTEST:
-                    puts("Building response for XTT_RETURN_WANT_BUILDIDCLIENTATTEST\n");
-
-                    //typedef struct {unsigned char data[16];} xtt_certificate_root_id;
-                    enif_alloc_binary(sizeof(xtt_certificate_root_id), temp_bin);
-                    memcpy(temp_bin->data, &(cs->claimed_root_id), sizeof(xtt_certificate_root_id));
-                    return enif_make_tuple3(env, ret_code, enif_make_binary(env, temp_bin), cs_term);
-                default:
-                    printf("Building default response for %d\n", rc);
-                    return enif_make_tuple2(env, ret_code, cs_term);
-        }
-    //return build_response(env, rc, &cs_term, cs, &temp_bin);
+    return build_response(env, rc, &cs_term, cs, &temp_bin);
 }
 
 static ERL_NIF_TERM
@@ -557,33 +500,8 @@ xtt_handshake_build_idclientattest(ErlNifEnv* env, int argc, const ERL_NIF_TERM 
                                                    &(cs->ctx));
 
     ErlNifBinary *temp_bin;
-    ERL_NIF_TERM ret_code = enif_make_int(env, rc);
 
-        switch(rc){
-                case XTT_RETURN_WANT_READ:
-                    puts("Building response for XTT_RETURN_WANT_READ\n");
-                    return enif_make_tuple3(env, ret_code, enif_make_int(env, cs->bytes_requested), cs_term);
-                case XTT_RETURN_WANT_WRITE:
-                    puts("Building response for XTT_RETURN_WANT_WRITE\n");
-                    printf("Creating write buffer of length %d from %p\n", cs->bytes_requested, cs->io_ptr);
-                    enif_alloc_binary(cs->bytes_requested, temp_bin);
-                    memcpy(temp_bin->data, cs->io_ptr, cs->bytes_requested);
-
-                    return XTT_RETURN_WANT_WRITE;
-
-                    return enif_make_tuple3(env, ret_code, enif_make_binary(env, temp_bin), cs_term);
-                case XTT_RETURN_WANT_BUILDIDCLIENTATTEST:
-                    puts("Building response for XTT_RETURN_WANT_BUILDIDCLIENTATTEST\n");
-
-                    //typedef struct {unsigned char data[16];} xtt_certificate_root_id;
-                    enif_alloc_binary(sizeof(xtt_certificate_root_id), temp_bin);
-                    memcpy(temp_bin->data, &(cs->claimed_root_id), sizeof(xtt_certificate_root_id));
-                    return enif_make_tuple3(env, ret_code, enif_make_binary(env, temp_bin), cs_term);
-                default:
-                    printf("Building default response for %d\n", rc);
-                    return enif_make_tuple2(env, ret_code, cs_term);
-        }
-    //return build_response(env, rc, &cs_term, cs, &temp_bin);
+    return build_response(env, rc, &cs_term, cs, &temp_bin);
 }
 
 static ERL_NIF_TERM
@@ -607,33 +525,8 @@ xtt_handshake_parse_idserverfinished(ErlNifEnv* env, int argc, const ERL_NIF_TER
                                                      &(cs->io_ptr),
                                                      &(cs->ctx));
     ErlNifBinary *temp_bin;
-    ERL_NIF_TERM ret_code = enif_make_int(env, rc);
 
-        switch(rc){
-                case XTT_RETURN_WANT_READ:
-                    puts("Building response for XTT_RETURN_WANT_READ\n");
-                    return enif_make_tuple3(env, ret_code, enif_make_int(env, cs->bytes_requested), cs_term);
-                case XTT_RETURN_WANT_WRITE:
-                    puts("Building response for XTT_RETURN_WANT_WRITE\n");
-                    printf("Creating write buffer of length %d from %p\n", cs->bytes_requested, cs->io_ptr);
-                    enif_alloc_binary(cs->bytes_requested, temp_bin);
-                    memcpy(temp_bin->data, cs->io_ptr, cs->bytes_requested);
-
-                    return XTT_RETURN_WANT_WRITE;
-
-                    return enif_make_tuple3(env, ret_code, enif_make_binary(env, temp_bin), cs_term);
-                case XTT_RETURN_WANT_BUILDIDCLIENTATTEST:
-                    puts("Building response for XTT_RETURN_WANT_BUILDIDCLIENTATTEST\n");
-
-                    //typedef struct {unsigned char data[16];} xtt_certificate_root_id;
-                    enif_alloc_binary(sizeof(xtt_certificate_root_id), temp_bin);
-                    memcpy(temp_bin->data, &(cs->claimed_root_id), sizeof(xtt_certificate_root_id));
-                    return enif_make_tuple3(env, ret_code, enif_make_binary(env, temp_bin), cs_term);
-                default:
-                    printf("Building default response for %d\n", rc);
-                    return enif_make_tuple2(env, ret_code, cs_term);
-        }
-    //return build_response(env, rc, &cs_term, cs, &temp_bin);
+    return build_response(env, rc, &cs_term, cs, &temp_bin);
 }
 
 static ERL_NIF_TERM
