@@ -340,7 +340,7 @@ xtt_start_client_handshake(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 
     printf("Result of xtt_handshake_client_start %d\n", rc);
 
-    ErlNifBinary *temp_bin;
+    ErlNifBinary temp_bin;
     ERL_NIF_TERM ret_code = enif_make_int(env, rc);
 
     switch(rc){
@@ -350,19 +350,19 @@ xtt_start_client_handshake(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
             case XTT_RETURN_WANT_WRITE:
                 puts("Building response for XTT_RETURN_WANT_WRITE\n");
                 printf("Creating write buffer of length %d from %p\n", cs->bytes_requested, cs->io_ptr);
-                enif_alloc_binary(cs->bytes_requested, temp_bin);
-                memcpy(temp_bin->data, cs->io_ptr, cs->bytes_requested);
+                enif_alloc_binary(cs->bytes_requested, &temp_bin);
+                memcpy(temp_bin.data, cs->io_ptr, cs->bytes_requested);
 
                 return XTT_RETURN_WANT_WRITE;
 
-                return enif_make_tuple3(env, ret_code, enif_make_binary(env, temp_bin), cs_term);
+                return enif_make_tuple3(env, ret_code, enif_make_binary(env, &temp_bin), cs_term);
             case XTT_RETURN_WANT_BUILDIDCLIENTATTEST:
                 puts("Building response for XTT_RETURN_WANT_BUILDIDCLIENTATTEST\n");
 
                 //typedef struct {unsigned char data[16];} xtt_certificate_root_id;
-                enif_alloc_binary(sizeof(xtt_certificate_root_id), temp_bin);
-                memcpy(temp_bin->data, &(cs->claimed_root_id), sizeof(xtt_certificate_root_id));
-                return enif_make_tuple3(env, ret_code, enif_make_binary(env, temp_bin), cs_term);
+                enif_alloc_binary(sizeof(xtt_certificate_root_id), &temp_bin);
+                memcpy(temp_bin.data, &(cs->claimed_root_id), sizeof(xtt_certificate_root_id));
+                return enif_make_tuple3(env, ret_code, enif_make_binary(env, &temp_bin), cs_term);
             default:
                 printf("Building default response for %d\n", rc);
                 return enif_make_tuple2(env, ret_code, cs_term);
