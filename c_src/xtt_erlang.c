@@ -376,7 +376,7 @@ xtt_client_handshake(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]){
         puts("DONE\n");
     }
     else{
-        printf("Received bytes: %d Written bytes: %d\n", received_bin.size, bytes_written),
+        printf("Received bytes: %d Written bytes: %d\n", received_bin.size, bytes_written);
     }
 
     xtt_return_code_type rc = xtt_handshake_client_handle_io(

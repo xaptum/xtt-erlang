@@ -138,10 +138,17 @@ initialize_ids(DataDir, ParameterMap)->
   RequestedClientIdFile = maps:get(requested_client_id_file, ParameterMap, filename:join([DataDir, ?REQUESTED_CLIENT_ID_FILE])),
   IntendedServerIdFile = maps:get(server_id_file, ParameterMap, filename:join([DataDir, ?SERVER_ID_FILE])),
 
-  {ok, RequestedClientId} = file:read_file(RequestedClientIdFile),
-  %% TODO move check to NIF %% true = lists:member(size(RequestedClientId), [1, ?XTT_IDENTITY_SIZE]),
+  RequestedClientId =
+  case file:read_file(RequestedClientIdFile) of
+    {ok, ?XTT_REQUEST_ID_FROM_SERVER} -> ?XTT_NULL_IDENTITY;
+    {ok, ClientId} when size(ClientId) =/= ?XTT_IDENTITY_SIZE ->
+      io:format("Invalid requested client id ~p of size ~b while expecting size ~b in file ~p~n",
+        [ClientId, size(ClientId), ?XTT_IDENTITY_SIZE, ?REQUESTED_CLIENT_ID_FILE]),
+      false = true;
+    {ok, ClientId} when size(ClientId) =:= ?XTT_IDENTITY_SIZE -> ClientId
+  end,
 
-    {ok, IntendedServerId} = file:read_file(IntendedServerIdFile),
+  {ok, IntendedServerId} = file:read_file(IntendedServerIdFile),
 
  {RequestedClientId, IntendedServerId}.
 

@@ -16,6 +16,8 @@
 -define(XTT_VERSION_ONE, 1).
 
 -define(XTT_IDENTITY_SIZE, 16).
+-define(XTT_REQUEST_ID_FROM_SERVER, <<"0">>).
+-define(XTT_NULL_IDENTITY, <<0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0>>).
 
 -define(XTT_RETURN_SUCCESS, 0).
 
