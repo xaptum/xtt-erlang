@@ -9,6 +9,7 @@
 ErlNifResourceType* CLIENT_STATE_RESOURCE_TYPE;
 ErlNifResourceType* GROUP_CONTEXT_RESOURCE_TYPE;
 ErlNifResourceType* SERVER_ROOT_CERT_RESOURCE_TYPE;
+ErlNifResourceType* STRUCT_RESOURCE_TYPE;
 
 struct client_state {
           unsigned char in[MAX_HANDSHAKE_SERVER_MESSAGE_LENGTH];
@@ -17,8 +18,8 @@ struct client_state {
           uint16_t bytes_requested;
           xtt_certificate_root_id claimed_root_id;
           struct xtt_client_handshake_context ctx;
-          xtt_identity_type  xtt_requested_client_id;
-          xtt_identity_type  xtt_intended_server_id;
+          xtt_identity_type  xtt_requested_client_id;  %% TODO move out of here into enif_alloc_resource on the spot
+          xtt_identity_type  xtt_intended_server_id;   %% TODO move out of here into enif_alloc_resource on the spot
         };
 
 void
@@ -34,6 +35,7 @@ load(ErlNifEnv* env, void** priv, ERL_NIF_TERM load_info)
     const char* cs_name = "client_state";
     const char* gc_name = "xtt_client_group_context";
     const char* srcc_name = "xtt_server_root_certificate_context";
+    const char* struct_name = "struct";
 
     CLIENT_STATE_RESOURCE_TYPE = enif_open_resource_type(
         env, mod, cs_name, free_resource, ERL_NIF_RT_CREATE | ERL_NIF_RT_TAKEOVER, NULL
@@ -55,6 +57,14 @@ load(ErlNifEnv* env, void** priv, ERL_NIF_TERM load_info)
 
     if(SERVER_ROOT_CERT_RESOURCE_TYPE == NULL)
         return -1;
+
+    STRUCT_RESOURCE_TYPE = enif_open_resource_type(
+            env, mod, srcc_name, free_resource, ERL_NIF_RT_CREATE | ERL_NIF_RT_TAKEOVER, NULL
+    );
+
+    if(STRUCT_RESOURCE_TYPE == NULL)
+        return -1;
+
 
     return 0;
 }
@@ -169,10 +179,16 @@ xtt_init_client_group_context(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[
     printf("daaCredBin: %s (size %d)\n", daaCredBin.data, daaCredBin.size);
     printf("basename: %s (size %d)\n", basenameBin.data, basenameBin.size);
 
+    xtt_daa_priv_key_lrsw  *xtt_daa_priv_key = enif_alloc_resource(STRUCT_RESOURCE_TYPE, sizeof(xtt_daa_priv_key_lrsw));
+    xtt_daa_credential_lrsw *xtt_daa_cred = enif_alloc_resource(STRUCT_RESOURCE_TYPE, sizeof(xtt_daa_credential_lrsw));
+
+    memcpy(xtt_daa_priv_key->data, daaPrivKeyBin.data, sizeof(xtt_daa_priv_key_lrsw));
+    memcpy(xtt_daa_cred->data, daaCredBin.data, sizeof(xtt_daa_credential_lrsw));
+
     xtt_return_code_type rc = xtt_initialize_client_group_context_lrsw(group_ctx_out,
                                   &gid,
-                                  (xtt_daa_priv_key_lrsw *) &(daaPrivKeyBin.data),
-                                  (xtt_daa_credential_lrsw *) &(daaCredBin.data),
+                                  xtt_daa_priv_key,
+                                  xtt_daa_cred,
                                   basenameBin.data,
                                   basenameBin.size);
 
