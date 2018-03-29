@@ -35,18 +35,17 @@ test_params() ->
     data_dir => example_data_dir()
  }.
 
-
-handshake_test()->
+do_handshake_test()->
   ensure_xtt_server_started(?XTT_SERVER_HOST, ?XTT_SERVER_PORT),
   Params = test_params(),
-  xtt_erlang:xtt_client_handshake(Params).
+  Result = xtt_erlang:xtt_client_handshake(Params),
+  io:format("Handshake complete with result ~b!~n", [Result]).
 
 ensure_xtt_server_started(ServerHost, ServerPort)->
   %% Check if running or
   %% Find xtt install dir and run
   %%os:cmd(?XTT_INSTALL_DIR ++ "/xtt_server " ++ integer_to_list(ServerPort)),
   ok.
-
 
 
 

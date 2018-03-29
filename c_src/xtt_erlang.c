@@ -69,7 +69,10 @@ build_response(ErlNifEnv* env, int rc, ERL_NIF_TERM *state, struct client_state 
             return enif_make_tuple3(env, ret_code, enif_make_binary(env, temp_bin), *state);
         default:
             printf("Building default response for %d\n", rc);
-            return enif_make_tuple2(env, ret_code, *state);
+            printf("Creating write buffer of length %d from %p\n", cs->bytes_requested, cs->io_ptr);
+            enif_alloc_binary(cs->bytes_requested, temp_bin);
+            memcpy(temp_bin->data, cs->io_ptr, cs->bytes_requested);
+            return enif_make_tuple3(env, ret_code,enif_make_binary(env, temp_bin), *state);
     }
 }
 
@@ -528,16 +531,6 @@ xtt_build_error_msg(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]){
 
    return enif_make_binary(env, err_buffer_bin); // for writing by xtt_erlang.erl
 }
-
-// STEP 2. repeat (SENDING) until XTT_RETURN_WANT_READ returned
-// ctx->state = XTT_CLIENT_HANDSHAKE_STATE_SENDING_CLIENTINIT;
-// rc = XTT_RETURN_WANT_READ if sent complete message || XTT_RETURN_WANT_WRITE if we need to send more || XTT_RETURN_BAD_IO_LENGTH if sent too much
-//
-// STEP 3. repeat (RECEIVING) until XTT_RETURN_WANT_WRITE
-// ctx->state = XTT_CLIENT_HANDSHAKE_STATE_READING_SERVERATTESTHEADER;
-// rc = XTT_RETURN_WANT_READ;
-//
-// STEP 4.
 
 static ErlNifFunc nif_funcs[] = {
     {"xtt_init_client_handshake_context", 2, xtt_init_client_handshake_context, ERL_NIF_DIRTY_JOB_CPU_BOUND},

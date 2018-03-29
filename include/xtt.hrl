@@ -20,6 +20,7 @@
 -define(XTT_NULL_IDENTITY, <<0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0>>).
 
 -define(XTT_RETURN_SUCCESS, 0).
+-define(XTT_RETURN_FAILURE, -1).
 
 %% Handahske next-state return codes:
 -define(XTT_RETURN_WANT_WRITE, 1).
