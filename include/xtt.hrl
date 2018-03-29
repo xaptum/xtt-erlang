@@ -16,20 +16,25 @@
 -define(XTT_VERSION_ONE, 1).
 
 -define(XTT_IDENTITY_SIZE, 16).
+-define(XTT_REQUEST_ID_FROM_SERVER, <<"0">>).
+-define(XTT_NULL_IDENTITY, <<0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0>>).
 
--define(XTT_GROUP_ID_SIZE, 32).
--define(XTT_DAA_CREDENTIAL_SIZE, 260).
--define(XTT_DAA_PRIV_KEY_SIZE, 32).
--define(XTT_DAA_GROUP_PUB_KEY_SIZE, 258).
--define(XTT_DAA_SIGNATURE_SIZE, 389).
--define(XTT_DAA_PSEUDONUM_SIZE, 65).
+-define(XTT_RETURN_SUCCESS, 0).
+-define(XTT_RETURN_FAILURE, -1).
 
-%%/* Diffie-Hellman */
-%%typedef struct {unsigned char data[32];} xtt_x25519_pub_key;
-%%typedef struct {unsigned char data[32];} xtt_x25519_priv_key;
-%%typedef struct {unsigned char data[32];} xtt_x25519_shared_secret;
+%% Handahske next-state return codes:
+-define(XTT_RETURN_WANT_WRITE, 1).
+-define(XTT_RETURN_WANT_READ, 2).
+-define(XTT_RETURN_WANT_BUILDSERVERATTEST, 3).
+-define(XTT_RETURN_WANT_PREPARSESERVERATTEST, 4).
+-define(XTT_RETURN_WANT_BUILDIDCLIENTATTEST, 5).
+-define(XTT_RETURN_WANT_PREPARSEIDCLIENTATTEST, 6).
+-define(XTT_RETURN_WANT_BUILDIDSERVERFINISHED, 7).
+-define(XTT_RETURN_WANT_PARSEIDSERVERFINISHED, 8).
+-define(XTT_RETURN_HANDSHAKE_FINISHED, 9).
 
-%%typedef struct {unsigned char data[16];} xtt_identity_type;
+%% Error codes:
+-define(XTT_RETURN_RECEIVED_ERROR_MSG,  10).
 
 -define(DEFAULT_DATA_DIR, ".").
 

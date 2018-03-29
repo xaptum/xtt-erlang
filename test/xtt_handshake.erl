@@ -6,11 +6,11 @@
 %%% @end
 %%% Created : 19. Mar 2018 7:11 PM
 %%%-------------------------------------------------------------------
--module(xtt_handshake_test).
+-module(xtt_handshake).
 -author("iguberman").
 
 %% API
--export([test_params/0, handshake_test/0]).
+-export([test_params/0, client_test/0]).
 
 -include_lib("eunit/include/eunit.hrl").
 -include("xtt.hrl").
@@ -35,18 +35,18 @@ test_params() ->
     data_dir => example_data_dir()
  }.
 
-
-handshake_test()->
+client_test()->
+  application:ensure_all_started(lager),
   ensure_xtt_server_started(?XTT_SERVER_HOST, ?XTT_SERVER_PORT),
   Params = test_params(),
-  xtt_erlang:xtt_client_handshake(Params).
+  Result = xtt_erlang:xtt_client_handshake(Params),
+  io:format("Handshake complete with result ~b!~n", [Result]).
 
 ensure_xtt_server_started(ServerHost, ServerPort)->
   %% Check if running or
   %% Find xtt install dir and run
   %%os:cmd(?XTT_INSTALL_DIR ++ "/xtt_server " ++ integer_to_list(ServerPort)),
   ok.
-
 
 
 
