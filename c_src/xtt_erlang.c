@@ -67,9 +67,21 @@ build_response(ErlNifEnv* env, int rc, ERL_NIF_TERM *state, struct client_state 
             enif_alloc_binary(sizeof(xtt_certificate_root_id), temp_bin);
             memcpy(temp_bin->data, &(cs->claimed_root_id), sizeof(xtt_certificate_root_id));
             return enif_make_tuple3(env, ret_code, enif_make_binary(env, temp_bin), *state);
+        case XTT_RETURN_WANT_PREPARSESERVERATTEST:
+            puts("Building response for XTT_RETURN_WANT_PREPARSESERVERATTEST\n");
+            return enif_make_tuple2(env, ret_code, *state);
+        case XTT_RETURN_WANT_PARSEIDSERVERFINISHED:
+            puts("Building response for XTT_RETURN_WANT_PARSEIDSERVERFINISHED\n");
+            return enif_make_tuple2(env, ret_code, *state);
+        case XTT_RETURN_HANDSHAKE_FINISHED:
+            puts("Building response for XTT_RETURN_HANDSHAKE_FINISHED\n");
+            return enif_make_tuple2(env, ret_code, *state);
+        case XTT_RETURN_RECEIVED_ERROR_MSG:
+            puts("Building response for XTT_RETURN_WANT_PARSEIDSERVERFINISHED\n");
+            return enif_make_tuple2(env, ret_code, *state);
         default:
             printf("Building default response for %d\n", rc);
-            printf("Creating write buffer of length %d from %p\n", cs->bytes_requested, cs->io_ptr);
+            printf("Creating write err_buffer of length %d from %p\n", cs->bytes_requested, cs->io_ptr);
             enif_alloc_binary(cs->bytes_requested, temp_bin);
             memcpy(temp_bin->data, cs->io_ptr, cs->bytes_requested);
             return enif_make_tuple3(env, ret_code,enif_make_binary(env, temp_bin), *state);
