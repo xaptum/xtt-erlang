@@ -36,6 +36,7 @@ test_params() ->
  }.
 
 client_test()->
+  application:ensure_all_started(lager),
   ensure_xtt_server_started(?XTT_SERVER_HOST, ?XTT_SERVER_PORT),
   Params = test_params(),
   Result = xtt_erlang:xtt_client_handshake(Params),

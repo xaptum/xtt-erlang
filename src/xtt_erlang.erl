@@ -28,7 +28,6 @@
 -define(CERT_TABLE, cert).
 
 init() ->
-  application:ensure_all_started(lager),
   SoName = filename:join([priv_dir(), ?LIBNAME]),
   lager:info("Loading NIFs from ~p", [SoName]),
   ok = erlang:load_nif(SoName, 0).
