@@ -6,11 +6,11 @@
 %%% @end
 %%% Created : 19. Mar 2018 7:11 PM
 %%%-------------------------------------------------------------------
--module(xtt_handshake_test).
+-module(xtt_handshake).
 -author("iguberman").
 
 %% API
--export([test_params/0, handshake_test/0]).
+-export([test_params/0, client_test/0]).
 
 -include_lib("eunit/include/eunit.hrl").
 -include("xtt.hrl").
@@ -35,7 +35,7 @@ test_params() ->
     data_dir => example_data_dir()
  }.
 
-do_handshake_test()->
+client_test()->
   ensure_xtt_server_started(?XTT_SERVER_HOST, ?XTT_SERVER_PORT),
   Params = test_params(),
   Result = xtt_erlang:xtt_client_handshake(Params),
