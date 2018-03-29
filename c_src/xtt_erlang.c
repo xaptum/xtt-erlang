@@ -30,7 +30,7 @@ load(ErlNifEnv* env, void** priv, ERL_NIF_TERM load_info)
     const char* struct_name = "struct";
 
     STRUCT_RESOURCE_TYPE = enif_open_resource_type(
-            env, mod, srcc_name, free_resource, ERL_NIF_RT_CREATE | ERL_NIF_RT_TAKEOVER, NULL
+            env, mod, struct_name, free_resource, ERL_NIF_RT_CREATE | ERL_NIF_RT_TAKEOVER, NULL
     );
 
     if(STRUCT_RESOURCE_TYPE == NULL)
