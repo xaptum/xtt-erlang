@@ -49,5 +49,15 @@
 -define(ROOT_PUBKEY_FILE, "root_pub.bin").
 
 
+%% TODO should we create NIF wrappers for each nvram object just to get the sizeof(correspondingStruct)
+%% to avoid redefining it here?
+-define(XTT_DAA_CRED_SIZE, 260).
+-define(XTT_DAA_GROUP_PUB_KEY_SIZE, 258).
+-define(XTT_DAA_ROOT_ID_SIZE, 16).
+-define(XTT_DAA_ROOT_PUB_KEY_SIZE, 32).
 
-
+-define(KEY_HANDLE, list_to_integer("81800000", 16)).
+-define(GPK_HANDLE, list_to_integer("1400000", 16)).
+-define(CRED_HANDLE, list_to_integer("1400001", 16)).
+-define(ROOT_ID_HANDLE, list_to_integer("1400003", 16)).
+-define(ROOT_PUBKEY_HANDLE, list_to_integer("1400004", 16)).

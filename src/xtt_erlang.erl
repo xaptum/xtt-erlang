@@ -6,6 +6,7 @@
   xtt_client_handshake/1,
   xtt_init_client_handshake_context/2,
   xtt_init_client_group_context/4,
+  xtt_init_client_group_contextTPM/7,
   xtt_init_server_root_certificate_context/2,
   xtt_start_client_handshake/1,
   xtt_client_handshake/3,
@@ -103,6 +104,9 @@ xtt_client_handshake(#{ server := ServerName,
 xtt_init_client_group_context(_Gid, _PrivKey, _Credential, _Basename)->
   erlang:nif_error(?LINE).
 
+xtt_init_client_group_contextTPM(_GId, _Credential, _Basename, _KeyHandle, _TPMPassword, _TPMPasswordLength, _TctiContext)->
+  erlang:nif_error(?LINE).
+
 xtt_init_server_root_certificate_context(_RootId, _RootPubKey)->
   erlang:nif_error(?LINE).
 
@@ -172,21 +176,32 @@ initialize_daa(false = _UseTpm, DataDir, Basename, ParameterMap)->
 
   {ok, PrivKey} = file:read_file(PrivKeyFile),
 
-  initialize_client_group_context(Gpk, PrivKey, Credential, Basename);
-initialize_daa(true = _UseTpm, _DataDir, Basename, _ParameterMap)->
-  {ok, Gpk} = read_nvram(gpk),
-  {ok, Credential} = read_nvram(cred),
-  {ok, PrivKey} = read_nvram(priv_key),
+  %%Gid = crypto:hash(sha256, Gpk), TODO MOVE BACK INTO ERLANG?
 
-  initialize_client_group_context(Gpk, PrivKey, Credential, Basename).
-
-initialize_client_group_context(Gpk, PrivKey, Credential, Basename)->
-  %%Gid = crypto:hash(sha256, Gpk),
   lager:info("STARTing xtt_initialize_client_group_context(~p, ~p, ~p, ~p)",
     [print_bin(Gpk), print_bin(PrivKey), print_bin(Credential), Basename]),
   GroupCtx = xtt_init_client_group_context(Gpk,PrivKey,Credential, Basename),
   lager:info("Resulting GroupCtx: ~p", [GroupCtx]),
-  GroupCtx.
+  GroupCtx;
+
+initialize_daa(true = _UseTpm, _DataDir, Basename,
+    #{
+       use_tpm := true, %% sanity check
+       tpm_host := TpmHostname,
+       tpm_port:= TpmPort,
+       tpm_password := TpmPassword} = _ParameterMap)->
+
+  case xaptum_tpm_erlang:tss2_tcti_initialize_socket(TpmHostname, TpmPort) of
+    {0, TctiContext} ->
+      {ok, Gpk} = read_nvram(?XTT_DAA_GROUP_PUB_KEY_SIZE, ?GPK_HANDLE, TctiContext),
+      {ok, Credential} = read_nvram(?XTT_DAA_CRED_SIZE, ?CRED_HANDLE, TctiContext),
+      GroupCtxTPM = initialize_client_group_contextTPM(
+        Gpk, Credential, Basename, ?KEY_HANDLE, TpmPassword, size(TpmPassword), TctiContext),
+      lager:info("Resulting GroupCtx: ~p", [GroupCtxTPM]),
+      GroupCtxTPM;
+    BadReturnCode -> {error, BadReturnCode}
+  end.
+
 
 print_bin(Bin) when size(Bin) > 5->
   ?PRINT_BIN(Bin);
@@ -219,8 +234,7 @@ init_cert_db(RootId, RootPubkey)->
 read_nvram(root_id)-> todo;
 read_nvram(root_pub_key)->todo;
 read_nvram(gpk)->todo;
-read_nvram(cred)-> todo;
-read_nvram(priv_key)->todo.
+read_nvram(cred)-> todo.
 
 do_handshake(Socket, RequestedClientId, IntendedServerId, GroupCtx, HandshakeState)->
   Result = xtt_start_client_handshake(HandshakeState),

@@ -10,7 +10,9 @@
 -author("iguberman").
 
 %% API
--export([test_params/0, client_test/0]).
+-export([test_params/0,
+  client_test/0,
+  client_TPM_test/0]).
 
 -include_lib("eunit/include/eunit.hrl").
 -include("xtt.hrl").
@@ -35,12 +37,35 @@ test_params() ->
     data_dir => example_data_dir()
  }.
 
-client_test()->
+test_paramsTPM() ->
+  #{
+    server => ?XTT_SERVER_HOST,
+    port => ?XTT_SERVER_PORT,
+    xtt_version => ?XTT_VERSION_ONE,
+    xtt_suite  => ?XTT_X25519_LRSW_ED25519_AES256GCM_SHA512,
+    data_dir => example_data_dir(),
+    use_tpm => true,
+    tpm_host => "localhost",
+    tpm_port => "2321",
+    tpm_password => <<>>
+  }.
+
+test_handshake(Params)->
   application:ensure_all_started(lager),
   ensure_xtt_server_started(?XTT_SERVER_HOST, ?XTT_SERVER_PORT),
-  Params = test_params(),
   Result = xtt_erlang:xtt_client_handshake(Params),
   io:format("Handshake complete with result ~b!~n", [Result]).
+
+client_test()->
+  Params = test_params(),
+  io:format("Staring client test with params ~p~n", Params),
+  test_handshake(Params).
+
+client_TPM_test()->
+  Params = test_paramsTPM(),
+  io:format("Staring client TPM test with params ~p~n", Params),
+  test_handshake(Params).
+
 
 ensure_xtt_server_started(ServerHost, ServerPort)->
   %% Check if running or

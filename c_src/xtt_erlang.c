@@ -2,7 +2,6 @@
 #include <ecdaa.h>
 #include <xtt.h>
 #include <erl_nif.h>
-#include <mcheck.h>
 
 #define USE_TPM 1
 
@@ -106,6 +105,7 @@ xtt_init_client_group_context(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[
     ErlNifBinary daaPrivKeyBin;
     ErlNifBinary daaCredBin;
     ErlNifBinary basenameBin;
+    ErlNifBinary tctiContextBin;
 
     if(!enif_inspect_binary(env, argv[0], &gpkBin) ) {
             fprintf(stderr, "Bad arg at position 0\n");
@@ -197,6 +197,132 @@ xtt_init_client_group_context(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[
 }
 
 static ERL_NIF_TERM
+xtt_init_client_group_contextTPM(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]){
+
+puts("START NIF: xtt_init_client_group_contextTPM...\n");
+
+    if(argc != 7) {
+        fprintf(stderr, "Bad arg error: expected 7 got %d\n", argc);
+        return enif_make_badarg(env);
+    }
+
+    ErlNifBinary gpkBin;
+    ErlNifBinary daaCredBin;
+    ErlNifBinary basenameBin;
+
+
+    if(!enif_inspect_binary(env, argv[0], &gpkBin) ) {
+            fprintf(stderr, "Bad arg at position 0\n");
+            return enif_make_badarg(env);
+    }
+    else if (gpkBin.size != sizeof(xtt_daa_group_pub_key_lrsw)){
+        fprintf(stderr, "Bad arg at position 1: expecting xtt_daa_group_pub_key_lrsw size %lu got %zu\n",
+        sizeof(xtt_daa_group_pub_key_lrsw), gpkBin.size);
+        return enif_make_badarg(env);
+    }
+
+    if(!enif_inspect_binary(env, argv[1], &daaCredBin) ) {
+             fprintf(stderr, "Bad arg at position 1\n");
+             return enif_make_badarg(env);
+    }
+    else if (daaCredBin.size != sizeof(xtt_daa_credential_lrsw)){
+        fprintf(stderr, "Bad arg at position 1: expecting xtt_daa_credential_lrsw size %lu got %zu\n",
+        sizeof(xtt_daa_credential_lrsw), daaCredBin.size);
+        return enif_make_badarg(env);
+    }
+
+    if(!enif_inspect_binary(env, argv[2], &basenameBin) ) {
+        fprintf(stderr, "Bad arg at position 2\n");
+        return enif_make_badarg(env);
+    }
+    else if (basenameBin.size > MAX_BASENAME_LENGTH){
+        fprintf(stderr, "Bad arg at position 2: size of basename %lu more than MAX %d\n", basenameBin.size, MAX_BASENAME_LENGTH);
+        return enif_make_badarg(env);
+    }
+
+
+    uint32_t key_handle;
+
+    if(!enif_get_uint(env, argv[3], &key_handle)) {
+        fprintf(stderr, "Bad key_handle arg at position 3\n");
+        return enif_make_badarg(env);
+    }
+
+    ErlNifBinary tpmPasswordBin;
+
+    if(!enif_inspect_binary(env, argv[4], &tpmPasswordBin) ) {
+        fprintf(stderr, "Bad tpmPassword arg at position 4\n");
+        return enif_make_badarg(env);
+    }
+
+    uint16_t tpm_password_len;
+
+    if(!enif_get_uint(env, argv[5], &tpm_password_len)) {
+        fprintf(stderr, "Bad tpm_password_len arg at position 5\n");
+        return enif_make_badarg(env);
+    }
+
+    ErlNifBinary tctiContextBin;
+    if(!enif_inspect_binary(env, argv[6], &tctiContextBin) ) {
+        fprintf(stderr, "Bad tcti_context arg at position 6\n");
+        return enif_make_badarg(env);
+    }
+
+    struct xtt_client_group_context *group_ctx_out =
+        enif_alloc_resource(STRUCT_RESOURCE_TYPE, sizeof(struct xtt_client_group_context));
+
+    if(group_ctx_out == NULL){
+        puts("Failed to allocate xtt_client_group_context group_ctx_out!\n");
+        return enif_make_badarg(env);
+    }
+
+    xtt_group_id gid;
+    int hash_ret = crypto_hash_sha256(gid.data, gpkBin.data, gpkBin.size);
+    if (0 != hash_ret)
+        return enif_make_int(env, -1);
+
+    puts("Starting xtt_initialize_client_group_context_lrswTPM with args:\n");
+    printf("gid: %s (size %d)\n", gid.data, sizeof(gid));
+    printf("daaCredBin: %s (size %d)\n", daaCredBin.data, daaCredBin.size);
+    printf("basename: %s (size %d)\n", basenameBin.data, basenameBin.size);
+    printf("key_handle: %d\n", key_handle);
+    printf("tpm_password: %s of size %d and tpm_password_len arg %d\n",
+        tpmPasswordBin.data, tpmPasswordBin.size, tpm_password_len);
+
+    xtt_daa_credential_lrsw *xtt_daa_cred = enif_alloc_resource(STRUCT_RESOURCE_TYPE, sizeof(xtt_daa_credential_lrsw));
+    memcpy(xtt_daa_cred->data, daaCredBin.data, sizeof(xtt_daa_credential_lrsw));
+
+    xtt_return_code_type xtt_initialize_client_group_context_lrswTPM(group_ctx_out,
+                                                                     &gid,
+                                                                     xtt_daa_cred,
+                                                                     basenameBin.data,
+                                                                     basenameBin.size
+                                                                     key_handle,
+                                                                     tpmPasswordBin.data,
+                                                                     tpm_password_len,
+                                                                     (TSS2_SYS_CONTEXT *) tctiContextBin.data);
+
+    printf("Finished xtt_initialize_client_group_context_lrswTPM with return code %d\n", rc);
+
+    ERL_NIF_TERM result;
+
+    if (XTT_RETURN_SUCCESS != rc) {
+            fprintf(stderr, "Error initializing client group context: %d\n", rc);
+            result = enif_make_int(env, rc);
+    }
+    else{
+        puts("SUCCESS\n");
+        result = enif_make_resource(env, group_ctx_out);
+    }
+
+    enif_release_resource(group_ctx_out);
+
+    return result;
+
+}
+
+
+static ERL_NIF_TERM
 xtt_init_server_root_certificate_context(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]){
 
     puts("START NIF: xtt_init_server_root_certificate_context...\n");
@@ -228,7 +354,6 @@ xtt_init_server_root_certificate_context(ErlNifEnv* env, int argc, const ERL_NIF
         sizeof(xtt_ed25519_pub_key), certRootPubKeyBin.size);
         return enif_make_badarg(env);
     }
-
 
     puts("enif_alloc_resource xtt_server_root_certificate_context\n");
 
@@ -285,7 +410,6 @@ xtt_init_client_handshake_context(ErlNifEnv* env, int argc, const ERL_NIF_TERM a
         return enif_make_badarg(env);
     }
 
-    // TODO experiment to go back to singel STRUCT_RESOURCE_TYPE
      struct client_state *cs = enif_alloc_resource(STRUCT_RESOURCE_TYPE, sizeof(struct client_state));
 
      if(cs == NULL){
@@ -553,6 +677,7 @@ static ErlNifFunc nif_funcs[] = {
     {"xtt_handshake_parse_idserverfinished", 1, xtt_handshake_parse_idserverfinished, ERL_NIF_DIRTY_JOB_CPU_BOUND},
     {"xtt_build_error_msg", 1, xtt_build_error_msg, ERL_NIF_DIRTY_JOB_CPU_BOUND},
     {"xtt_init_client_group_context", 4, xtt_init_client_group_context, ERL_NIF_DIRTY_JOB_CPU_BOUND},
+    {"xtt_init_client_group_contextTPM", 7, xtt_init_client_group_contextTPM, ERL_NIF_DIRTY_JOB_CPU_BOUND},
     {"xtt_init_server_root_certificate_context", 2, xtt_init_server_root_certificate_context, ERL_NIF_DIRTY_JOB_CPU_BOUND}
 };
 
