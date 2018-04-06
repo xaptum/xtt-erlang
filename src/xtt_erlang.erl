@@ -231,10 +231,9 @@ init_cert_db(RootId, RootPubkey)->
   ets:insert(?CERT_TABLE, {RootId, CertContext}). %% TODO DB: Should replace file reading stuff with write ets to disk?
 
 %% Should be NIF(s)
-read_nvram(root_id)-> todo;
-read_nvram(root_pub_key)->todo;
-read_nvram(gpk)->todo;
-read_nvram(cred)-> todo.
+read_nvram(Size, Handle, TctiContext)->
+
+
 
 do_handshake(Socket, RequestedClientId, IntendedServerId, GroupCtx, HandshakeState)->
   Result = xtt_start_client_handshake(HandshakeState),
