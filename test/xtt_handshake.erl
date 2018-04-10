@@ -58,12 +58,12 @@ test_handshake(Params)->
 
 client_test()->
   Params = test_params(),
-  io:format("Staring client test with params ~p~n", Params),
+  io:format("Staring client test with params ~p~n", [Params]),
   test_handshake(Params).
 
 client_TPM_test()->
   Params = test_paramsTPM(),
-  io:format("Staring client TPM test with params ~p~n", Params),
+  io:format("Staring client TPM test with params ~p~n", [Params]),
   test_handshake(Params).
 
 
