@@ -296,7 +296,7 @@ puts("START NIF: xtt_init_client_group_contextTPM...\n");
                                                                      &gid,
                                                                      xtt_daa_cred,
                                                                      basenameBin.data,
-                                                                     basenameBin.size
+                                                                     basenameBin.size,
                                                                      key_handle,
                                                                      tpmPasswordBin.data,
                                                                      tpm_password_len,
