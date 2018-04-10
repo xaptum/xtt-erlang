@@ -71,27 +71,30 @@ xtt_client_handshake(#{ server := ServerName,
 
   lager:info("Initialized RequestedClientId to ~p and IntendedServerId to ~p", [RequestedClientId, IntendedServerId]),
 
-  GroupContext = initialize_daa(UseTpm, DataDir, ParameterMap),
+  case initialize_context(UseTpm, DataDir, ParameterMap) of
+    {ok, GroupContext} ->
+      case xtt_init_client_handshake_context(XttVersion, XttSuite) of
+        {ok, XttClientHandshakeStatus} ->
 
-  lager:info("Initialized Group Context ~p", [GroupContext]),
+          lager:info("Initialized Handshake Context ~p", [XttClientHandshakeStatus]),
 
-  initialize_certs(UseTpm, DataDir, ParameterMap),
+          lager:info("Connecting to ~p:~b.....", [ServerName, Port]),
+          {ok, Socket} = gen_tcp:connect(ServerName, Port, ?TCP_OPTIONS),
+          lager:info("DONE"),
 
-  lager:info("Initialized Certificates in ~p: ~p", [?CERT_TABLE, ets:tab2list(?CERT_TABLE)]),
+          RC = do_handshake(Socket, RequestedClientId, IntendedServerId, GroupContext, XttClientHandshakeStatus),
 
-  XttClientHandshakeStatus = xtt_init_client_handshake_context(XttVersion, XttSuite),
+          lager:info("Handshake result: ~p", [RC]),
 
-  lager:info("Initialized Handshake Context ~p", [XttClientHandshakeStatus]),
-
-  lager:info("Connecting to ~p:~b.....", [ServerName, Port]),
-  {ok, Socket} = gen_tcp:connect(ServerName, Port, ?TCP_OPTIONS),
-  lager:info("DONE"),
-
-  RC = do_handshake(Socket, RequestedClientId, IntendedServerId, GroupContext, XttClientHandshakeStatus),
-
-  lager:info("do_handshake result: ~p", [RC]),
-
-  RC.
+          RC;
+        {error, ErrorCode} ->
+          lager:error("Error ~p initializing handshake context, not performing handshake :(", [ErrorCode]),
+          {error, ErrorCode}
+      end;
+    {error, Error} ->
+      lager:error("Error initializing context: p", [Error]),
+      {error, Error}
+  end.
 %%
 %%  {ok, RespBuffer} = gen_tcp:recv(Socket, 0),
 %%  lager:info("Finished client init!  Received buffer ~p from server ~p", [RespBuffer, ServerName]).
@@ -159,7 +162,7 @@ initialize_ids(DataDir, ParameterMap)->
  {RequestedClientId, IntendedServerId}.
 
 
-initialize_daa(UseTpm, DataDir, ParameterMap) ->
+initialize_context(UseTpm, DataDir, ParameterMap) ->
   BasenameFile = maps:get(base_filename, ParameterMap, filename:join([DataDir, ?BASENAME_FILE])),
   {ok, Basename} = file:read_file(BasenameFile),
   lager:info("Basename: ~p", [Basename]),
@@ -180,9 +183,19 @@ initialize_daa(false = _UseTpm, DataDir, Basename, ParameterMap)->
 
   lager:info("STARTing xtt_initialize_client_group_context(~p, ~p, ~p, ~p)",
     [print_bin(Gpk), print_bin(PrivKey), print_bin(Credential), Basename]),
-  GroupCtx = xtt_init_client_group_context(Gpk,PrivKey,Credential, Basename),
-  lager:info("Resulting GroupCtx: ~p", [GroupCtx]),
-  GroupCtx;
+  case xtt_init_client_group_context(Gpk, PrivKey, Credential, Basename) of
+    {ok, GroupCtx} ->
+      lager:info("Resulting GroupCtx: ~p", [GroupCtx]),
+      case initialize_certs(DataDir, ParameterMap) of
+        ok ->
+          {ok, GroupCtx};
+        {error, Error} ->
+          {error, Error}
+      end;
+    {error, ErrorCode} ->
+      lager:error("Error ~p initializing client group context", [ErrorCode]),
+      {error, init_client_group_context_failed}
+  end;
 
 initialize_daa(true = _UseTpm, _DataDir, Basename,
     #{
@@ -191,15 +204,31 @@ initialize_daa(true = _UseTpm, _DataDir, Basename,
        tpm_port:= TpmPort,
        tpm_password := TpmPassword} = _ParameterMap)->
 
-  case xaptum_tpm_erlang:tss2_tcti_initialize_socket(TpmHostname, TpmPort) of
-    {0, TctiContext} ->
-      {ok, Gpk} = read_nvram(?XTT_DAA_GROUP_PUB_KEY_SIZE, ?GPK_HANDLE, TctiContext),
-      {ok, Credential} = read_nvram(?XTT_DAA_CRED_SIZE, ?CRED_HANDLE, TctiContext),
-      GroupCtxTPM = initialize_client_group_contextTPM(
-        Gpk, Credential, Basename, ?KEY_HANDLE, TpmPassword, size(TpmPassword), TctiContext),
-      lager:info("Resulting GroupCtx: ~p", [GroupCtxTPM]),
-      GroupCtxTPM;
-    BadReturnCode -> {error, BadReturnCode}
+  case xaptum_tpm:tss2_tcti_initialize_socket(TpmHostname, TpmPort) of
+    {ok, TctiContext} ->
+      case  xaptum_tpm:tss2_sys_initialize(TctiContext) of
+        {ok, SapiContext} ->
+          {ok, Gpk} = read_nvram(?XTT_DAA_GROUP_PUB_KEY_SIZE, ?GPK_HANDLE, SapiContext),
+
+          {ok, Credential} = read_nvram(?XTT_DAA_CRED_SIZE, ?CRED_HANDLE, SapiContext),
+
+          case initialize_client_group_contextTPM(
+                Gpk, Credential, Basename, ?KEY_HANDLE, TpmPassword, size(TpmPassword), TctiContext) of
+            {ok, GroupCtxTPM} ->
+
+              lager:info("Resulting GroupCtx: ~p", [GroupCtxTPM]),
+
+              case initialize_certsTPM(SapiContext) of
+                ok -> {ok, GroupCtxTPM};
+                {error, Error} -> {error, Error}
+              end;
+          {error, ErrorCode} ->
+            lager:error("Error ~p initializing client group context TPM", [ErrorCode]),
+            {error, init_client_group_context_tpm_failed}
+      end;
+    {error, _ErrorCode} -> {error, init_tss2_sys_failed}
+      end;
+    {error, _ErrorCode} -> {error, init_tss2_tcti_failed}
   end.
 
 
@@ -208,7 +237,7 @@ print_bin(Bin) when size(Bin) > 5->
 print_bin(Bin) ->
   Bin.
 
-initialize_certs(false = _UseTpm, DataDir, ParameterMap)->
+initialize_certs(DataDir, ParameterMap)->
   RootIdFilename = maps:get(root_id_filename, ParameterMap, filename:join(DataDir, ?ROOT_ID_FILE)),
   RootPubkeyFilename = maps:get(root_pubkey_filename, ParameterMap, filename:join(DataDir, ?ROOT_PUBKEY_FILE)),
 
@@ -219,19 +248,24 @@ initialize_certs(false = _UseTpm, DataDir, ParameterMap)->
 
   lager:info("Initializing cert db with RootId ~p and RootPubKey ~p", [RootId, print_bin(RootPubKey)]),
 
-  init_cert_db(RootId, RootPubKey);
-initialize_certs(true = _UseTpm, _DataDir, ParameterMap)->
-  RootId = read_nvram(root_id),
-  RootPubKey = read_nvram(root_pub_key),
+  init_cert_db(RootId, RootPubKey).
+
+initialize_certsTPM(SapiContext)->
+  {ok, RootId} = read_nvram(?XTT_DAA_ROOT_ID_SIZE, ?ROOT_ID_HANDLE, SapiContext),
+  {ok, RootPubKey} = read_nvram(?XTT_DAA_GROUP_PUB_KEY_SIZE, ?ROOT_PUBKEY_HANDLE, SapiContext),
   init_cert_db(RootId, RootPubKey).
 
 init_cert_db(RootId, RootPubkey)->
-  CertContext = xtt_init_server_root_certificate_context(RootId, RootPubkey),
-  ets:new(?CERT_TABLE, ?DEFAULT_ETS_OPTS),
-  ets:insert(?CERT_TABLE, {RootId, CertContext}). %% TODO DB: Should replace file reading stuff with write ets to disk?
-
-%% Should be NIF(s)
-read_nvram(Size, Handle, TctiContext)->
+  case xtt_init_server_root_certificate_context(RootId, RootPubkey) of
+    {ok, CertContext} ->
+        ets:new(?CERT_TABLE, ?DEFAULT_ETS_OPTS),
+        ets:insert(?CERT_TABLE, {RootId, CertContext}), %% TODO DB: Should replace file reading stuff with write ets to disk?
+        lager:info("Initialized Certificates in ~p: ~p", [?CERT_TABLE, ets:tab2list(?CERT_TABLE)]),
+        ok;
+    {error, ErrorCode} ->
+      lager:error("Error ~p initializing server root certificate context", [ErrorCode] ),
+      {error, init_cert_context_failed}
+  end.
 
 
 

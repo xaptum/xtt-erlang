@@ -5,6 +5,9 @@
 
 #define USE_TPM 1
 
+ERL_NIF_TERM ATOM_OK;
+ERL_NIF_TERM ATOM_ERROR;
+
 ErlNifResourceType* STRUCT_RESOURCE_TYPE;
 
 struct client_state {
@@ -34,6 +37,9 @@ load(ErlNifEnv* env, void** priv, ERL_NIF_TERM load_info)
 
     if(STRUCT_RESOURCE_TYPE == NULL)
         return -1;
+
+    ATOM_OK = enif_make_atom(env, "ok");
+    ATOM_ERROR = enif_make_atom(env, "error");
 
 
     return 0;
@@ -184,11 +190,11 @@ xtt_init_client_group_context(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[
 
     if (XTT_RETURN_SUCCESS != rc) {
             fprintf(stderr, "Error initializing client group context: %d\n", rc);
-            result = enif_make_int(env, rc);
+            result = enif_make_tuple2(env, ATOM_ERROR, enif_make_int(env, rc));
     }
     else{
         puts("SUCCESS\n");
-        result = enif_make_resource(env, group_ctx_out);
+        result = enif_make_tuple2(env, ATOM_OK, enif_make_resource(env, group_ctx_out));
     }
 
     enif_release_resource(group_ctx_out);
@@ -308,11 +314,11 @@ puts("START NIF: xtt_init_client_group_contextTPM...\n");
 
     if (XTT_RETURN_SUCCESS != rc) {
             fprintf(stderr, "Error initializing client group context: %d\n", rc);
-            result = enif_make_int(env, rc);
+            result = enif_make_tuple2(env, ATOM_ERROR, enif_make_int(env, rc));
     }
     else{
         puts("SUCCESS\n");
-        result = enif_make_resource(env, group_ctx_out);
+        result = enif_make_tuple2(env, ATOM_OK, enif_make_resource(env, group_ctx_out));
     }
 
     enif_release_resource(group_ctx_out);
@@ -374,11 +380,11 @@ xtt_init_server_root_certificate_context(ErlNifEnv* env, int argc, const ERL_NIF
 
     if (XTT_RETURN_SUCCESS != rc){
         fprintf(stderr, "Error initializing root certificate context: %d\n", rc);
-        result = enif_make_int(env, rc);
+        result = enif_make_tuple2(env, ATOM_ERROR, enif_make_int(env, rc));
     }
     else{
-        puts("SUCCESS\n");
-        result = enif_make_resource(env, cert_ctx);
+        puts("xtt_initialize_server_root_certificate_context_ed25519 SUCCESS\n");
+        result = enif_make_tuple2(env, ATOM_OK, enif_make_resource(env, cert_ctx));
     }
 
     enif_release_resource(cert_ctx);
@@ -430,11 +436,11 @@ xtt_init_client_handshake_context(ErlNifEnv* env, int argc, const ERL_NIF_TERM a
 
      if (XTT_RETURN_SUCCESS != rc) {
         fprintf(stderr, "Error initializing client handshake context: %d\n", rc);
-        result = enif_make_int(env, rc);
+        result = enif_make_tuple2(env, ATOM_ERROR, enif_make_int(env, rc));
      }
      else {
         puts("SUCCESS\n");
-        result = enif_make_resource(env, cs);
+        result = enif_make_tuple2(env, ATOM_OK, enif_make_resource(env, cs));
      }
 
      enif_release_resource(cs);
