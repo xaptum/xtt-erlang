@@ -292,7 +292,7 @@ puts("START NIF: xtt_init_client_group_contextTPM...\n");
     xtt_daa_credential_lrsw *xtt_daa_cred = enif_alloc_resource(STRUCT_RESOURCE_TYPE, sizeof(xtt_daa_credential_lrsw));
     memcpy(xtt_daa_cred->data, daaCredBin.data, sizeof(xtt_daa_credential_lrsw));
 
-    xtt_return_code_type xtt_initialize_client_group_context_lrswTPM(group_ctx_out,
+    xtt_return_code_type rc = xtt_initialize_client_group_context_lrswTPM(group_ctx_out,
                                                                      &gid,
                                                                      xtt_daa_cred,
                                                                      basenameBin.data,
