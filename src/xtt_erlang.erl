@@ -208,11 +208,11 @@ initialize_daa(true = _UseTpm, _DataDir, Basename,
     {ok, TctiContext} ->
       case  xaptum_tpm:tss2_sys_initialize(TctiContext) of
         {ok, SapiContext} ->
-          {ok, Gpk} = read_nvram(?XTT_DAA_GROUP_PUB_KEY_SIZE, ?GPK_HANDLE, SapiContext),
+          {ok, Gpk} = xaptum_tpm:tss2_sys_nv_read(?XTT_DAA_GROUP_PUB_KEY_SIZE, ?GPK_HANDLE, SapiContext),
 
-          {ok, Credential} = read_nvram(?XTT_DAA_CRED_SIZE, ?CRED_HANDLE, SapiContext),
+          {ok, Credential} = xaptum_tpm:tss2_sys_nv_read(?XTT_DAA_CRED_SIZE, ?CRED_HANDLE, SapiContext),
 
-          case initialize_client_group_contextTPM(
+          case xtt_init_client_group_contextTPM(
                 Gpk, Credential, Basename, ?KEY_HANDLE, TpmPassword, size(TpmPassword), TctiContext) of
             {ok, GroupCtxTPM} ->
 
@@ -251,8 +251,8 @@ initialize_certs(DataDir, ParameterMap)->
   init_cert_db(RootId, RootPubKey).
 
 initialize_certsTPM(SapiContext)->
-  {ok, RootId} = read_nvram(?XTT_DAA_ROOT_ID_SIZE, ?ROOT_ID_HANDLE, SapiContext),
-  {ok, RootPubKey} = read_nvram(?XTT_DAA_GROUP_PUB_KEY_SIZE, ?ROOT_PUBKEY_HANDLE, SapiContext),
+  {ok, RootId} = xaptum_tpm:tss2_sys_nv_read(?XTT_DAA_ROOT_ID_SIZE, ?ROOT_ID_HANDLE, SapiContext),
+  {ok, RootPubKey} = xaptum_tpm:tss2_sys_nv_read(?XTT_DAA_GROUP_PUB_KEY_SIZE, ?ROOT_PUBKEY_HANDLE, SapiContext),
   init_cert_db(RootId, RootPubKey).
 
 init_cert_db(RootId, RootPubkey)->
