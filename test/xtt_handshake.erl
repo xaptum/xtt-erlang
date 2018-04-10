@@ -12,7 +12,8 @@
 %% API
 -export([test_params/0,
   client_test/0,
-  client_TPM_test/0]).
+  client_handshake/0,
+  client_TPM_handshake/0]).
 
 -include_lib("eunit/include/eunit.hrl").
 -include("xtt.hrl").
@@ -56,16 +57,20 @@ test_handshake(Params)->
   Result = xtt_erlang:xtt_client_handshake(Params),
   io:format("Handshake complete with result ~b!~n", [Result]).
 
-client_test()->
+client_handshake()->
   Params = test_params(),
   io:format("Staring client test with params ~p~n", [Params]),
   test_handshake(Params).
 
-client_TPM_test()->
+client_TPM_handshake()->
   Params = test_paramsTPM(),
   io:format("Staring client TPM test with params ~p~n", [Params]),
   test_handshake(Params).
 
+client_test()->
+  client_handshake(),
+  timer:sleep(100),
+  client_TPM_handshake().
 
 ensure_xtt_server_started(ServerHost, ServerPort)->
   %% Check if running or
