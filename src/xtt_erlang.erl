@@ -211,6 +211,8 @@ initialize_daa(true = _UseTpm, _DataDir, Basename,
        tpm_port:= TpmPort,
        tpm_password := TpmPassword} = _ParameterMap)->
 
+  xaptum_tpm:init(),
+
   case xaptum_tpm:tss2_tcti_initialize_socket(TpmHostname, TpmPort) of
     {ok, TctiContext} ->
       case  xaptum_tpm:tss2_sys_initialize(TctiContext) of
