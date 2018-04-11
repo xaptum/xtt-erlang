@@ -19,12 +19,6 @@ struct client_state {
           struct xtt_client_handshake_context ctx;
         };
 
-//void
-//free_resource(ErlNifEnv* env, void* obj)
-//{
-//   enif_free(obj);
-//}
-
 static int
 load(ErlNifEnv* env, void** priv, ERL_NIF_TERM load_info)
 {
@@ -273,12 +267,13 @@ puts("START NIF: xtt_init_client_group_contextTPM...\n");
         return enif_make_badarg(env);
     }
 
-    struct xtt_client_group_context *group_ctx_out =
+    struct xtt_client_group_context *group_ctx =
         enif_alloc_resource(STRUCT_RESOURCE_TYPE, sizeof(struct xtt_client_group_context));
 
-    if(group_ctx_out == NULL){
-        puts("Failed to allocate xtt_client_group_context group_ctx_out!\n");
-        return enif_make_badarg(env);
+    if(group_ctx == NULL){
+        puts("Failed to allocate resource for struct xtt_client_group_context group_ctx!\n");
+        puts("\n");
+        return enif_make_tuple2(env, ATOM_ERROR, enif_make_int(env, 1));
     }
 
     xtt_group_id gid;
@@ -297,7 +292,7 @@ puts("START NIF: xtt_init_client_group_contextTPM...\n");
     xtt_daa_credential_lrsw *xtt_daa_cred = enif_alloc_resource(STRUCT_RESOURCE_TYPE, sizeof(xtt_daa_credential_lrsw));
     memcpy(xtt_daa_cred->data, daaCredBin.data, sizeof(xtt_daa_credential_lrsw));
 
-    xtt_return_code_type rc = xtt_initialize_client_group_context_lrswTPM(group_ctx_out,
+    xtt_return_code_type rc = xtt_initialize_client_group_context_lrswTPM(group_ctx,
                                                                      &gid,
                                                                      xtt_daa_cred,
                                                                      basenameBin.data,
@@ -317,10 +312,10 @@ puts("START NIF: xtt_init_client_group_contextTPM...\n");
     }
     else{
         puts("SUCCESS\n");
-        result = enif_make_tuple2(env, ATOM_OK, enif_make_resource(env, group_ctx_out));
+        result = enif_make_tuple2(env, ATOM_OK, enif_make_resource(env, group_ctx));
     }
 
-    enif_release_resource(group_ctx_out);
+    enif_release_resource(group_ctx);
 
     return result;
 
