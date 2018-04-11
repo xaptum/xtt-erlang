@@ -19,11 +19,11 @@ struct client_state {
           struct xtt_client_handshake_context ctx;
         };
 
-void
-free_resource(ErlNifEnv* env, void* obj)
-{
-   enif_free(obj);
-}
+//void
+//free_resource(ErlNifEnv* env, void* obj)
+//{
+//   enif_free(obj);
+//}
 
 static int
 load(ErlNifEnv* env, void** priv, ERL_NIF_TERM load_info)
@@ -32,7 +32,7 @@ load(ErlNifEnv* env, void** priv, ERL_NIF_TERM load_info)
     const char* struct_name = "struct";
 
     STRUCT_RESOURCE_TYPE = enif_open_resource_type(
-            env, mod, struct_name, free_resource, ERL_NIF_RT_CREATE | ERL_NIF_RT_TAKEOVER, NULL
+            env, mod, struct_name, NULL, ERL_NIF_RT_CREATE | ERL_NIF_RT_TAKEOVER, NULL
     );
 
     if(STRUCT_RESOURCE_TYPE == NULL)
@@ -111,7 +111,6 @@ xtt_init_client_group_context(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[
     ErlNifBinary daaPrivKeyBin;
     ErlNifBinary daaCredBin;
     ErlNifBinary basenameBin;
-    ErlNifBinary tctiContextBin;
 
     if(!enif_inspect_binary(env, argv[0], &gpkBin) ) {
             fprintf(stderr, "Bad arg at position 0\n");
@@ -268,9 +267,9 @@ puts("START NIF: xtt_init_client_group_contextTPM...\n");
         return enif_make_badarg(env);
     }
 
-    ErlNifBinary tctiContextBin;
-    if(!enif_inspect_binary(env, argv[6], &tctiContextBin) ) {
-        fprintf(stderr, "Bad tcti_context arg at position 6\n");
+    TSS2_TCTI_CONTEXT * tcti_context;
+
+    if(!enif_get_resource(env, argv[6], STRUCT_RESOURCE_TYPE, (void**) &tcti_context)) {
         return enif_make_badarg(env);
     }
 
@@ -306,7 +305,7 @@ puts("START NIF: xtt_init_client_group_contextTPM...\n");
                                                                      key_handle,
                                                                      tpmPasswordBin.data,
                                                                      tpm_password_len,
-                                                                     (TSS2_SYS_CONTEXT *) tctiContextBin.data);
+                                                                     tcti_context);
 
     printf("Finished xtt_initialize_client_group_context_lrswTPM with return code %d\n", rc);
 
