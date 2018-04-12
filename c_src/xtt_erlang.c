@@ -10,7 +10,7 @@ ERL_NIF_TERM ATOM_ERROR;
 
 ErlNifResourceType* STRUCT_RESOURCE_TYPE;
 
-//ErlNifResourceType* TCTI_RESOURCE_TYPE;
+ErlNifResourceType* TCTI_RESOURCE_TYPE;
 ErlNifResourceType* CLIENT_STATE_RESOURCE_TYPE;
 ErlNifResourceType* GROUP_CONTEXT_RESOURCE_TYPE;
 ErlNifResourceType* CERT_CONTEXT_RESOURCE_TYPE;
@@ -27,32 +27,31 @@ struct client_state {
 static int
 load(ErlNifEnv* env, void** priv, ERL_NIF_TERM load_info)
 {
-    const char* mod = "xtt_erlang";
     const char* struct_name = "struct";
 
     STRUCT_RESOURCE_TYPE = enif_open_resource_type(
-            env, mod, struct_name, NULL, ERL_NIF_RT_CREATE | ERL_NIF_RT_TAKEOVER, NULL
+            env, NULL, struct_name, NULL, ERL_NIF_RT_CREATE | ERL_NIF_RT_TAKEOVER, NULL
     );
 
     if(STRUCT_RESOURCE_TYPE == NULL)
         return -1;
 
-//    TCTI_RESOURCE_TYPE = enif_open_resource_type(
-//            env, "xaptum_tpm", "tcti", NULL, ERL_NIF_RT_CREATE | ERL_NIF_RT_TAKEOVER, NULL
-//        );
-//
-//    if(TCTI_RESOURCE_TYPE == NULL)
-//            return -1;
+    TCTI_RESOURCE_TYPE = enif_open_resource_type(
+            env, NULL, "tcti", NULL, ERL_NIF_RT_TAKEOVER, NULL
+        );
+
+    if(TCTI_RESOURCE_TYPE == NULL)
+            return -1;
 
     CLIENT_STATE_RESOURCE_TYPE = enif_open_resource_type(
-        env, mod, "client_state", NULL, ERL_NIF_RT_CREATE | ERL_NIF_RT_TAKEOVER, NULL
+        env, NULL, "client_state", NULL, ERL_NIF_RT_CREATE | ERL_NIF_RT_TAKEOVER, NULL
     );
 
     if(CLIENT_STATE_RESOURCE_TYPE == NULL)
         return -1;
 
     GROUP_CONTEXT_RESOURCE_TYPE = enif_open_resource_type(
-            env, mod, "group_context", NULL, ERL_NIF_RT_CREATE | ERL_NIF_RT_TAKEOVER, NULL
+            env, NULL, "group_context", NULL, ERL_NIF_RT_CREATE | ERL_NIF_RT_TAKEOVER, NULL
         );
 
     if(GROUP_CONTEXT_RESOURCE_TYPE == NULL)
@@ -60,7 +59,7 @@ load(ErlNifEnv* env, void** priv, ERL_NIF_TERM load_info)
 
 
     CERT_CONTEXT_RESOURCE_TYPE = enif_open_resource_type(
-        env, mod, "cert_context", NULL, ERL_NIF_RT_CREATE | ERL_NIF_RT_TAKEOVER, NULL
+        env, NULL, "cert_context", NULL, ERL_NIF_RT_CREATE | ERL_NIF_RT_TAKEOVER, NULL
     );
 
     if(CERT_CONTEXT_RESOURCE_TYPE == NULL)
