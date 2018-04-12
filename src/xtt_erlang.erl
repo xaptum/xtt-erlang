@@ -19,8 +19,8 @@
 
 -include("xtt.hrl").
 
--define(APPNAME, xtt_erlang).
--define(LIBNAME, 'xtt-erlang').
+-define(XTT_APPNAME, xtt_erlang).
+-define(XTT_LIBNAME, 'xtt-erlang').
 
 -define(TCP_OPTIONS, [binary, {packet, 0}, {keepalive, true}, {active, false}]).
 
@@ -29,8 +29,8 @@
 -define(CERT_TABLE, cert).
 
 init() ->
-  SoName = filename:join([priv_dir(), ?LIBNAME]),
-  lager:info("Loading NIFs from ~p", [SoName]),
+  SoName = filename:join([priv_dir(), ?XTT_LIBNAME]),
+  lager:info("Loading XTT NIFs from ~p", [SoName]),
   case erlang:load_nif(SoName, 0) of
     ok ->
       lager:info("Successfully loaded NIFs from ~p", [SoName]);
@@ -41,7 +41,7 @@ init() ->
   end.
 
 priv_dir() ->
-  case code:priv_dir(?APPNAME) of
+  case code:priv_dir(?XTT_APPNAME) of
     {error, bad_name} ->
       case filelib:is_dir(filename:join(["..", priv])) of
         true ->

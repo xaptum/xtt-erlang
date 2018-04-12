@@ -34,7 +34,7 @@ endif
 CFLAGS += -fPIC -I $(ERTS_INCLUDE_DIR) -I $(ERL_INTERFACE_INCLUDE_DIR)
 CXXFLAGS += -fPIC -I $(ERTS_INCLUDE_DIR) -I $(ERL_INTERFACE_INCLUDE_DIR)
 
-LDLIBS += -L $(ERL_INTERFACE_LIB_DIR) -lerl_interface -lei -lecdaa -L _build/default/lib/xaptum_tpm_erlang/priv -lxaptum_tpm_erlang -lxtt
+LDLIBS += -L $(ERL_INTERFACE_LIB_DIR) -lerl_interface -lei -lecdaa -L $(BASEDIR)/_build/default/lib/xaptum_tpm_erlang/priv -lxaptum_tpm_erlang -lxtt
 LDFLAGS += -shared
 
 # Verbosity.
