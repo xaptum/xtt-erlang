@@ -17,6 +17,8 @@
 
 -export([priv_dir/0]).
 
+-on_load(init/0).
+
 -include("xtt.hrl").
 
 -define(XTT_APPNAME, xtt_erlang).
@@ -66,9 +68,6 @@ xtt_client_handshake(#{ server := ServerName,
                         port := Port,
                         xtt_version := XttVersion,
                         xtt_suite := XttSuite} = ParameterMap) ->
-
-  xaptum_tpm:init(),
-  init(),
 
   UseTpm = maps:get(use_tpm, ParameterMap, false),
   DataDir = maps:get(data_dir, ParameterMap, "."),
