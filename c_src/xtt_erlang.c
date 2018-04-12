@@ -3,14 +3,14 @@
 #include <xtt.h>
 #include <erl_nif.h>
 
+extern ErlNifResourceType* TCTI_RESOURCE_TYPE;
+
 #define USE_TPM 1
 
 ERL_NIF_TERM ATOM_OK;
 ERL_NIF_TERM ATOM_ERROR;
 
 ErlNifResourceType* STRUCT_RESOURCE_TYPE;
-
-extern ErlNifResourceType* TCTI_RESOURCE_TYPE;
 ErlNifResourceType* CLIENT_STATE_RESOURCE_TYPE;
 ErlNifResourceType* GROUP_CONTEXT_RESOURCE_TYPE;
 ErlNifResourceType* CERT_CONTEXT_RESOURCE_TYPE;
