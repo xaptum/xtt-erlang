@@ -10,7 +10,7 @@ ERL_NIF_TERM ATOM_ERROR;
 
 ErlNifResourceType* STRUCT_RESOURCE_TYPE;
 
-ErlNifResourceType* TCTI_RESOURCE_TYPE;
+extern ErlNifResourceType* TCTI_RESOURCE_TYPE;
 ErlNifResourceType* CLIENT_STATE_RESOURCE_TYPE;
 ErlNifResourceType* GROUP_CONTEXT_RESOURCE_TYPE;
 ErlNifResourceType* CERT_CONTEXT_RESOURCE_TYPE;
@@ -36,12 +36,12 @@ load(ErlNifEnv* env, void** priv, ERL_NIF_TERM load_info)
     if(STRUCT_RESOURCE_TYPE == NULL)
         return -1;
 
-    TCTI_RESOURCE_TYPE = enif_open_resource_type(
-            env, NULL, "tcti", NULL, ERL_NIF_RT_TAKEOVER, NULL
-        );
-
-    if(TCTI_RESOURCE_TYPE == NULL)
-            return -1;
+//    TCTI_RESOURCE_TYPE = enif_open_resource_type(
+//            env, NULL, "tcti", NULL, ERL_NIF_RT_TAKEOVER, NULL
+//        );
+//
+//    if(TCTI_RESOURCE_TYPE == NULL)
+//            return -1;
 
     CLIENT_STATE_RESOURCE_TYPE = enif_open_resource_type(
         env, NULL, "client_state", NULL, ERL_NIF_RT_CREATE | ERL_NIF_RT_TAKEOVER, NULL

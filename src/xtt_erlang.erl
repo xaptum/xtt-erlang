@@ -67,6 +67,7 @@ xtt_client_handshake(#{ server := ServerName,
                         xtt_version := XttVersion,
                         xtt_suite := XttSuite} = ParameterMap) ->
 
+  xaptum_tpm:init(),
   init(),
 
   UseTpm = maps:get(use_tpm, ParameterMap, false),
@@ -210,8 +211,6 @@ initialize_daa(true = _UseTpm, _DataDir, Basename,
        tpm_host := TpmHostname,
        tpm_port:= TpmPort,
        tpm_password := TpmPassword} = _ParameterMap)->
-
-  xaptum_tpm:init(),
 
   case xaptum_tpm:tss2_tcti_initialize_socket(TpmHostname, TpmPort) of
     {ok, TctiContext} ->
