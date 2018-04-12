@@ -31,6 +31,8 @@
 -define(CERT_TABLE, cert).
 
 init() ->
+  application:ensure_all_started(lager),
+
   SoName = filename:join([priv_dir(), ?XTT_LIBNAME]),
   lager:info("Loading XTT NIFs from ~p", [SoName]),
   case erlang:load_nif(SoName, 0) of
