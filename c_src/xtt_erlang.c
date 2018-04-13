@@ -32,11 +32,15 @@ get_TCTI(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]){
 
     TSS2_TCTI_CONTEXT * tcti_context;
 
+    printf("TCTI_RESOURCE_TYPE: %p (before enif_get_resource))\n", TCTI_RESOURCE_TYPE);
+
     if(!enif_get_resource(env, argv[0], TCTI_RESOURCE_TYPE, (void**) &tcti_context)) {
+        printf("TCTI_RESOURCE_TYPE: %p (after enif_get_resource failure))\n", TCTI_RESOURCE_TYPE);
         return enif_make_badarg(env);
     }
 
     printf("SUCCESS getting TCTI context arg: %p\n", tcti_context);
+    printf("TCTI_RESOURCE_TYPE: %p (after enif_get_resource success))\n", TCTI_RESOURCE_TYPE);
 
     return enif_make_tuple2(env, ATOM_OK, argv[0]);
 
