@@ -261,7 +261,7 @@ initialize_certs(DataDir, ParameterMap)->
 
 initialize_certsTPM(SapiContext)->
   {ok, RootId} = xaptum_tpm:tss2_sys_nv_read(?XTT_DAA_ROOT_ID_SIZE, ?ROOT_ID_HANDLE, SapiContext),
-  {ok, RootPubKey} = xaptum_tpm:tss2_sys_nv_read(?XTT_DAA_GROUP_PUB_KEY_SIZE, ?ROOT_PUBKEY_HANDLE, SapiContext),
+  {ok, RootPubKey} = xaptum_tpm:tss2_sys_nv_read(?XTT_DAA_ROOT_PUB_KEY_SIZE, ?ROOT_PUBKEY_HANDLE, SapiContext),
   init_cert_db(RootId, RootPubKey).
 
 init_cert_db(RootId, RootPubkey)->
