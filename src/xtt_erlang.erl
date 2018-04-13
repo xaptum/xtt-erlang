@@ -199,7 +199,7 @@ initialize_daa(false = _UseTpm, DataDir, Basename, ParameterMap)->
   {ok, PrivKey} = file:read_file(PrivKeyFile),
 
   file:write_file(?OUT_FILE, <<"PRIV KEY: ">>),
-  file:write_File(?OUT_FILE, PrivKey),
+  file:write_file(?OUT_FILE, PrivKey),
 
   %%Gid = crypto:hash(sha256, Gpk), TODO MOVE BACK INTO ERLANG?
 
@@ -245,7 +245,7 @@ initialize_daa(true = _UseTpm, _DataDir, Basename,
           {ok, PrivKey} = xaptum_tpm:tss2_sys_nv_read(?XTT_DAA_KEY_SIZE, ?KEY_HANDLE, SapiContext),
 
           file:write_file(?OUT_FILE_TPM, <<"PRIV KEY: ">>),
-          file:write_File(?OUT_FILE_TPM, PrivKey),
+          file:write_file(?OUT_FILE_TPM, PrivKey),
 
           case xtt_init_client_group_contextTPM(
                 Gpk, Credential, Basename, ?KEY_HANDLE, TpmPassword, size(TpmPassword), TctiContext) of
@@ -280,10 +280,10 @@ initialize_certs(DataDir, ParameterMap)->
   {ok, RootPubKey} = file:read_file(RootPubkeyFilename),
 
   file:write_file(?OUT_FILE, <<"ROOT ID: ">>),
-  file:write_File(?OUT_FILE, RootId),
+  file:write_file(?OUT_FILE, RootId),
 
   file:write_file(?OUT_FILE, <<"ROOT PUB KEY: ">>),
-  file:write_File(?OUT_FILE, RootPubKey),
+  file:write_file(?OUT_FILE, RootPubKey),
 
   init_cert_db(RootId, RootPubKey).
 
@@ -292,10 +292,10 @@ initialize_certsTPM(SapiContext)->
   {ok, RootPubKey} = xaptum_tpm:tss2_sys_nv_read(?XTT_DAA_ROOT_PUB_KEY_SIZE, ?ROOT_PUBKEY_HANDLE, SapiContext),
 
   file:write_file(?OUT_FILE_TPM, <<"ROOT ID: ">>),
-  file:write_File(?OUT_FILE_TPM, RootId),
+  file:write_file(?OUT_FILE_TPM, RootId),
 
   file:write_file(?OUT_FILE_TPM, <<"ROOT PUB KEY: ">>),
-  file:write_File(?OUT_FILE_TPM, RootPubKey),
+  file:write_file(?OUT_FILE_TPM, RootPubKey),
 
   init_cert_db(RootId, RootPubKey).
 
