@@ -213,6 +213,9 @@ xtt_init_client_group_context(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[
     }
     else{
         puts("SUCCESS\n");
+        FILE *f;
+        f = fopen("xtt_handshake.out", "a");
+        fprintf(f, "Group Ctx: %p", group_ctx);
         result = enif_make_tuple2(env, ATOM_OK, enif_make_resource(env, group_ctx_out));
     }
 
@@ -337,6 +340,10 @@ puts("START NIF: xtt_init_client_group_contextTPM...\n");
     }
     else{
         puts("SUCCESS\n");
+        FILE *f;
+        f = fopen("xtt_handshakeTPM.out", "a");
+        fprintf(f, "Group Ctx: %p", group_ctx);
+
         result = enif_make_tuple2(env, ATOM_OK, enif_make_resource(env, group_ctx));
     }
 
