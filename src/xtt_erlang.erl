@@ -250,12 +250,8 @@ initialize_certs(DataDir, ParameterMap)->
   RootIdFilename = maps:get(root_id_filename, ParameterMap, filename:join(DataDir, ?ROOT_ID_FILE)),
   RootPubkeyFilename = maps:get(root_pubkey_filename, ParameterMap, filename:join(DataDir, ?ROOT_PUBKEY_FILE)),
 
-  lager:info("Getting RootId from  ~p and RootPubKey from ~p", [RootIdFilename, RootPubkeyFilename]),
-
   {ok, RootId} = file:read_file(RootIdFilename),
   {ok, RootPubKey} = file:read_file(RootPubkeyFilename),
-
-  lager:info("Initializing cert db with RootId ~p and RootPubKey ~p", [RootId, print_bin(RootPubKey)]),
 
   init_cert_db(RootId, RootPubKey).
 
@@ -265,11 +261,12 @@ initialize_certsTPM(SapiContext)->
   init_cert_db(RootId, RootPubKey).
 
 init_cert_db(RootId, RootPubkey)->
+   lager:info("Initializing cert db with RootId ~p and RootPubKey ~p", [RootId, print_bin(RootPubkey)]),
   case xtt_init_server_root_certificate_context(RootId, RootPubkey) of
     {ok, CertContext} ->
         ets:new(?CERT_TABLE, ?DEFAULT_ETS_OPTS),
         ets:insert(?CERT_TABLE, {RootId, CertContext}), %% TODO DB: Should replace file reading stuff with write ets to disk?
-        lager:info("Initialized Certificates in ~p: ~p", [?CERT_TABLE, ets:tab2list(?CERT_TABLE)]),
+        lager:info("Initialized Certificates in '~p' table: ~p", [?CERT_TABLE, ets:tab2list(?CERT_TABLE)]),
         ok;
     {error, ErrorCode} ->
       lager:error("Error ~p initializing server root certificate context", [ErrorCode] ),
