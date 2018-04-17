@@ -58,13 +58,11 @@ test_handshake(Params)->
   lager:info("Handshake complete with result ~b!~n", [Result]).
 
 client_test()->
-  start_lager("FILE"),
   Params = test_params(),
   lager:info("Staring client test with params ~p~n", [Params]),
   test_handshake(Params).
 
 client_TPM_test()->
-  start_lager("TPM"),
   Params = test_paramsTPM(),
   ensure_xtt_server_started(?XTT_SERVER_HOST, ?XTT_SERVER_PORT_TPM),
   lager:info("Staring client test with params ~p~n", [Params]),
@@ -75,10 +73,3 @@ ensure_xtt_server_started(ServerHost, ServerPort)->
   %% Find xtt install dir and run
   %%os:cmd(?XTT_INSTALL_DIR ++ "/xtt_server " ++ integer_to_list(ServerPort)),
   ok.
-
-start_lager(Source)->
-  application:ensure_all_started(lager),
-  application:set_env(lager, handlers, [
-    {lager_console_backend, [{level, info}, {formatter, lager_default_formatter},
-      {formatter_config, [time," [",source,"][",severity,"] ", message, "\n"]}]}]),
-  lager:md([{source, Source}]).

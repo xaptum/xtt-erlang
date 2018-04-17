@@ -32,7 +32,9 @@
 
 init() ->
   application:ensure_all_started(lager),
-
+  application:set_env(lager, handlers, [
+    {lager_console_backend, [{level, info}, {formatter, lager_default_formatter},
+      {formatter_config, [time," [",source,"][",severity,"] ", message, "\n"]}]}]),
   SoName = filename:join([priv_dir(), ?XTT_LIBNAME]),
   lager:info("Loading XTT NIFs from ~p", [SoName]),
   case erlang:load_nif(SoName, 0) of
@@ -72,6 +74,10 @@ xtt_client_handshake(#{ host := Host,
                         xtt_suite := XttSuite} = ParameterMap) ->
 
   UseTpm = maps:get(use_tpm, ParameterMap, false),
+  case UseTpm of
+    true -> lager:md([{source, "TPM"}]);
+    false -> lager:md([{source, "FILE"}])
+  end,
   DataDir = maps:get(data_dir, ParameterMap, "."),
 
   lager:info("Performing client handshake with TPM ~p", [UseTpm]),
