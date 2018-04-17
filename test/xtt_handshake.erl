@@ -52,6 +52,7 @@ test_paramsTPM() ->
   }.
 
 test_handshake(Params)->
+  lager:md([{source, 'FILE'}]),
   #{port := Port, host := Host} = Params,
   ensure_xtt_server_started(Host, Port),
   application:ensure_all_started(lager),
@@ -64,6 +65,7 @@ client_test()->
   test_handshake(Params).
 
 client_TPM_test()->
+  lager:md([{source, 'TPM'}]),
   Params = test_paramsTPM(),
   ensure_xtt_server_started(?XTT_SERVER_HOST, ?XTT_SERVER_PORT_TPM),
   io:format("Staring client TPM test with params ~p~n", [Params]),
