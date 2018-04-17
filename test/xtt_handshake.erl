@@ -52,23 +52,22 @@ test_paramsTPM() ->
   }.
 
 test_handshake(Params)->
-  lager:md([{source, 'FILE'}]),
   #{port := Port, host := Host} = Params,
   ensure_xtt_server_started(Host, Port),
-  application:ensure_all_started(lager),
   Result = xtt_erlang:xtt_client_handshake(Params),
-  io:format("Handshake complete with result ~b!~n", [Result]).
+  lager:info("Handshake complete with result ~b!~n", [Result]).
 
 client_test()->
+  start_lager("FILE"),
   Params = test_params(),
-  io:format("Staring client test with params ~p~n", [Params]),
+  lager:info("Staring client test with params ~p~n", [Params]),
   test_handshake(Params).
 
 client_TPM_test()->
-  lager:md([{source, 'TPM'}]),
+  start_lager("TPM"),
   Params = test_paramsTPM(),
   ensure_xtt_server_started(?XTT_SERVER_HOST, ?XTT_SERVER_PORT_TPM),
-  io:format("Staring client TPM test with params ~p~n", [Params]),
+  lager:info("Staring client test with params ~p~n", [Params]),
   test_handshake(Params).
 
 ensure_xtt_server_started(ServerHost, ServerPort)->
@@ -77,6 +76,9 @@ ensure_xtt_server_started(ServerHost, ServerPort)->
   %%os:cmd(?XTT_INSTALL_DIR ++ "/xtt_server " ++ integer_to_list(ServerPort)),
   ok.
 
-
-
-
+start_lager(Source)->
+  application:ensure_all_started(lager),
+  application:set_env(lager, handlers, [
+    {lager_console_backend, [{level, info}, {formatter, lager_default_formatter},
+      {formatter_config, [time," [",source,"][",severity,"] ", message, "\n"]}]}]),
+  lager:md([{source, Source}]).
