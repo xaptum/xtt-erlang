@@ -212,12 +212,12 @@ initialize_daa(false = _UseTpm, DataDir, Basename, ParameterMap)->
       {error, init_client_group_context_failed}
   end;
 
-initialize_daa(true = _UseTpm, _DataDir, Basename,
+initialize_daa(true = _UseTpm, DataDir, Basename,
     #{
        use_tpm := true, %% sanity check
        tpm_host := TpmHostname,
        tpm_port:= TpmPort,
-       tpm_password := TpmPassword} = _ParameterMap)->
+       tpm_password := TpmPassword} = ParameterMap)->
 
   case xaptum_tpm:tss2_tcti_initialize_socket(TpmHostname, TpmPort) of
     {ok, TctiContext} ->
@@ -227,8 +227,10 @@ initialize_daa(true = _UseTpm, _DataDir, Basename,
 
           {ok, Credential} = xaptum_tpm:tss2_sys_nv_read(?XTT_DAA_CRED_SIZE, ?CRED_HANDLE, SapiContext),
 
-          case xtt_init_client_group_contextTPM(
-                Gpk, Credential, Basename, ?KEY_HANDLE, TpmPassword, size(TpmPassword), TctiContext) of
+          PrivKeyFile = maps:get(priv_key_filename, ParameterMap, filename:join([DataDir, ?DAA_SECRETKEY_FILE])),
+          {ok, PrivKey} = file:read_file(PrivKeyFile),
+
+          case xtt_init_client_group_context(Gpk, PrivKey, Credential, Basename) of
             {ok, GroupCtxTPM} ->
 
               lager:info("Resulting GroupCtx: ~p", [GroupCtxTPM]),

@@ -310,7 +310,7 @@ puts("START NIF: xtt_init_client_group_contextTPM...\n");
     printf("gid: %s (size %d)\n", gid.data, sizeof(gid));
     printf("daaCredBin: %s (size %d)\n", daaCredBin.data, daaCredBin.size);
     printf("basename: %s (size %d)\n", basenameBin.data, basenameBin.size);
-    printf("key_handle: %d\n", key_handle);
+    printf("key_handle: %lu\n", key_handle);
     printf("tpm_password: %s of size %d and tpm_password_len arg %d\n",
         tpmPasswordBin.data, tpmPasswordBin.size, tpm_password_len);
 
@@ -582,7 +582,7 @@ xtt_handshake_build_idclientattest(ErlNifEnv* env, int argc, const ERL_NIF_TERM 
     }
 
     struct xtt_server_root_certificate_context *server_cert;
-    //typedef struct {unsigned char data[16];} xtt_identity_type;
+
     ErlNifBinary requested_client_id;
     ErlNifBinary intended_server_id;
     struct xtt_client_group_context *group_ctx;
