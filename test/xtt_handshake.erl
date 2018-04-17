@@ -69,7 +69,7 @@ client_TPM_handshake()->
 
 client_test()->
   client_handshake(),
-  timer:sleep(100),
+  timer:sleep(10000),
   client_TPM_handshake().
 
 ensure_xtt_server_started(ServerHost, ServerPort)->
