@@ -337,6 +337,10 @@ handshake_advance(Socket, _RequestedClientId, _IntendedServerId, _GroupCtx,
     {error, Reason} ->
       lager:error("Filed to send error message ~p to server due to TCP send error ~p", [ErrToSend, Reason])
   end,
+  ?XTT_RETURN_FAILURE;
+handshake_advance(_Socket, _RequestedClientId, _IntendedServerId, _GroupCtx,
+    UnexpectedInput)->
+  lager:error("Unexpected input in handshake_advance: ~p", [UnexpectedInput]),
   ?XTT_RETURN_FAILURE.
 
 lookup_cert(ClaimedRootId)->
