@@ -66,7 +66,7 @@ priv_dir() ->
 xtt_client_handshake(PropertyFileName) when is_list(PropertyFileName)->
   {ok, PropertiesBin} = file:read_file(PropertyFileName),
   xtt_client_handshake(convert_to_map(PropertiesBin));
-xtt_client_handshake(#{ server := ServerName,
+xtt_client_handshake(#{ host := Host,
                         port := Port,
                         xtt_version := XttVersion,
                         xtt_suite := XttSuite} = ParameterMap) ->
@@ -87,8 +87,8 @@ xtt_client_handshake(#{ server := ServerName,
 
           lager:info("Initialized Handshake Context ~p", [XttClientHandshakeStatus]),
 
-          lager:info("Connecting to ~p:~b.....", [ServerName, Port]),
-          {ok, Socket} = gen_tcp:connect(ServerName, Port, ?TCP_OPTIONS),
+          lager:info("Connecting to ~p:~b.....", [Host, Port]),
+          {ok, Socket} = gen_tcp:connect(Host, Port, ?TCP_OPTIONS),
           lager:info("DONE"),
 
           RC = do_handshake(Socket, RequestedClientId, IntendedServerId, GroupContext, XttClientHandshakeStatus),
