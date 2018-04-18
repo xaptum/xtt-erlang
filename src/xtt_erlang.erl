@@ -89,15 +89,15 @@ xtt_client_handshake(#{ host := Host,
   case initialize_context(UseTpm, DataDir, ParameterMap) of
     {ok, GroupContext} ->
       case xtt_init_client_handshake_context(XttVersion, XttSuite) of
-        {ok, XttClientHandshakeStatus} ->
+        {ok} ->
 
-          lager:info("Initialized Handshake Context ~p", [XttClientHandshakeStatus]),
+          lager:info("Initialized Handshake Context ~p"),
 
           lager:info("Connecting to ~p:~b.....", [Host, Port]),
           {ok, Socket} = gen_tcp:connect(Host, Port, ?TCP_OPTIONS),
           lager:info("DONE"),
 
-          RC = do_handshake(Socket, RequestedClientId, IntendedServerId, GroupContext, XttClientHandshakeStatus),
+          RC = do_handshake(Socket, RequestedClientId, IntendedServerId, GroupContext),
 
           lager:info("Handshake result: ~p", [RC]),
 
@@ -284,8 +284,8 @@ init_cert_db(RootId, RootPubkey)->
 
 
 
-do_handshake(Socket, RequestedClientId, IntendedServerId, GroupCtx, HandshakeState)->
-  Result = xtt_start_client_handshake(HandshakeState),
+do_handshake(Socket, RequestedClientId, IntendedServerId, GroupCtx)->
+  Result = xtt_start_client_handshake(),
   lager:info("Result of start_client_handshake ~p", [Result]),
   handshake_advance(Socket, RequestedClientId, IntendedServerId, GroupCtx, Result).
 
