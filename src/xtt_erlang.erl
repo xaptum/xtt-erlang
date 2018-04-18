@@ -291,6 +291,7 @@ do_handshake(Socket, RequestedClientId, IntendedServerId, GroupCtx, HandshakeSta
 
 handshake_advance(Socket,  _RequestedClientId, _IntendedServerId, _GroupCtx,
     {?XTT_RETURN_WANT_READ, BytesRequested, HandshakeState})->
+  timer:sleep(100),
   lager:info("handshake_advance at XTT_RETURN_WANT_READ ~b bytes", [BytesRequested]),
   case gen_tcp:recv(Socket, BytesRequested) of
     {ok, Bin} ->
@@ -303,6 +304,7 @@ handshake_advance(Socket,  _RequestedClientId, _IntendedServerId, _GroupCtx,
   end;
 handshake_advance(Socket, _RequestedClientId, _IntendedServerId, _GroupCtx,
     {?XTT_RETURN_WANT_WRITE, BinToWrite, HandshakeState})->
+  timer:sleep(100),
   lager:info("handshake_advance at XTT_RETURN_WANT_WRITE ~p", [BinToWrite]),
   case gen_tcp:send(Socket, BinToWrite) of
     ok ->
@@ -315,12 +317,14 @@ handshake_advance(Socket, _RequestedClientId, _IntendedServerId, _GroupCtx,
   end;
 handshake_advance(Socket,  RequestedClientId, IntendedServerId, GroupCtx,
     {?XTT_RETURN_WANT_PREPARSESERVERATTEST, HandshakeState})->
+  timer:sleep(100),
   lager:info("handshake_advance at XTT_RETURN_WANT_PREPARSESERVERATTEST"),
   Result = xtt_handshake_preparse_serverattest(HandshakeState),
   lager:info("Result of xtt_handshake_preparse_serverattest: ~p", [Result]),
   handshake_advance(Socket, RequestedClientId, IntendedServerId, GroupCtx, Result);
 handshake_advance(Socket,  RequestedClientId, IntendedServerId, GroupCtx,
     {?XTT_RETURN_WANT_BUILDIDCLIENTATTEST, ClaimedRootId, HandshakeState})->
+    timer:sleep(100),
     lager:info("handshake_advance at XTT_RETURN_WANT_BUILDIDCLIENTATTEST"),
     lager:info("Looking up server's certificate from its claimed root_id ~p", [ClaimedRootId]),
     {ClaimedRootId, ServerCert} = lookup_cert(ClaimedRootId),
@@ -330,20 +334,24 @@ handshake_advance(Socket,  RequestedClientId, IntendedServerId, GroupCtx,
     handshake_advance(Socket, RequestedClientId, ClaimedRootId, GroupCtx, Result);
 handshake_advance(Socket, RequestedClientId, IntendedServerId, GroupCtx,
     {?XTT_RETURN_WANT_PARSEIDSERVERFINISHED, HandshakeState})->
+    timer:sleep(100),
     lager:info("handshake_advance at XTT_RETURN_WANT_PARSEIDSERVERFINISHED"),
     Result = xtt_handshake_parse_idserverfinished(HandshakeState),
     lager:info("Result of xtt_handshake_parse_idserverfinished: ~p", [Result]),
     handshake_advance(Socket, RequestedClientId, IntendedServerId, GroupCtx, Result);
 handshake_advance(_Socket, _RequestedClientId, _IntendedServerId, _GroupCtx,
     {?XTT_RETURN_HANDSHAKE_FINISHED, _HandshakeState})->
+  timer:sleep(100),
   lager:info("Handshake FINISHED!"),
   ?XTT_RETURN_SUCCESS;
 handshake_advance(_Socket, _RequestedClientId, _IntendedServerId, _GroupCtx,
     {?XTT_RETURN_RECEIVED_ERROR_MSG, _HandshakeState})->
+  timer:sleep(100),
   lager:error("Received error message from server"),
   ?XTT_RETURN_RECEIVED_ERROR_MSG;
 handshake_advance(Socket, _RequestedClientId, _IntendedServerId, _GroupCtx,
     {DefaultError, ErrToSend, _HandshakeState})->
+  timer:sleep(100),
   lager:error("Encountered error during client handshake: ~p sending error ~p to server", [DefaultError, ErrToSend]),
   case gen_tcp:send(Socket, ErrToSend) of
     ok ->
@@ -354,6 +362,7 @@ handshake_advance(Socket, _RequestedClientId, _IntendedServerId, _GroupCtx,
   ?XTT_RETURN_FAILURE;
 handshake_advance(_Socket, _RequestedClientId, _IntendedServerId, _GroupCtx,
     UnexpectedInput)->
+  timer:sleep(100),
   lager:error("Unexpected input in handshake_advance: ~p", [UnexpectedInput]),
   ?XTT_RETURN_FAILURE.
 
