@@ -502,7 +502,7 @@ xtt_start_client_handshake(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 
     printf("Result of xtt_handshake_client_start %d\n", rc);
 
-    ErlNifBinary temp_bin;
+    ErlNifBinary *temp_bin;
 
      printf("Building response with ret code %d when context state is %d\n", rc, cs->ctx.state);
 
