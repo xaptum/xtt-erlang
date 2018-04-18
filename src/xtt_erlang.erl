@@ -8,7 +8,7 @@
   xtt_init_client_group_context/4,
   xtt_init_client_group_contextTPM/7,
   xtt_init_server_root_certificate_context/2,
-  xtt_start_client_handshake/1,
+  xtt_start_client_handshake/0,
   xtt_client_handshake/2,
   xtt_handshake_preparse_serverattest/0,
   xtt_handshake_build_idclientattest/4,
@@ -131,7 +131,7 @@ xtt_init_server_root_certificate_context(_RootId, _RootPubKey)->
 xtt_init_client_handshake_context(_XttVersion, _XttSuite)->
   erlang:nif_error(?LINE).
 
-xtt_start_client_handshake(_XttClientState)->
+xtt_start_client_handshake()->
   erlang:nif_error(?LINE).
 
 xtt_client_handshake( _NumBytesWritten, _BytesRead)->
