@@ -75,10 +75,12 @@ build_response(ErlNifEnv* env, int rc, ERL_NIF_TERM *state, struct client_state 
     ERL_NIF_TERM ret_code = enif_make_int(env, rc);
     ERL_NIF_TERM response;
 
+    ERL_NIF_TERM cs_term = enif_make_resource(env, cs);
+
     switch(rc){
         case XTT_RETURN_WANT_READ:
             puts("Building response for XTT_RETURN_WANT_READ\n");
-            response = enif_make_tuple3(env, ret_code, enif_make_int(env, cs->bytes_requested), *state);
+            response = enif_make_tuple3(env, ret_code, enif_make_int(env, cs->bytes_requested), cs_term);
             break;
         case XTT_RETURN_WANT_WRITE:
             puts("Building response for XTT_RETURN_WANT_WRITE\n");
@@ -86,7 +88,7 @@ build_response(ErlNifEnv* env, int rc, ERL_NIF_TERM *state, struct client_state 
             enif_alloc_binary(cs->bytes_requested, temp_bin);
             memcpy(temp_bin->data, cs->io_ptr, cs->bytes_requested);
 
-            response = enif_make_tuple3(env, ret_code, enif_make_binary(env, temp_bin), *state);
+            response = enif_make_tuple3(env, ret_code, enif_make_binary(env, temp_bin), cs_term);
             break;
         case XTT_RETURN_WANT_BUILDIDCLIENTATTEST:
             puts("Building response for XTT_RETURN_WANT_BUILDIDCLIENTATTEST\n");
@@ -94,31 +96,33 @@ build_response(ErlNifEnv* env, int rc, ERL_NIF_TERM *state, struct client_state 
             //typedef struct {unsigned char data[16];} xtt_certificate_root_id;
             enif_alloc_binary(sizeof(xtt_certificate_root_id), temp_bin);
             memcpy(temp_bin->data, &(cs->claimed_root_id), sizeof(xtt_certificate_root_id));
-            response = enif_make_tuple3(env, ret_code, enif_make_binary(env, temp_bin), *state);
+            response = enif_make_tuple3(env, ret_code, enif_make_binary(env, temp_bin), cs_term);
             break;
         case XTT_RETURN_WANT_PREPARSESERVERATTEST:
             puts("Building response for XTT_RETURN_WANT_PREPARSESERVERATTEST\n");
-            response = enif_make_tuple2(env, ret_code, *state);
+            response = enif_make_tuple2(env, ret_code, cs_term);
             break;
         case XTT_RETURN_WANT_PARSEIDSERVERFINISHED:
             puts("Building response for XTT_RETURN_WANT_PARSEIDSERVERFINISHED\n");
-            response = enif_make_tuple2(env, ret_code, *state);
+            response = enif_make_tuple2(env, ret_code, cs_term);
             break;
         case XTT_RETURN_HANDSHAKE_FINISHED:
             puts("Building response for XTT_RETURN_HANDSHAKE_FINISHED\n");
-            response = enif_make_tuple2(env, ret_code, *state);
+            response = enif_make_tuple2(env, ret_code, cs_term);
             break;
         case XTT_RETURN_RECEIVED_ERROR_MSG:
             puts("Building response for XTT_RETURN_WANT_PARSEIDSERVERFINISHED\n");
-            response = enif_make_tuple2(env, ret_code, *state);
+            response = enif_make_tuple2(env, ret_code, cs_term);
             break;
         default:
             printf("Building default response for %d\n", rc);
             printf("Creating write err_buffer of length %d from %p\n", cs->bytes_requested, cs->io_ptr);
             enif_alloc_binary(cs->bytes_requested, temp_bin);
             memcpy(temp_bin->data, cs->io_ptr, cs->bytes_requested);
-            response = enif_make_tuple3(env, ret_code,enif_make_binary(env, temp_bin), *state);
+            response = enif_make_tuple3(env, ret_code,enif_make_binary(env, temp_bin), cs_term);
     }
+
+    enif_release_resource(cs);
 
     return response;
 }
