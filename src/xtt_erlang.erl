@@ -9,7 +9,7 @@
   xtt_init_client_group_contextTPM/7,
   xtt_init_server_root_certificate_context/2,
   xtt_start_client_handshake/1,
-  xtt_client_handshake/3,
+  xtt_client_handshake/2,
   xtt_handshake_preparse_serverattest/0,
   xtt_handshake_build_idclientattest/4,
   xtt_handshake_parse_idserverfinished/0,
@@ -134,7 +134,7 @@ xtt_init_client_handshake_context(_XttVersion, _XttSuite)->
 xtt_start_client_handshake(_XttClientState)->
   erlang:nif_error(?LINE).
 
-xtt_client_handshake(_XttClientState, _NumBytesWritten, _BytesRead)->
+xtt_client_handshake( _NumBytesWritten, _BytesRead)->
   erlang:nif_error(?LINE).
 
 xtt_handshake_preparse_serverattest() ->
@@ -328,8 +328,8 @@ handshake_advance(Socket,  RequestedClientId, IntendedServerId, GroupCtx,
     lager:info("handshake_advance at XTT_RETURN_WANT_BUILDIDCLIENTATTEST"),
     lager:info("Looking up server's certificate from its claimed root_id ~p", [ClaimedRootId]),
     {ClaimedRootId, ServerCert} = lookup_cert(ClaimedRootId),
-    lager:info("Running xtt_handshake_build_idclientattest(~p, ~p, ~p, ~p, ~p)", [ServerCert, RequestedClientId, IntendedServerId, GroupCtx, HandshakeState]),
-    Result = xtt_handshake_build_idclientattest(ServerCert, RequestedClientId, IntendedServerId, GroupCtx, HandshakeState),
+    lager:info("Running xtt_handshake_build_idclientattest(~p, ~p, ~p, ~p)", [ServerCert, RequestedClientId, IntendedServerId, GroupCtx]),
+    Result = xtt_handshake_build_idclientattest(ServerCert, RequestedClientId, IntendedServerId, GroupCtx),
     lager:info("Result of xtt_handshake_build_idclientattest: ~p", [Result]),
     handshake_advance(Socket, RequestedClientId, ClaimedRootId, GroupCtx, Result);
 handshake_advance(Socket, RequestedClientId, IntendedServerId, GroupCtx,
