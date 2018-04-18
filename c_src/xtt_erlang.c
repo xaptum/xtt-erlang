@@ -471,7 +471,7 @@ xtt_init_client_handshake_context(ErlNifEnv* env, int argc, const ERL_NIF_TERM a
      }
      else {
         puts("SUCCESS\n");
-        result = enif_make_tuple2(env, ATOM_OK);
+        result = enif_make_tuple1(env, ATOM_OK);
      }
 
      return result;
