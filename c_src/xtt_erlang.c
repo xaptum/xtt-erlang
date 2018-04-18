@@ -67,7 +67,7 @@ load(ErlNifEnv* env, void** priv, ERL_NIF_TERM load_info)
 
 // *************** INTERNAL FUNCTIONS *****************
 
-static ERL_NIF_TERM
+inline ERL_NIF_TERM
 build_response(ErlNifEnv* env, int rc, ERL_NIF_TERM *state, struct client_state *cs, ErlNifBinary *temp_bin){
 
     printf("Building response with ret code %d when context state is %d\n", rc, cs->ctx.state);
@@ -119,7 +119,7 @@ build_response(ErlNifEnv* env, int rc, ERL_NIF_TERM *state, struct client_state 
             printf("Creating write err_buffer of length %d from %p\n", cs->bytes_requested, cs->io_ptr);
             enif_alloc_binary(cs->bytes_requested, temp_bin);
             memcpy(temp_bin->data, cs->io_ptr, cs->bytes_requested);
-            response = enif_make_tuple3(env, ret_code,enif_make_binary(env, temp_bin), cs_term);
+            response = enif_make_tuple3(env, ret_code, enif_make_binary(env, temp_bin), cs_term);
     }
 
     enif_release_resource(cs);
