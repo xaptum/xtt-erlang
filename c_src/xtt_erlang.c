@@ -67,7 +67,7 @@ load(ErlNifEnv* env, void** priv, ERL_NIF_TERM load_info)
 
 // *************** INTERNAL FUNCTIONS *****************
 
-inline ERL_NIF_TERM
+static inline ERL_NIF_TERM
 build_response(ErlNifEnv* env, int rc, ERL_NIF_TERM *state, struct client_state *cs, ErlNifBinary *temp_bin){
 
     printf("Building response with ret code %d when context state is %d\n", rc, cs->ctx.state);
