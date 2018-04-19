@@ -68,13 +68,12 @@ load(ErlNifEnv* env, void** priv, ERL_NIF_TERM load_info)
 // *************** INTERNAL FUNCTIONS *****************
 
 static ERL_NIF_TERM
-build_response(ErlNifEnv* env, int rc, ERL_NIF_TERM *cs_term, struct client_state *cs, ErlNifBinary *temp_bin_not_used){
+build_response(ErlNifEnv* env, int rc, ERL_NIF_TERM *cs_term, struct client_state *cs, ErlNifBinary *temp_bin){
 
     printf("Building response with ret code %d when context state is %d\n", rc, cs->ctx.state);
 
     ERL_NIF_TERM ret_code = enif_make_int(env, rc);
     ERL_NIF_TERM response;
-    ErlNifBinary *temp_bin;
 
     switch(rc){
         case XTT_RETURN_WANT_READ:
