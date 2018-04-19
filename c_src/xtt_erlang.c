@@ -86,7 +86,7 @@ build_response(ErlNifEnv* env, int rc, ERL_NIF_TERM *cs_term, struct client_stat
             enif_alloc_binary(cs->bytes_requested, temp_bin);
             memcpy(temp_bin->data, cs->io_ptr, cs->bytes_requested);
 
-            response = enif_make_tuple3(env, ret_code, enif_make_binary(env, write_bin), *cs_term);
+            response = enif_make_tuple3(env, ret_code, enif_make_binary(env, temp_bin), *cs_term);
             break;
         case XTT_RETURN_WANT_BUILDIDCLIENTATTEST:
             puts("Building response for XTT_RETURN_WANT_BUILDIDCLIENTATTEST\n");
