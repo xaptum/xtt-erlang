@@ -75,8 +75,6 @@ build_response(ErlNifEnv* env, int rc, ERL_NIF_TERM *cs_term, struct client_stat
     ERL_NIF_TERM ret_code = enif_make_int(env, rc);
     ERL_NIF_TERM response;
 
-//    ERL_NIF_TERM cs_term = enif_make_resource(env, cs);
-
     switch(rc){
         case XTT_RETURN_WANT_READ:
             puts("Building response for XTT_RETURN_WANT_READ\n");
@@ -121,8 +119,6 @@ build_response(ErlNifEnv* env, int rc, ERL_NIF_TERM *cs_term, struct client_stat
             memcpy(temp_bin->data, cs->io_ptr, cs->bytes_requested);
             response = enif_make_tuple3(env, ret_code, enif_make_binary(env, temp_bin), *cs_term);
     }
-
-    enif_release_resource(cs);
 
     return response;
 }
