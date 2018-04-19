@@ -561,8 +561,6 @@ xtt_client_handshake(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]){
                                &(cs->io_ptr),
                                &(cs->ctx));
 
-
-    else
     ErlNifBinary *temp_bin;
 
     return build_response(env, rc, &cs_term, cs, &temp_bin);
