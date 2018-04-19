@@ -508,7 +508,7 @@ xtt_start_client_handshake(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
         enif_alloc_binary(cs->bytes_requested, write_bin);
         memcpy(write_bin->data, cs->io_ptr, cs->bytes_requested);
 
-        return enif_make_tuple3(env, enif_make_int(env, rc), enif_make_binary(env, write_bin), *cs_term);
+        return enif_make_tuple3(env, enif_make_int(env, rc), enif_make_binary(env, write_bin), &cs_term);
     }
 
     ErlNifBinary *temp_bin;
