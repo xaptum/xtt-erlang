@@ -83,9 +83,8 @@ build_response(ErlNifEnv* env, int rc, ERL_NIF_TERM *cs_term, struct client_stat
         case XTT_RETURN_WANT_WRITE:
             puts("Building response for XTT_RETURN_WANT_WRITE\n");
             printf("Creating write buffer of length %d from %p\n", cs->bytes_requested, cs->io_ptr);
-            ErlNifBinary *write_bin;
-            enif_alloc_binary(cs->bytes_requested, write_bin);
-            memcpy(write_bin->data, cs->io_ptr, cs->bytes_requested);
+            enif_alloc_binary(cs->bytes_requested, temp_bin);
+            memcpy(temp_bin->data, cs->io_ptr, cs->bytes_requested);
 
             response = enif_make_tuple3(env, ret_code, enif_make_binary(env, write_bin), *cs_term);
             break;
@@ -501,17 +500,7 @@ xtt_start_client_handshake(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 
     printf("Result of xtt_handshake_client_start %d\n", rc);
 
-    if (rc == XTT_RETURN_WANT_WRITE){
-        puts("xtt_start_client_handshake building response just for XTT_RETURN_WANT_WRITE\n");
-        printf("Creating write buffer of length %d from %p\n", cs->bytes_requested, cs->io_ptr);
-        ErlNifBinary *write_bin;
-        enif_alloc_binary(cs->bytes_requested, write_bin);
-        memcpy(write_bin->data, cs->io_ptr, cs->bytes_requested);
-
-        return enif_make_tuple3(env, enif_make_int(env, rc), enif_make_binary(env, write_bin), &cs_term);
-    }
-
-    ErlNifBinary *temp_bin;
+    ErlNifBinary temp_bin;
 
     return build_response(env, rc, &cs_term, cs, &temp_bin);
 }
