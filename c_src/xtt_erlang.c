@@ -195,10 +195,10 @@ xtt_init_client_group_context(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[
     if (0 != hash_ret)
         return enif_make_int(env, -1);
 
-    printf("gid: %s (size %d)\n", gid.data, sizeof(gid));
-    printf("daaPrivKey: %s (size %d)\n", daaPrivKeyBin.data, daaPrivKeyBin.size);
-    printf("daaCredBin: %s (size %d)\n", daaCredBin.data, daaCredBin.size);
-    printf("basename: %s (size %d)\n", basenameBin.data, basenameBin.size);
+    printf("gid: %s (size %lu)\n", gid.data, sizeof(gid));
+    printf("daaPrivKey: %s (size %lu)\n", daaPrivKeyBin.data, daaPrivKeyBin.size);
+    printf("daaCredBin: %s (size %lu)\n", daaCredBin.data, daaCredBin.size);
+    printf("basename: %s (size %lu)\n", basenameBin.data, basenameBin.size);
 
     xtt_daa_priv_key_lrsw  *xtt_daa_priv_key = enif_alloc_resource(STRUCT_RESOURCE_TYPE, sizeof(xtt_daa_priv_key_lrsw));
     xtt_daa_credential_lrsw *xtt_daa_cred = enif_alloc_resource(STRUCT_RESOURCE_TYPE, sizeof(xtt_daa_credential_lrsw));
@@ -336,11 +336,11 @@ puts("START NIF: xtt_init_client_group_contextTPM...\n");
 
 
     puts("Starting xtt_initialize_client_group_context_lrswTPM with args:\n");
-    printf("gid: %s (size %d)\n", gid.data, sizeof(gid));
-    printf("daaCredBin: %s (size %d)\n", daaCredBin.data, daaCredBin.size);
-    printf("basename: %s (size %d)\n", basenameBin.data, basenameBin.size);
-    printf("key_handle: %d\n", key_handle);
-    printf("tpm_password: %s of size %d and tpm_password_len arg %d\n",
+    printf("gid: %s (size %zu)\n", gid.data, sizeof(gid));
+    printf("daaCredBin: %s (size %lu)\n", daaCredBin.data, daaCredBin.size);
+    printf("basename: %s (size %lu)\n", basenameBin.data, basenameBin.size);
+    printf("key_handle: %zu\n", key_handle);
+    printf("tpm_password: %s of size %lu and tpm_password_len arg %zu\n",
         tpmPasswordBin.data, tpmPasswordBin.size, tpm_password_len);
 
 
@@ -563,7 +563,7 @@ xtt_client_handshake(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]){
         puts("DONE\n");
     }
     else{
-        printf("Received bytes: %d Written bytes: %d\n", received_bin.size, bytes_written);
+        printf("Received bytes: %lu Written bytes: %zu\n", received_bin.size, bytes_written);
     }
 
     xtt_return_code_type rc = xtt_handshake_client_handle_io(
