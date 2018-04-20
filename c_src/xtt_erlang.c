@@ -333,7 +333,7 @@ puts("START NIF: xtt_init_client_group_contextTPM...\n");
                                                                      basenameBin.data,
                                                                      basenameBin.size,
                                                                      key_handle,
-                                                                     tpmPasswordBin.data,
+                                                                     (const char *) tpmPasswordBin.data,
                                                                      tpm_password_len,
                                                                      tcti_context);
 
@@ -577,7 +577,7 @@ xtt_handshake_preparse_serverattest(ErlNifEnv* env, int argc, const ERL_NIF_TERM
                                                     &(cs->io_ptr),
                                                     &(cs->ctx));
 
-    ErlNifBinary *temp_bin;
+    ErlNifBinary temp_bin;
 
     return build_response(env, rc, &cs_term, cs, &temp_bin);
 }
