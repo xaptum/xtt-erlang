@@ -316,6 +316,12 @@ puts("START NIF: xtt_init_client_group_contextTPM...\n");
     if (0 != hash_ret)
         return enif_make_int(env, -1);
 
+    // TROUBLESHOOTING START
+    char tpm_password[] = "";
+    int tpm_password_size  = strlen(tpm_password);
+    // TROUBLESHOOTING END
+
+
     puts("Starting xtt_initialize_client_group_context_lrswTPM with args:\n");
     printf("gid: %s (size %d)\n", gid.data, sizeof(gid));
     printf("daaCredBin: %s (size %d)\n", daaCredBin.data, daaCredBin.size);
@@ -323,6 +329,7 @@ puts("START NIF: xtt_init_client_group_contextTPM...\n");
     printf("key_handle: %d\n", key_handle);
     printf("tpm_password: %s of size %d and tpm_password_len arg %d\n",
         tpmPasswordBin.data, tpmPasswordBin.size, tpm_password_len);
+
 
     xtt_daa_credential_lrsw *xtt_daa_cred = enif_alloc_resource(STRUCT_RESOURCE_TYPE, sizeof(xtt_daa_credential_lrsw));
     memcpy(xtt_daa_cred->data, daaCredBin.data, sizeof(xtt_daa_credential_lrsw));
@@ -333,8 +340,10 @@ puts("START NIF: xtt_init_client_group_contextTPM...\n");
                                                                      basenameBin.data,
                                                                      basenameBin.size,
                                                                      key_handle,
-                                                                     (const char *) tpmPasswordBin.data,
-                                                                     tpm_password_len,
+                                                                     tpm_password,
+                                                                     tpm_password_size,
+//                                                                     (const char *) tpmPasswordBin.data,
+//                                                                     tpm_password_len,
                                                                      tcti_context);
 
     printf("Finished xtt_initialize_client_group_context_lrswTPM with return code %d\n", rc);
