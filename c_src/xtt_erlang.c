@@ -184,7 +184,7 @@ xtt_init_client_group_context(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[
     struct xtt_client_group_context *group_ctx = enif_alloc_resource(GROUP_CONTEXT_RESOURCE_TYPE, sizeof(struct xtt_client_group_context));
 
     if(group_ctx == NULL){
-        puts("Failed to allocate xtt_client_group_context group_ctx_out!\n");
+        puts("Failed to allocate xtt_client_group_context group_ctx!\n");
         return enif_make_badarg(env);
     }
 
@@ -223,10 +223,10 @@ xtt_init_client_group_context(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[
     }
     else{
         puts("SUCCESS\n");
-        result = enif_make_tuple2(env, ATOM_OK, enif_make_resource(env, group_ctx_out));
+        result = enif_make_tuple2(env, ATOM_OK, enif_make_resource(env, group_ctx));
     }
 
-    enif_release_resource(group_ctx_out);
+    enif_release_resource(group_ctx);
 
     return result;
 }
