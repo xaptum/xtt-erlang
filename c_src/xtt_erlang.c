@@ -5,7 +5,7 @@
 
 extern ErlNifResourceType* TCTI_RESOURCE_TYPE;
 
-#define USE_TPM 1
+//#define USE_TPM 1
 
 ERL_NIF_TERM ATOM_OK;
 ERL_NIF_TERM ATOM_ERROR;
