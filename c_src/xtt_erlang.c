@@ -195,7 +195,7 @@ xtt_init_client_group_context(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[
     if (0 != hash_ret)
         return enif_make_int(env, -1);
 
-    printf("gid: %s (size %lu)\n", gid.data, sizeof(gid));
+    printf("gid: %s (size %zu)\n", gid.data, sizeof(gid));
     printf("daaPrivKey: %s (size %lu)\n", daaPrivKeyBin.data, daaPrivKeyBin.size);
     printf("daaCredBin: %s (size %lu)\n", daaCredBin.data, daaCredBin.size);
     printf("basename: %s (size %lu)\n", basenameBin.data, basenameBin.size);
