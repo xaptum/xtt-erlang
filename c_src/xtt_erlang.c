@@ -181,9 +181,9 @@ xtt_init_client_group_context(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[
         return enif_make_badarg(env);
     }
 
-    struct xtt_client_group_context *group_ctx_out = enif_alloc_resource(GROUP_CONTEXT_RESOURCE_TYPE, sizeof(struct xtt_client_group_context));
+    struct xtt_client_group_context *group_ctx = enif_alloc_resource(GROUP_CONTEXT_RESOURCE_TYPE, sizeof(struct xtt_client_group_context));
 
-    if(group_ctx_out == NULL){
+    if(group_ctx == NULL){
         puts("Failed to allocate xtt_client_group_context group_ctx_out!\n");
         return enif_make_badarg(env);
     }
@@ -206,7 +206,7 @@ xtt_init_client_group_context(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[
     memcpy(xtt_daa_priv_key->data, daaPrivKeyBin.data, sizeof(xtt_daa_priv_key_lrsw));
     memcpy(xtt_daa_cred->data, daaCredBin.data, sizeof(xtt_daa_credential_lrsw));
 
-    xtt_return_code_type rc = xtt_initialize_client_group_context_lrsw(group_ctx_out,
+    xtt_return_code_type rc = xtt_initialize_client_group_context_lrsw(group_ctx,
                                   &gid,
                                   xtt_daa_priv_key,
                                   xtt_daa_cred,
@@ -302,12 +302,10 @@ puts("START NIF: xtt_init_client_group_contextTPM...\n");
         return enif_make_badarg(env);
     }
 
-    struct xtt_client_group_context *group_ctx =
-        enif_alloc_resource(GROUP_CONTEXT_RESOURCE_TYPE, sizeof(struct xtt_client_group_context));
+    struct xtt_client_group_context *group_ctx = enif_alloc_resource(GROUP_CONTEXT_RESOURCE_TYPE, sizeof(struct xtt_client_group_context));
 
     if(group_ctx == NULL){
         puts("Failed to allocate resource for struct xtt_client_group_context group_ctx!\n");
-        puts("\n");
         return enif_make_tuple2(env, ATOM_ERROR, enif_make_int(env, 1));
     }
 
@@ -321,6 +319,19 @@ puts("START NIF: xtt_init_client_group_contextTPM...\n");
     uint16_t tpm_password_size = 0;
 
     uint32_t key_handle_g = 0x81800000;
+
+    TSS2_TCTI_CONTEXT *tcti_context_new;
+    const char *tpm_hostname_g = "localhost";
+    const char *tpm_port_g = "2321";
+    unsigned char tcti_context_buffer_g[128];
+    assert(tss2_tcti_getsize_socket() < sizeof(tcti_context_buffer_g));
+    tcti_context = (TSS2_TCTI_CONTEXT*)tcti_context_buffer_g;
+    int tcti_ret = tss2_tcti_init_socket(tpm_hostname_g, tpm_port_g, tcti_context);
+    if (TSS2_RC_SUCCESS != tcti_ret) {
+                fprintf(stderr, "Error: Unable to initialize TCTI context\n");
+                return -1;
+            }
+
     // TROUBLESHOOTING END
 
 
@@ -347,7 +358,7 @@ puts("START NIF: xtt_init_client_group_contextTPM...\n");
                                                                      tpm_password_size,
 //                                                                     (const char *) tpmPasswordBin.data,
 //                                                                     tpm_password_len,
-                                                                     tcti_context);
+                                                                     tcti_context_new);
 
     printf("Finished xtt_initialize_client_group_context_lrswTPM with return code %d\n", rc);
 
