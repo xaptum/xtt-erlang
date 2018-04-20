@@ -319,6 +319,8 @@ puts("START NIF: xtt_init_client_group_contextTPM...\n");
     // TROUBLESHOOTING START
     const char *tpm_password = NULL;
     uint16_t tpm_password_size = 0;
+
+    uint32_t key_handle_g = 0x81800000;
     // TROUBLESHOOTING END
 
 
@@ -339,7 +341,8 @@ puts("START NIF: xtt_init_client_group_contextTPM...\n");
                                                                      xtt_daa_cred,
                                                                      basenameBin.data,
                                                                      basenameBin.size,
-                                                                     key_handle,
+                                                                     key_handle_g,
+//                                                                     key_handle,
                                                                      tpm_password,
                                                                      tpm_password_size,
 //                                                                     (const char *) tpmPasswordBin.data,
