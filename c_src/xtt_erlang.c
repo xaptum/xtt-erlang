@@ -326,11 +326,12 @@ puts("START NIF: xtt_init_client_group_contextTPM...\n");
     unsigned char tcti_context_buffer_g[128];
     assert(tss2_tcti_getsize_socket() < sizeof(tcti_context_buffer_g));
     tcti_context = (TSS2_TCTI_CONTEXT*)tcti_context_buffer_g;
+    printf("Creating new tcti socket at %s:%s\n", tpm_hostname_g, tpm_port_g);
     int tcti_ret = tss2_tcti_init_socket(tpm_hostname_g, tpm_port_g, tcti_context);
     if (TSS2_RC_SUCCESS != tcti_ret) {
-                fprintf(stderr, "Error: Unable to initialize TCTI context\n");
-                return -1;
-            }
+        fprintf(stderr, "Error: Unable to initialize new TCTI context, using existing one!\n");
+        tcti_context_new = tcti_context;
+    }
 
     // TROUBLESHOOTING END
 
