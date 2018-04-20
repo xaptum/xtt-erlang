@@ -317,8 +317,8 @@ puts("START NIF: xtt_init_client_group_contextTPM...\n");
         return enif_make_int(env, -1);
 
     // TROUBLESHOOTING START
-    char tpm_password[] = "";
-    int tpm_password_size  = strlen(tpm_password);
+    const char *tpm_password = NULL;
+    uint16_t tpm_password_size = 0;
     // TROUBLESHOOTING END
 
 
