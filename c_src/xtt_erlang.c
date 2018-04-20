@@ -540,7 +540,7 @@ xtt_client_handshake(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]){
                                &(cs->io_ptr),
                                &(cs->ctx));
 
-    ErlNifBinary *temp_bin;
+    ErlNifBinary temp_bin;
 
     return build_response(env, rc, &cs_term, cs, &temp_bin);
 }
@@ -567,7 +567,7 @@ xtt_handshake_preparse_serverattest(ErlNifEnv* env, int argc, const ERL_NIF_TERM
                                                     &(cs->io_ptr),
                                                     &(cs->ctx));
 
-    ErlNifBinary *temp_bin;
+    ErlNifBinary temp_bin;
 
     return build_response(env, rc, &cs_term, cs, &temp_bin);
 }
@@ -638,9 +638,9 @@ xtt_handshake_build_idclientattest(ErlNifEnv* env, int argc, const ERL_NIF_TERM 
                                                        group_ctx,
                                                        &(cs->ctx));
 
-    ErlNifBinary *temp_bin;
+     ErlNifBinary temp_bin;
 
-    return build_response(env, rc, &cs_term, cs, &temp_bin);
+     return build_response(env, rc, &cs_term, cs, &temp_bin);
 }
 
 static ERL_NIF_TERM
@@ -663,7 +663,7 @@ xtt_handshake_parse_idserverfinished(ErlNifEnv* env, int argc, const ERL_NIF_TER
     xtt_return_code_type rc = xtt_handshake_client_parse_idserverfinished(&(cs->bytes_requested),
                                                      &(cs->io_ptr),
                                                      &(cs->ctx));
-    ErlNifBinary *temp_bin;
+    ErlNifBinary temp_bin;
 
     return build_response(env, rc, &cs_term, cs, &temp_bin);
 }
