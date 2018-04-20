@@ -3,6 +3,10 @@
 #include <xtt.h>
 #include <erl_nif.h>
 
+// TODO REMOVE
+#include <tss2/tss2_sys.h>
+#include <tss2/tss2_tcti_socket.h>
+
 extern ErlNifResourceType* TCTI_RESOURCE_TYPE;
 
 //#define USE_TPM 1
@@ -314,17 +318,17 @@ puts("START NIF: xtt_init_client_group_contextTPM...\n");
     if (0 != hash_ret)
         return enif_make_int(env, -1);
 
-    // TROUBLESHOOTING START
+    // TODO REMOVE: TROUBLESHOOTING START
     const char *tpm_password = NULL;
     uint16_t tpm_password_size = 0;
 
     uint32_t key_handle_g = 0x81800000;
 
-    TSS2_TCTI_CONTEXT *tcti_context_new;
+    TSS2_TCTI_CONTEXT *tcti_context_new = NULL;
     const char *tpm_hostname_g = "localhost";
     const char *tpm_port_g = "2321";
     unsigned char tcti_context_buffer_g[128];
-    assert(tss2_tcti_getsize_socket() < sizeof(tcti_context_buffer_g));
+//    assert(tss2_tcti_getsize_socket() < sizeof(tcti_context_buffer_g));
     tcti_context = (TSS2_TCTI_CONTEXT*)tcti_context_buffer_g;
     printf("Creating new tcti socket at %s:%s\n", tpm_hostname_g, tpm_port_g);
     int tcti_ret = tss2_tcti_init_socket(tpm_hostname_g, tpm_port_g, tcti_context);
@@ -333,15 +337,15 @@ puts("START NIF: xtt_init_client_group_contextTPM...\n");
         tcti_context_new = tcti_context;
     }
 
-    // TROUBLESHOOTING END
+    // TODO REMOVE: TROUBLESHOOTING END
 
 
     puts("Starting xtt_initialize_client_group_context_lrswTPM with args:\n");
     printf("gid: %s (size %zu)\n", gid.data, sizeof(gid));
     printf("daaCredBin: %s (size %lu)\n", daaCredBin.data, daaCredBin.size);
     printf("basename: %s (size %lu)\n", basenameBin.data, basenameBin.size);
-    printf("key_handle: %zu\n", key_handle);
-    printf("tpm_password: %s of size %lu and tpm_password_len arg %zu\n",
+    printf("key_handle: %lu\n", key_handle);
+    printf("tpm_password: %s of size %lu and tpm_password_len arg %d\n",
         tpmPasswordBin.data, tpmPasswordBin.size, tpm_password_len);
 
 
@@ -718,7 +722,7 @@ xtt_build_error_msg(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]){
   // (void)build_error_msg(err_buffer, &bytes_requested, version);
 
    uint16_t *err_buff_len = (uint16_t *) 16;
-   ErlNifBinary *err_buffer_bin;
+   ErlNifBinary *err_buffer_bin = NULL;
    enif_alloc_binary((size_t) err_buff_len, err_buffer_bin);
    (void)build_error_msg(err_buffer_bin->data, err_buff_len, version);
    //         memcpy(err_buffer_bin->data, err_buffer, sizeof(err_buffer);
