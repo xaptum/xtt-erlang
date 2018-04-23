@@ -350,7 +350,7 @@ puts("START NIF: xtt_init_client_group_contextTPM...\n");
 
     xtt_return_code_type rc = xtt_initialize_client_group_context_lrswTPM(group_ctx,
                                                                      &gid,
-                                                                     (xtt_daa_credential_lrsw *) xtt_daa_credential_lrsw.data,
+                                                                     (xtt_daa_credential_lrsw *) daaCredBin.data,
                                                                      basenameBin.data,
                                                                      basenameBin.size,
                                                                      key_handle_g,
