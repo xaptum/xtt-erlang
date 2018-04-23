@@ -348,13 +348,9 @@ puts("START NIF: xtt_init_client_group_contextTPM...\n");
     printf("tpm_password: %s of size %lu and tpm_password_len arg %d\n",
         tpmPasswordBin.data, tpmPasswordBin.size, tpm_password_len);
 
-
-    xtt_daa_credential_lrsw *xtt_daa_cred = enif_alloc_resource(STRUCT_RESOURCE_TYPE, sizeof(xtt_daa_credential_lrsw));
-    memcpy(xtt_daa_cred->data, daaCredBin.data, sizeof(xtt_daa_credential_lrsw));
-
     xtt_return_code_type rc = xtt_initialize_client_group_context_lrswTPM(group_ctx,
                                                                      &gid,
-                                                                     xtt_daa_cred,
+                                                                     (xtt_daa_credential_lrsw *) xtt_daa_credential_lrsw.data,
                                                                      basenameBin.data,
                                                                      basenameBin.size,
                                                                      key_handle_g,
