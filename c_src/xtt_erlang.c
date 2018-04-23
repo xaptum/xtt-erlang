@@ -661,17 +661,11 @@ xtt_handshake_build_idclientattest(ErlNifEnv* env, int argc, const ERL_NIF_TERM 
             return enif_make_badarg(env);
     }
 
-    xtt_identity_type  *xtt_requested_client_id = enif_alloc_resource(STRUCT_RESOURCE_TYPE, sizeof(xtt_identity_type));
-    xtt_identity_type *xtt_intended_server_id = enif_alloc_resource(STRUCT_RESOURCE_TYPE, sizeof(xtt_identity_type));
-
-    memcpy(xtt_requested_client_id->data, requested_client_id.data, sizeof(xtt_identity_type));
-    memcpy(xtt_intended_server_id->data, intended_server_id.data, sizeof(xtt_identity_type));
-
     xtt_return_code_type rc = xtt_handshake_client_build_idclientattest(&(cs->bytes_requested),
                                                        &(cs->io_ptr),
                                                        server_cert,
-                                                       xtt_requested_client_id,
-                                                       xtt_intended_server_id,
+                                                       (xtt_identity_type *) requested_client_id.data,
+                                                       (xtt_identity_type *) intended_server_id.data,
                                                        group_ctx,
                                                        &(cs->ctx));
 
