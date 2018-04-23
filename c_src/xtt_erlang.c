@@ -339,6 +339,7 @@ puts("START NIF: xtt_init_client_group_contextTPM...\n");
 
 
     // 1) Read DAA-related things in from file/TPM-NVRAM
+    const char *basename_file = "basename.bin";
         unsigned char basename[1024];
         read_ret = read_file_into_buffer(basename, sizeof(basename), basename_file);
         if (read_ret < 0) {
