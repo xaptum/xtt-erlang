@@ -341,7 +341,7 @@ puts("START NIF: xtt_init_client_group_contextTPM...\n");
     // 1) Read DAA-related things in from file/TPM-NVRAM
     const char *basename_file = "basename.bin";
         unsigned char basename[1024];
-        read_ret = read_file_into_buffer(basename, sizeof(basename), basename_file);
+        int read_ret = read_file_into_buffer(basename, sizeof(basename), basename_file);
         if (read_ret < 0) {
             fprintf(stderr, "Error reading basename from file\n");
             return -1;
@@ -349,6 +349,7 @@ puts("START NIF: xtt_init_client_group_contextTPM...\n");
         uint16_t basename_len = (uint16_t)read_ret;
 
 
+    const char *daa_cred_file = "daa_cred.bin";
     xtt_daa_credential_lrsw cred;
             read_ret = read_file_into_buffer(cred.data, sizeof(xtt_daa_credential_lrsw), daa_cred_file);
             if (sizeof(xtt_daa_credential_lrsw) != read_ret) {
