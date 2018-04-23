@@ -337,6 +337,8 @@ puts("START NIF: xtt_init_client_group_contextTPM...\n");
         tcti_context_new = tcti_context;
     }
 
+
+    const char *basename = "BASENAME";
     // TODO REMOVE: TROUBLESHOOTING END
 
 
@@ -351,8 +353,8 @@ puts("START NIF: xtt_init_client_group_contextTPM...\n");
     xtt_return_code_type rc = xtt_initialize_client_group_context_lrswTPM(group_ctx,
                                                                      &gid,
                                                                      (xtt_daa_credential_lrsw *) daaCredBin.data,
-                                                                     basenameBin.data,
-                                                                     basenameBin.size,
+                                                                     basename,
+                                                                     strlen(basename),
                                                                      key_handle_g,
 //                                                                     key_handle,
                                                                      tpm_password,
