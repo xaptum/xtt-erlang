@@ -338,7 +338,23 @@ puts("START NIF: xtt_init_client_group_contextTPM...\n");
     }
 
 
-    const char *basename = "BASENAME";
+    // 1) Read DAA-related things in from file/TPM-NVRAM
+        unsigned char basename[1024];
+        read_ret = read_file_into_buffer(basename, sizeof(basename), basename_file);
+        if (read_ret < 0) {
+            fprintf(stderr, "Error reading basename from file\n");
+            return -1;
+        }
+        uint16_t basename_len = (uint16_t)read_ret;
+
+
+    xtt_daa_credential_lrsw cred;
+            read_ret = read_file_into_buffer(cred.data, sizeof(xtt_daa_credential_lrsw), daa_cred_file);
+            if (sizeof(xtt_daa_credential_lrsw) != read_ret) {
+                fprintf(stderr, "Error reading DAA credential from file\n");
+                return -1;
+            }
+
     // TODO REMOVE: TROUBLESHOOTING END
 
 
@@ -352,9 +368,10 @@ puts("START NIF: xtt_init_client_group_contextTPM...\n");
 
     xtt_return_code_type rc = xtt_initialize_client_group_context_lrswTPM(group_ctx,
                                                                      &gid,
-                                                                     (xtt_daa_credential_lrsw *) daaCredBin.data,
-                                                                     basename,
-                                                                     strlen(basename),
+//                                                                     (xtt_daa_credential_lrsw *) daaCredBin.data,
+                                                                     &cred,
+                                                                     (unsigned char*) basename,
+                                                                     basename_len,
                                                                      key_handle_g,
 //                                                                     key_handle,
                                                                      tpm_password,
