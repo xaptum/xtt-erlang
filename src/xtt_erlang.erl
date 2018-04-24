@@ -6,6 +6,7 @@
   xtt_client_handshake/1,
   xtt_init_client_handshake_context/2,
   xtt_init_client_group_context/4,
+  xtt_init_client_group_contextTPM/7,
   xtt_init_server_root_certificate_context/2,
   xtt_start_client_handshake/1,
   xtt_client_handshake/3,
@@ -16,10 +17,12 @@
 
 -export([priv_dir/0]).
 
+-on_load(init/0).
+
 -include("xtt.hrl").
 
--define(APPNAME, xtt_erlang).
--define(LIBNAME, 'xtt-erlang').
+-define(XTT_APPNAME, xtt_erlang).
+-define(XTT_LIBNAME, 'xtt-erlang').
 
 -define(TCP_OPTIONS, [binary, {packet, 0}, {keepalive, true}, {active, false}]).
 
@@ -28,12 +31,23 @@
 -define(CERT_TABLE, cert).
 
 init() ->
-  SoName = filename:join([priv_dir(), ?LIBNAME]),
-  lager:info("Loading NIFs from ~p", [SoName]),
-  ok = erlang:load_nif(SoName, 0).
+  application:set_env(lager, handlers, [
+    {lager_console_backend, [{level, info}, {formatter, lager_default_formatter},
+      {formatter_config, [time," [",source,"][",severity,"] ", message, "\n"]}]}]),
+  application:ensure_all_started(lager),
+  SoName = filename:join([priv_dir(), ?XTT_LIBNAME]),
+  lager:info("Loading XTT NIFs from ~p", [SoName]),
+  case erlang:load_nif(SoName, 0) of
+    ok ->
+      lager:info("Successfully loaded NIFs from ~p", [SoName]);
+    {error, {reload, ReloadMessage}} ->
+      lager:info("Reload attempt: ~p", [ReloadMessage]),
+      ok;
+    {error, RealError} -> lager:error("Error loading NIF library: ~p", [RealError])
+  end.
 
 priv_dir() ->
-  case code:priv_dir(?APPNAME) of
+  case code:priv_dir(?XTT_APPNAME) of
     {error, bad_name} ->
       case filelib:is_dir(filename:join(["..", priv])) of
         true ->
@@ -54,14 +68,16 @@ priv_dir() ->
 xtt_client_handshake(PropertyFileName) when is_list(PropertyFileName)->
   {ok, PropertiesBin} = file:read_file(PropertyFileName),
   xtt_client_handshake(convert_to_map(PropertiesBin));
-xtt_client_handshake(#{ server := ServerName,
+xtt_client_handshake(#{ host := Host,
                         port := Port,
                         xtt_version := XttVersion,
                         xtt_suite := XttSuite} = ParameterMap) ->
 
-  init(),
-
   UseTpm = maps:get(use_tpm, ParameterMap, false),
+  case UseTpm of
+    true -> lager:md([{source, "TPM"}]);
+    false -> lager:md([{source, "FILE"}])
+  end,
   DataDir = maps:get(data_dir, ParameterMap, "."),
 
   lager:info("Performing client handshake with TPM ~p", [UseTpm]),
@@ -70,27 +86,26 @@ xtt_client_handshake(#{ server := ServerName,
 
   lager:info("Initialized RequestedClientId to ~p and IntendedServerId to ~p", [RequestedClientId, IntendedServerId]),
 
-  GroupContext = initialize_daa(UseTpm, DataDir, ParameterMap),
+  ok = initialize_certs(DataDir, ParameterMap),
 
-  lager:info("Initialized Group Context ~p", [GroupContext]),
+  case xtt_init_client_handshake_context(XttVersion, XttSuite) of
+        {ok, XttClientHandshakeStatus} ->
 
-  initialize_certs(UseTpm, DataDir, ParameterMap),
+          lager:info("Initialized Handshake Context ~p", [XttClientHandshakeStatus]),
 
-  lager:info("Initialized Certificates in ~p: ~p", [?CERT_TABLE, ets:tab2list(?CERT_TABLE)]),
+          lager:info("Connecting to ~p:~b.....", [Host, Port]),
+          {ok, Socket} = gen_tcp:connect(Host, Port, ?TCP_OPTIONS),
+          lager:info("DONE"),
+          CreateGroupCtxFun = fun()->initialize_group_context(UseTpm, DataDir, ParameterMap) end,
+          RC = do_handshake(Socket, RequestedClientId, IntendedServerId, CreateGroupCtxFun, XttClientHandshakeStatus),
+          lager:info("Handshake result: ~p", [RC]),
 
-  XttClientHandshakeStatus = xtt_init_client_handshake_context(XttVersion, XttSuite),
+          RC;
+        {error, ErrorCode} ->
+          lager:error("Error ~p initializing handshake context, not performing handshake :(", [ErrorCode]),
+          {error, ErrorCode}
+  end.
 
-  lager:info("Initialized Handshake Context ~p", [XttClientHandshakeStatus]),
-
-  lager:info("Connecting to ~p:~b.....", [ServerName, Port]),
-  {ok, Socket} = gen_tcp:connect(ServerName, Port, ?TCP_OPTIONS),
-  lager:info("DONE"),
-
-  RC = do_handshake(Socket, RequestedClientId, IntendedServerId, GroupContext, XttClientHandshakeStatus),
-
-  lager:info("do_handshake result: ~p", [RC]),
-
-  RC.
 %%
 %%  {ok, RespBuffer} = gen_tcp:recv(Socket, 0),
 %%  lager:info("Finished client init!  Received buffer ~p from server ~p", [RespBuffer, ServerName]).
@@ -101,6 +116,9 @@ xtt_client_handshake(#{ server := ServerName,
 %%====================================================================
 
 xtt_init_client_group_context(_Gid, _PrivKey, _Credential, _Basename)->
+  erlang:nif_error(?LINE).
+
+xtt_init_client_group_contextTPM(_GId, _Credential, _Basename, _KeyHandle, _TPMPassword, _TPMPasswordLength, _TctiContext)->
   erlang:nif_error(?LINE).
 
 xtt_init_server_root_certificate_context(_RootId, _RootPubKey)->
@@ -155,13 +173,13 @@ initialize_ids(DataDir, ParameterMap)->
  {RequestedClientId, IntendedServerId}.
 
 
-initialize_daa(UseTpm, DataDir, ParameterMap) ->
+initialize_group_context(UseTpm, DataDir, ParameterMap) ->
   BasenameFile = maps:get(base_filename, ParameterMap, filename:join([DataDir, ?BASENAME_FILE])),
   {ok, Basename} = file:read_file(BasenameFile),
   lager:info("Basename: ~p", [Basename]),
-  initialize_daa(UseTpm, DataDir, Basename, ParameterMap).
+  do_initialize_group_context(UseTpm, DataDir, Basename, ParameterMap).
 
-initialize_daa(false = _UseTpm, DataDir, Basename, ParameterMap)->
+do_initialize_group_context(false = _UseTpm, DataDir, Basename, ParameterMap)->
   GpkFile = maps:get(gpk_filename, ParameterMap, filename:join([DataDir, ?DAA_GPK_FILE])),
   CredFile = maps:get(cred_filename, ParameterMap, filename:join([DataDir, ?DAA_CRED_FILE])),
   PrivKeyFile = maps:get(priv_key_filename, ParameterMap, filename:join([DataDir, ?DAA_SECRETKEY_FILE])),
@@ -172,111 +190,155 @@ initialize_daa(false = _UseTpm, DataDir, Basename, ParameterMap)->
 
   {ok, PrivKey} = file:read_file(PrivKeyFile),
 
-  initialize_client_group_context(Gpk, PrivKey, Credential, Basename);
-initialize_daa(true = _UseTpm, _DataDir, Basename, _ParameterMap)->
-  {ok, Gpk} = read_nvram(gpk),
-  {ok, Credential} = read_nvram(cred),
-  {ok, PrivKey} = read_nvram(priv_key),
+  %%Gid = crypto:hash(sha256, Gpk), TODO MOVE BACK INTO ERLANG?
 
-  initialize_client_group_context(Gpk, PrivKey, Credential, Basename).
-
-initialize_client_group_context(Gpk, PrivKey, Credential, Basename)->
-  %%Gid = crypto:hash(sha256, Gpk),
   lager:info("STARTing xtt_initialize_client_group_context(~p, ~p, ~p, ~p)",
     [print_bin(Gpk), print_bin(PrivKey), print_bin(Credential), Basename]),
-  GroupCtx = xtt_init_client_group_context(Gpk,PrivKey,Credential, Basename),
-  lager:info("Resulting GroupCtx: ~p", [GroupCtx]),
-  GroupCtx.
+  case xtt_init_client_group_context(Gpk, PrivKey, Credential, Basename) of
+    {ok, GroupCtx} ->
+      lager:info("Resulting GroupCtx: ~p", [GroupCtx]),
+      {ok, GroupCtx};
+    {error, ErrorCode} ->
+      lager:error("Error ~p initializing client group context", [ErrorCode]),
+      {error, init_client_group_context_failed}
+  end;
+
+do_initialize_group_context(true = _UseTpm, _DataDir, Basename,
+    #{
+       use_tpm := true, %% sanity check
+       tpm_host := TpmHostname,
+       tpm_port:= TpmPort,
+       tpm_password := TpmPassword} = _ParameterMap)->
+
+  case xaptum_tpm:tss2_tcti_initialize_socket(TpmHostname, TpmPort) of
+    {ok, TctiContext} ->
+      case  xaptum_tpm:tss2_sys_initialize(TctiContext) of
+        {ok, SapiContext} ->
+          {ok, Gpk} = xaptum_tpm:tss2_sys_nv_read(?XTT_DAA_GROUP_PUB_KEY_SIZE, ?GPK_HANDLE, SapiContext),
+
+          {ok, Credential} = xaptum_tpm:tss2_sys_nv_read(?XTT_DAA_CRED_SIZE, ?CRED_HANDLE, SapiContext),
+
+          case xtt_init_client_group_contextTPM(
+                Gpk, Credential, Basename, ?KEY_HANDLE, TpmPassword, size(TpmPassword), TctiContext) of
+            {ok, GroupCtxTPM} ->
+              lager:info("Resulting GroupCtx: ~p", [GroupCtxTPM]),
+              {ok, GroupCtxTPM};
+          {error, ErrorCode} ->
+            lager:error("Error ~p initializing client group context TPM", [ErrorCode]),
+            {error, init_client_group_context_tpm_failed}
+      end;
+    {error, _ErrorCode} -> {error, init_tss2_sys_failed}
+      end;
+    {error, _ErrorCode} -> {error, init_tss2_tcti_failed}
+  end.
+
 
 print_bin(Bin) when size(Bin) > 5->
   ?PRINT_BIN(Bin);
 print_bin(Bin) ->
   Bin.
 
-initialize_certs(false = _UseTpm, DataDir, ParameterMap)->
+initialize_certs(DataDir, ParameterMap)->
   RootIdFilename = maps:get(root_id_filename, ParameterMap, filename:join(DataDir, ?ROOT_ID_FILE)),
   RootPubkeyFilename = maps:get(root_pubkey_filename, ParameterMap, filename:join(DataDir, ?ROOT_PUBKEY_FILE)),
-
-  lager:info("Getting RootId from  ~p and RootPubKey from ~p", [RootIdFilename, RootPubkeyFilename]),
 
   {ok, RootId} = file:read_file(RootIdFilename),
   {ok, RootPubKey} = file:read_file(RootPubkeyFilename),
 
-  lager:info("Initializing cert db with RootId ~p and RootPubKey ~p", [RootId, print_bin(RootPubKey)]),
+  init_cert_db(RootId, RootPubKey).
 
-  init_cert_db(RootId, RootPubKey);
-initialize_certs(true = _UseTpm, _DataDir, ParameterMap)->
-  RootId = read_nvram(root_id),
-  RootPubKey = read_nvram(root_pub_key),
+initialize_certsTPM(SapiContext)->
+  {ok, RootId} = xaptum_tpm:tss2_sys_nv_read(?XTT_DAA_ROOT_ID_SIZE, ?ROOT_ID_HANDLE, SapiContext),
+  {ok, RootPubKey} = xaptum_tpm:tss2_sys_nv_read(?XTT_DAA_ROOT_PUB_KEY_SIZE, ?ROOT_PUBKEY_HANDLE, SapiContext),
   init_cert_db(RootId, RootPubKey).
 
 init_cert_db(RootId, RootPubkey)->
-  CertContext = xtt_init_server_root_certificate_context(RootId, RootPubkey),
-  ets:new(?CERT_TABLE, ?DEFAULT_ETS_OPTS),
-  ets:insert(?CERT_TABLE, {RootId, CertContext}). %% TODO DB: Should replace file reading stuff with write ets to disk?
+   lager:info("Initializing cert db with RootId ~p and RootPubKey ~p", [RootId, print_bin(RootPubkey)]),
+  case xtt_init_server_root_certificate_context(RootId, RootPubkey) of
+    {ok, CertContext} ->
+        case lists:member(?CERT_TABLE, ets:all()) of
+          false -> ets:new(?CERT_TABLE, ?DEFAULT_ETS_OPTS);
+          _True -> ok
+        end,
+        ets:insert(?CERT_TABLE, {RootId, CertContext}), %% TODO DB: Should replace file reading stuff with write ets to disk?
+        lager:info("Initialized Certificates in '~p' table: ~p", [?CERT_TABLE, ets:tab2list(?CERT_TABLE)]),
+        ok;
+    {error, ErrorCode} ->
+      lager:error("Error ~p initializing server root certificate context", [ErrorCode] ),
+      {error, init_cert_context_failed}
+  end.
 
-%% Should be NIF(s)
-read_nvram(root_id)-> todo;
-read_nvram(root_pub_key)->todo;
-read_nvram(gpk)->todo;
-read_nvram(cred)-> todo;
-read_nvram(priv_key)->todo.
 
-do_handshake(Socket, RequestedClientId, IntendedServerId, GroupCtx, HandshakeState)->
+
+do_handshake(Socket, RequestedClientId, IntendedServerId, GroupCtxFun, HandshakeState)->
   Result = xtt_start_client_handshake(HandshakeState),
   lager:info("Result of start_client_handshake ~p", [Result]),
-  handshake_advance(Socket, RequestedClientId, IntendedServerId, GroupCtx, Result).
+  handshake_advance(Socket, RequestedClientId, IntendedServerId, GroupCtxFun, Result).
 
-handshake_advance(Socket,  _RequestedClientId, _IntendedServerId, _GroupCtx,
+handshake_advance(Socket,  _RequestedClientId, _IntendedServerId, GroupCtxFun,
     {?XTT_RETURN_WANT_READ, BytesRequested, HandshakeState})->
+  timer:sleep(100),
   lager:info("handshake_advance at XTT_RETURN_WANT_READ ~b bytes", [BytesRequested]),
   case gen_tcp:recv(Socket, BytesRequested) of
     {ok, Bin} ->
       lager:info("Read ~p", [Bin]),
       Result = xtt_client_handshake(HandshakeState, 0, Bin),
-      handshake_advance(Socket, _RequestedClientId, _IntendedServerId, _GroupCtx, Result);
+      lager:info("Result of xtt_client_handshake WANT_READ: ~p", [Result]),
+      handshake_advance(Socket, _RequestedClientId, _IntendedServerId, GroupCtxFun, Result);
     {error, Reason} ->
       lager:error("Handshake TCP receive error ~p (BytesRequested: ~p)", [Reason, BytesRequested])
   end;
-handshake_advance(Socket, _RequestedClientId, _IntendedServerId, _GroupCtx,
+handshake_advance(Socket, _RequestedClientId, _IntendedServerId, GroupCtxFun,
     {?XTT_RETURN_WANT_WRITE, BinToWrite, HandshakeState})->
+  timer:sleep(100),
   lager:info("handshake_advance at XTT_RETURN_WANT_WRITE ~p", [BinToWrite]),
   case gen_tcp:send(Socket, BinToWrite) of
     ok ->
       lager:info("Write SUCCESS!"),
       Result = xtt_client_handshake(HandshakeState, size(BinToWrite), <<>>),
-      handshake_advance(Socket, _RequestedClientId, _IntendedServerId, _GroupCtx, Result);
+      lager:info("Result of xtt_client_handshake WANT_WRITE: ~p", [Result]),
+      handshake_advance(Socket, _RequestedClientId, _IntendedServerId, GroupCtxFun, Result);
     {error, Reason} ->
       lager:error("Handshake TCP send error ~p (BinToWrite ~p) ", [Reason, BinToWrite])
   end;
-handshake_advance(Socket,  RequestedClientId, IntendedServerId, GroupCtx,
+handshake_advance(Socket,  RequestedClientId, IntendedServerId, GroupCtxFun,
     {?XTT_RETURN_WANT_PREPARSESERVERATTEST, HandshakeState})->
+  timer:sleep(100),
   lager:info("handshake_advance at XTT_RETURN_WANT_PREPARSESERVERATTEST"),
   Result = xtt_handshake_preparse_serverattest(HandshakeState),
-  handshake_advance(Socket, RequestedClientId, IntendedServerId, GroupCtx, Result);
-handshake_advance(Socket,  RequestedClientId, IntendedServerId, GroupCtx,
+  lager:info("Result of xtt_handshake_preparse_serverattest: ~p", [Result]),
+  handshake_advance(Socket, RequestedClientId, IntendedServerId, GroupCtxFun, Result);
+handshake_advance(Socket,  RequestedClientId, IntendedServerId, GroupCtxFun,
     {?XTT_RETURN_WANT_BUILDIDCLIENTATTEST, ClaimedRootId, HandshakeState})->
+    timer:sleep(100),
     lager:info("handshake_advance at XTT_RETURN_WANT_BUILDIDCLIENTATTEST"),
     lager:info("Looking up server's certificate from its claimed root_id ~p", [ClaimedRootId]),
     {ClaimedRootId, ServerCert} = lookup_cert(ClaimedRootId),
+    {ok, GroupCtx} = GroupCtxFun(),
     lager:info("Running xtt_handshake_build_idclientattest(~p, ~p, ~p, ~p, ~p)", [ServerCert, RequestedClientId, IntendedServerId, GroupCtx, HandshakeState]),
     Result = xtt_handshake_build_idclientattest(ServerCert, RequestedClientId, IntendedServerId, GroupCtx, HandshakeState),
+    lager:info("Result of xtt_handshake_build_idclientattest: ~p", [Result]),
     handshake_advance(Socket, RequestedClientId, ClaimedRootId, GroupCtx, Result);
 handshake_advance(Socket, RequestedClientId, IntendedServerId, GroupCtx,
     {?XTT_RETURN_WANT_PARSEIDSERVERFINISHED, HandshakeState})->
+    timer:sleep(100),
     lager:info("handshake_advance at XTT_RETURN_WANT_PARSEIDSERVERFINISHED"),
     Result = xtt_handshake_parse_idserverfinished(HandshakeState),
+    lager:info("Result of xtt_handshake_parse_idserverfinished: ~p", [Result]),
     handshake_advance(Socket, RequestedClientId, IntendedServerId, GroupCtx, Result);
-handshake_advance(_Socket, _RequestedClientId, _IntendedServerId, _GroupCtx,
+handshake_advance(_Socket, _RequestedClientId, _IntendedServerId, GroupCtx,
     {?XTT_RETURN_HANDSHAKE_FINISHED, _HandshakeState})->
+  timer:sleep(100),
   lager:info("Handshake FINISHED!"),
   ?XTT_RETURN_SUCCESS;
 handshake_advance(_Socket, _RequestedClientId, _IntendedServerId, _GroupCtx,
     {?XTT_RETURN_RECEIVED_ERROR_MSG, _HandshakeState})->
+  timer:sleep(100),
   lager:error("Received error message from server"),
   ?XTT_RETURN_RECEIVED_ERROR_MSG;
 handshake_advance(Socket, _RequestedClientId, _IntendedServerId, _GroupCtx,
     {DefaultError, ErrToSend, _HandshakeState})->
+  timer:sleep(100),
   lager:error("Encountered error during client handshake: ~p sending error ~p to server", [DefaultError, ErrToSend]),
   case gen_tcp:send(Socket, ErrToSend) of
     ok ->
@@ -284,6 +346,11 @@ handshake_advance(Socket, _RequestedClientId, _IntendedServerId, _GroupCtx,
     {error, Reason} ->
       lager:error("Filed to send error message ~p to server due to TCP send error ~p", [ErrToSend, Reason])
   end,
+  ?XTT_RETURN_FAILURE;
+handshake_advance(_Socket, _RequestedClientId, _IntendedServerId, _GroupCtx,
+    UnexpectedInput)->
+  timer:sleep(100),
+  lager:error("Unexpected input in handshake_advance: ~p", [UnexpectedInput]),
   ?XTT_RETURN_FAILURE.
 
 lookup_cert(ClaimedRootId)->
