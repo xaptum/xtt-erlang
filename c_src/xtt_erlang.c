@@ -318,30 +318,6 @@ puts("START NIF: xtt_init_client_group_contextTPM...\n");
     if (0 != hash_ret)
         return enif_make_int(env, -1);
 
-    // TODO REMOVE: TROUBLESHOOTING START
-    const char *tpm_password = NULL;
-    uint16_t tpm_password_size = 0;
-
-    uint32_t key_handle_g = 0x81800000;
-
-    TSS2_TCTI_CONTEXT *tcti_context_new = NULL;
-    const char *tpm_hostname_g = "localhost";
-    const char *tpm_port_g = "2321";
-    unsigned char tcti_context_buffer_g[128];
-//    assert(tss2_tcti_getsize_socket() < sizeof(tcti_context_buffer_g));
-    tcti_context = (TSS2_TCTI_CONTEXT*)tcti_context_buffer_g;
-    printf("Creating new tcti socket at %s:%s\n", tpm_hostname_g, tpm_port_g);
-    int tcti_ret = tss2_tcti_init_socket(tpm_hostname_g, tpm_port_g, tcti_context);
-    if (TSS2_RC_SUCCESS != tcti_ret) {
-        fprintf(stderr, "Error: Unable to initialize new TCTI context, using existing one!\n");
-        tcti_context_new = tcti_context;
-    }
-
-
-    const char *basename = "BASENAME";
-    // TODO REMOVE: TROUBLESHOOTING END
-
-
     puts("Starting xtt_initialize_client_group_context_lrswTPM with args:\n");
     printf("gid: %s (size %zu)\n", gid.data, sizeof(gid));
     printf("daaCredBin: %s (size %lu)\n", daaCredBin.data, daaCredBin.size);
@@ -353,15 +329,12 @@ puts("START NIF: xtt_init_client_group_contextTPM...\n");
     xtt_return_code_type rc = xtt_initialize_client_group_context_lrswTPM(group_ctx,
                                                                      &gid,
                                                                      (xtt_daa_credential_lrsw *) daaCredBin.data,
-                                                                     basename,
-                                                                     strlen(basename),
-                                                                     key_handle_g,
-//                                                                     key_handle,
-                                                                     tpm_password,
-                                                                     tpm_password_size,
-//                                                                     (const char *) tpmPasswordBin.data,
-//                                                                     tpm_password_len,
-                                                                     tcti_context_new);
+                                                                     basenameBin.data,
+                                                                     basenameBin.size,
+                                                                     key_handle,
+                                                                     (const char *) tpmPasswordBin.data,
+                                                                     tpm_password_len,
+                                                                     tcti_context);
 
     printf("Finished xtt_initialize_client_group_context_lrswTPM with return code %d\n", rc);
 
