@@ -240,8 +240,8 @@ xtt_init_client_group_contextTPM(ErlNifEnv* env, int argc, const ERL_NIF_TERM ar
 
 puts("START NIF: xtt_init_client_group_contextTPM...\n");
 
-    if(argc != 7) {
-        fprintf(stderr, "Bad arg error: expected 7 got %d\n", argc);
+    if(argc != 6) {
+        fprintf(stderr, "Bad arg error: expected 6 got %d\n", argc);
         return enif_make_badarg(env);
     }
 
@@ -280,11 +280,16 @@ puts("START NIF: xtt_init_client_group_contextTPM...\n");
 
 
     uint32_t key_handle;
-
-    if(!enif_get_uint(env, argv[3], &key_handle)) {
-        fprintf(stderr, "Bad key_handle arg at position 3\n");
-        return enif_make_badarg(env);
+    unsigned key_handle_temp;
+    if (!enif_get_uint(env, argv[3], &key_handle_temp)) {
+        fprintf(stderr, "Bad arg at position 3\n");
+    	return enif_make_badarg(env);
     }
+    if (key_handle_temp > UINT32_MAX) {
+    	fprintf(stderr, "Bad arg at position 3: received non-32bit TPM handle\n");
+    	return enif_make_badarg(env);
+    }
+    key_handle = (uint32_t)key_handle_temp;
 
     ErlNifBinary tpmPasswordBin;
 
@@ -293,16 +298,10 @@ puts("START NIF: xtt_init_client_group_contextTPM...\n");
         return enif_make_badarg(env);
     }
 
-    uint16_t tpm_password_len;
-
-    if(!enif_get_uint(env, argv[5], &tpm_password_len)) {
-        fprintf(stderr, "Bad tpm_password_len arg at position 5\n");
-        return enif_make_badarg(env);
-    }
 
     TSS2_TCTI_CONTEXT * tcti_context;
 
-    if(!enif_get_resource(env, argv[6], TCTI_RESOURCE_TYPE, (void**) &tcti_context)) {
+    if(!enif_get_resource(env, argv[5], TCTI_RESOURCE_TYPE, (void**) &tcti_context)) {
         return enif_make_badarg(env);
     }
 
@@ -332,8 +331,8 @@ puts("START NIF: xtt_init_client_group_contextTPM...\n");
                                                                      basenameBin.data,
                                                                      basenameBin.size,
                                                                      key_handle,
-                                                                     (const char *) tpmPasswordBin.data,
-                                                                     tpm_password_len,
+                                                                     tpmPasswordBin.data,
+                                                                     tpmPasswordBin.size,
                                                                      tcti_context);
 
     printf("Finished xtt_initialize_client_group_context_lrswTPM with return code %d\n", rc);
