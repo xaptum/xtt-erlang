@@ -322,8 +322,8 @@ puts("START NIF: xtt_init_client_group_contextTPM...\n");
     printf("daaCredBin: %s (size %lu)\n", daaCredBin.data, daaCredBin.size);
     printf("basename: %s (size %lu)\n", basenameBin.data, basenameBin.size);
     printf("key_handle: %lu\n", key_handle);
-    printf("tpm_password: %s of size %lu and tpm_password_len arg %d\n",
-        tpmPasswordBin.data, tpmPasswordBin.size, tpm_password_len);
+    printf("tpm_password: %s of size %lu\n",
+        tpmPasswordBin.data, tpmPasswordBin.size);
 
     xtt_return_code_type rc = xtt_initialize_client_group_context_lrswTPM(group_ctx,
                                                                      &gid,
