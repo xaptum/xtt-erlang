@@ -6,7 +6,7 @@
   xtt_client_handshake/1,
   xtt_init_client_handshake_context/2,
   xtt_init_client_group_context/4,
-  xtt_init_client_group_contextTPM/7,
+  xtt_init_client_group_contextTPM/6,
   xtt_init_server_root_certificate_context/2,
   xtt_start_client_handshake/1,
   xtt_client_handshake/3,
@@ -118,7 +118,7 @@ xtt_client_handshake(#{ host := Host,
 xtt_init_client_group_context(_Gid, _PrivKey, _Credential, _Basename)->
   erlang:nif_error(?LINE).
 
-xtt_init_client_group_contextTPM(_GId, _Credential, _Basename, _KeyHandle, _TPMPassword, _TPMPasswordLength, _TctiContext)->
+xtt_init_client_group_contextTPM(_GId, _Credential, _Basename, _KeyHandle, _TPMPassword, _TctiContext)->
   erlang:nif_error(?LINE).
 
 xtt_init_server_root_certificate_context(_RootId, _RootPubKey)->
@@ -219,7 +219,7 @@ do_initialize_group_context(true = _UseTpm, _DataDir, Basename,
           {ok, Credential} = xaptum_tpm:tss2_sys_nv_read(?XTT_DAA_CRED_SIZE, ?CRED_HANDLE, SapiContext),
 
           case xtt_init_client_group_contextTPM(
-                Gpk, Credential, Basename, ?KEY_HANDLE, TpmPassword, size(TpmPassword), TctiContext) of
+                Gpk, Credential, Basename, ?KEY_HANDLE, TpmPassword, TctiContext) of
             {ok, GroupCtxTPM} ->
               lager:info("Resulting GroupCtx: ~p", [GroupCtxTPM]),
               {ok, GroupCtxTPM};

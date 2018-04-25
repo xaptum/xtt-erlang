@@ -240,8 +240,8 @@ xtt_init_client_group_contextTPM(ErlNifEnv* env, int argc, const ERL_NIF_TERM ar
 
 puts("START NIF: xtt_init_client_group_contextTPM...\n");
 
-    if(argc != 7) {
-        fprintf(stderr, "Bad arg error: expected 7 got %d\n", argc);
+    if(argc != 6) {
+        fprintf(stderr, "Bad arg error: expected 6 got %d\n", argc);
         return enif_make_badarg(env);
     }
 
@@ -280,11 +280,16 @@ puts("START NIF: xtt_init_client_group_contextTPM...\n");
 
 
     uint32_t key_handle;
-
-    if(!enif_get_uint(env, argv[3], &key_handle)) {
-        fprintf(stderr, "Bad key_handle arg at position 3\n");
-        return enif_make_badarg(env);
+    unsigned key_handle_temp;
+    if (!enif_get_uint(env, argv[3], &key_handle_temp)) {
+        fprintf(stderr, "Bad arg at position 3\n");
+    	return enif_make_badarg(env);
     }
+    if (key_handle_temp > UINT32_MAX) {
+    	fprintf(stderr, "Bad arg at position 3: received non-32bit TPM handle\n");
+    	return enif_make_badarg(env);
+    }
+    key_handle = (uint32_t)key_handle_temp;
 
     ErlNifBinary tpmPasswordBin;
 
@@ -293,16 +298,10 @@ puts("START NIF: xtt_init_client_group_contextTPM...\n");
         return enif_make_badarg(env);
     }
 
-    uint16_t tpm_password_len;
-
-    if(!enif_get_uint(env, argv[5], &tpm_password_len)) {
-        fprintf(stderr, "Bad tpm_password_len arg at position 5\n");
-        return enif_make_badarg(env);
-    }
 
     TSS2_TCTI_CONTEXT * tcti_context;
 
-    if(!enif_get_resource(env, argv[6], TCTI_RESOURCE_TYPE, (void**) &tcti_context)) {
+    if(!enif_get_resource(env, argv[5], TCTI_RESOURCE_TYPE, (void**) &tcti_context)) {
         return enif_make_badarg(env);
     }
 
@@ -323,8 +322,8 @@ puts("START NIF: xtt_init_client_group_contextTPM...\n");
     printf("daaCredBin: %s (size %lu)\n", daaCredBin.data, daaCredBin.size);
     printf("basename: %s (size %lu)\n", basenameBin.data, basenameBin.size);
     printf("key_handle: %lu\n", key_handle);
-    printf("tpm_password: %s of size %lu and tpm_password_len arg %d\n",
-        tpmPasswordBin.data, tpmPasswordBin.size, tpm_password_len);
+    printf("tpm_password: %s of size %lu\n",
+        tpmPasswordBin.data, tpmPasswordBin.size);
 
     xtt_return_code_type rc = xtt_initialize_client_group_context_lrswTPM(group_ctx,
                                                                      &gid,
@@ -332,8 +331,8 @@ puts("START NIF: xtt_init_client_group_contextTPM...\n");
                                                                      basenameBin.data,
                                                                      basenameBin.size,
                                                                      key_handle,
-                                                                     (const char *) tpmPasswordBin.data,
-                                                                     tpm_password_len,
+                                                                     tpmPasswordBin.data,
+                                                                     tpmPasswordBin.size,
                                                                      tcti_context);
 
     printf("Finished xtt_initialize_client_group_context_lrswTPM with return code %d\n", rc);
@@ -704,7 +703,7 @@ static ErlNifFunc nif_funcs[] = {
     {"xtt_handshake_parse_idserverfinished", 1, xtt_handshake_parse_idserverfinished, ERL_NIF_DIRTY_JOB_CPU_BOUND},
     {"xtt_build_error_msg", 1, xtt_build_error_msg, ERL_NIF_DIRTY_JOB_CPU_BOUND},
     {"xtt_init_client_group_context", 4, xtt_init_client_group_context, ERL_NIF_DIRTY_JOB_CPU_BOUND},
-    {"xtt_init_client_group_contextTPM", 7, xtt_init_client_group_contextTPM, ERL_NIF_DIRTY_JOB_CPU_BOUND},
+    {"xtt_init_client_group_contextTPM", 6, xtt_init_client_group_contextTPM, ERL_NIF_DIRTY_JOB_CPU_BOUND},
     {"xtt_init_server_root_certificate_context", 2, xtt_init_server_root_certificate_context, ERL_NIF_DIRTY_JOB_CPU_BOUND}
 };
 
