@@ -132,7 +132,7 @@ group_context_inputs(#{data_dir := DataDir, use_tpm := false} = ParameterMap) ->
   {ok, #group_context_inputs{gpk=Gid, credential = Credential, basename = Basename, priv_key = PrivKey}};
 
 group_context_inputs(#{
-  data_dir = DataDir,
+  data_dir := DataDir,
   use_tpm := true,
   tpm_host := TpmHostname,
   tpm_port:= TpmPort,
@@ -174,7 +174,7 @@ initialize_certsTPM(SapiContext)->
   xtt_utils:init_cert_db(RootId, RootPubKey).
 
 
-initialize_ids(#{data_dir = DataDir} = ParameterMap)->
+initialize_ids(#{data_dir := DataDir} = ParameterMap)->
   RequestedClientIdFile = maps:get(requested_client_id_file, ParameterMap, filename:join([DataDir, ?REQUESTED_CLIENT_ID_FILE])),
   IntendedServerIdFile = maps:get(server_id_file, ParameterMap, filename:join([DataDir, ?SERVER_ID_FILE])),
 
