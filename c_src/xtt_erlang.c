@@ -160,7 +160,7 @@ xtt_init_client_group_context(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[
             fprintf(stderr, "Bad arg at position 1\n");
             return enif_make_badarg(env);
     }
-    else if (daaPrivKeyBin.size != sizeof(xtt_daa_priv_key_lrsw)){
+    else if (daaPrivKeyBin.size != sizeof(xtt_group_id)){
         fprintf(stderr, "Bad arg at position 1: expecting xtt_daa_priv_key_lrsw size %lu got %zu\n",
         sizeof(xtt_daa_priv_key_lrsw), daaPrivKeyBin.size);
         return enif_make_badarg(env);
@@ -194,12 +194,6 @@ xtt_init_client_group_context(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[
 
     puts("Starting xtt_initialize_client_group_context_lrsw with args:\n");
 
-    // TODO remove
-    xtt_group_id gid;
-    int hash_ret = crypto_hash_sha256(gid.data, gpkBin.data, gpkBin.size);
-    if (0 != hash_ret)
-        return enif_make_int(env, -1);
-
     printf("gid: %s (size %zu)\n", gid.data, sizeof(gid));
     printf("daaPrivKey: %s (size %lu)\n", daaPrivKeyBin.data, daaPrivKeyBin.size);
     printf("daaCredBin: %s (size %lu)\n", daaCredBin.data, daaCredBin.size);
@@ -212,7 +206,7 @@ xtt_init_client_group_context(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[
     memcpy(xtt_daa_cred->data, daaCredBin.data, sizeof(xtt_daa_credential_lrsw));
 
     xtt_return_code_type rc = xtt_initialize_client_group_context_lrsw(group_ctx,
-                                  &gid,
+                                  (xtt_group_id *) gpkBin.data
                                   xtt_daa_priv_key,
                                   xtt_daa_cred,
                                   basenameBin.data,
@@ -254,7 +248,7 @@ puts("START NIF: xtt_init_client_group_contextTPM...\n");
             fprintf(stderr, "Bad arg at position 0\n");
             return enif_make_badarg(env);
     }
-    else if (gpkBin.size != sizeof(xtt_daa_group_pub_key_lrsw)){
+    else if (gpkBin.size != sizeof(xtt_group_id)){
         fprintf(stderr, "Bad arg at position 1: expecting xtt_daa_group_pub_key_lrsw size %lu got %zu\n",
         sizeof(xtt_daa_group_pub_key_lrsw), gpkBin.size);
         return enif_make_badarg(env);
@@ -313,11 +307,6 @@ puts("START NIF: xtt_init_client_group_contextTPM...\n");
         return enif_make_tuple2(env, ATOM_ERROR, enif_make_int(env, 1));
     }
 
-    xtt_group_id gid;
-    int hash_ret = crypto_hash_sha256(gid.data, gpkBin.data, gpkBin.size);
-    if (0 != hash_ret)
-        return enif_make_int(env, -1);
-
     puts("Starting xtt_initialize_client_group_context_lrswTPM with args:\n");
     printf("gid: %s (size %zu)\n", gid.data, sizeof(gid));
     printf("daaCredBin: %s (size %lu)\n", daaCredBin.data, daaCredBin.size);
@@ -327,7 +316,7 @@ puts("START NIF: xtt_init_client_group_contextTPM...\n");
         tpmPasswordBin.data, tpmPasswordBin.size);
 
     xtt_return_code_type rc = xtt_initialize_client_group_context_lrswTPM(group_ctx,
-                                                                     &gid,
+                                                                     (xtt_group_id *) gpkBin.data,
                                                                      (xtt_daa_credential_lrsw *) daaCredBin.data,
                                                                      basenameBin.data,
                                                                      basenameBin.size,
@@ -648,9 +637,7 @@ xtt_handshake_parse_idserverfinished(ErlNifEnv* env, int argc, const ERL_NIF_TER
 
     struct client_state *cs;
 
-    ERL_NIF_TERM cs_term = argv[0];
-
-    if(!enif_get_resource(env, cs_term, CLIENT_STATE_RESOURCE_TYPE, (void**) &cs)) {
+    if(!enif_get_resource(env, argv[0], CLIENT_STATE_RESOURCE_TYPE, (void**) &cs)) {
         return enif_make_badarg(env);
     }
 
@@ -659,7 +646,7 @@ xtt_handshake_parse_idserverfinished(ErlNifEnv* env, int argc, const ERL_NIF_TER
                                                      &(cs->ctx));
     ErlNifBinary temp_bin;
 
-    return build_response(env, rc, &cs_term, cs, &temp_bin);
+    return build_response(env, rc, cs, &temp_bin);
 }
 
 static ERL_NIF_TERM
