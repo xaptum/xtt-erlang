@@ -70,7 +70,7 @@ maybe_init_group_context(#group_context_inputs{
     {error, ErrorCode} ->
       lager:error("Error ~p initializing client group context", [ErrorCode]),
       {error, init_client_group_context_failed}
-  end
+  end.
 
 
 
