@@ -80,7 +80,7 @@ test_handshake(TestId, Params)->
   ensure_xtt_server_started(XttServerHost, XttServerPort),
   {RequestedClientId, IntendedServerId} = initialize_ids(Params),
   ok = initialize_certs(Params),
-  GroupContextInputs = group_context_inputs(Params),
+  {ok, GroupContextInputs} = group_context_inputs(Params),
   {ok, _Pid} = xtt_handshake:start_link(TestId,
     XttServerHost, XttServerPort,
     RequestedClientId, IntendedServerId,
@@ -91,12 +91,14 @@ test_handshake(TestId, Params)->
 
 client_test()->
   Params = test_params(),
+  lager:md([{source, "FILE"}]),
   lager:info("Staring client test with params ~p~n", [Params]),
   test_handshake(xtt_test_file, Params).
 
 client_TPM_test()->
   Params = test_paramsTPM(),
   ensure_xtt_server_started(?XTT_SERVER_HOST, ?XTT_SERVER_PORT_TPM),
+  lager:md([{source, "TPM"}]),
   lager:info("Staring client test with params ~p~n", [Params]),
   test_handshake(xtt_test_tpm, Params).
 
