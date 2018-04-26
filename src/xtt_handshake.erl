@@ -34,7 +34,7 @@
   status,
   xtt_server_host, xtt_server_port, xtt_server_socket,
   requested_client_id, intended_server_id,
-  xtt_version = ?XTT_VERSION_ONE,  xtt_suite = XTT_X25519_LRSW_ED25519_AES256GCM_SHA512,
+  xtt_version = ?XTT_VERSION_ONE,  xtt_suite = ?XTT_X25519_LRSW_ED25519_AES256GCM_SHA512,
   group_context,
   handshake_state
 }).
@@ -44,7 +44,7 @@
 %%%===================================================================
 
 priv_key(KeyHandle, TctiContext) when is_integer(KeyHandle)->
-  priv_key_info(KeyHandle, _TpmPassword = "", TctiContext).
+  priv_key(KeyHandle, _TpmPassword = "", TctiContext).
 
 priv_key(KeyHandle, TpmPassword, TctiContext) when is_integer(KeyHandle), is_list(TpmPassword), is_reference(TctiContext)->
   #priv_key_tpm{key_handle = KeyHandle, tpm_password = TpmPassword, tcti_context = TctiContext};
@@ -96,7 +96,7 @@ handle_call(get_handshake_context, _From, #state{handshake_state = HandshakeStat
   {reply, {ok, HandshakeState}, State}.
 
 handle_cast(start_handshake, #state{handshake_state = HandshakeState} = State) ->
-  Result = xtt_start_client_handshake(HandshakeState),
+  Result = xtt_erlang:xtt_start_client_handshake(HandshakeState),
   lager:info("Result of start_client_handshake ~p", [Result]),
   gen_server:cast(self(), Result),
   {noreply, State};
@@ -105,7 +105,7 @@ handle_cast({?XTT_RETURN_WANT_READ, BytesRequested},
     #state{xtt_server_socket = Socket, handshake_state = HandshakeState} = State)->
   lager:info("XTT_RETURN_WANT_READ ~b bytes", [BytesRequested]),
   {ok, Bin} = gen_tcp:recv(Socket, BytesRequested),
-  Result = xtt_client_handshake(HandshakeState, 0, Bin),
+  Result = xtt_erlang:xtt_client_handshake(HandshakeState, 0, Bin),
   gen_server:cast(self(), Result),
   {noreply, State};
 
@@ -113,7 +113,7 @@ handle_cast({?XTT_RETURN_WANT_WRITE, BinToWrite},
     #state{xtt_server_socket = XttServerSocket, handshake_state = HandshakeState} = State)->
   lager:info("XTT_RETURN_WANT_WRITE ~p bytes", [BinToWrite]),
   ok = gen_tcp:send(XttServerSocket, BinToWrite),
-  Result = xtt_client_handshake(HandshakeState, size(BinToWrite), <<>>),
+  Result = xtt_erlang:xtt_client_handshake(HandshakeState, size(BinToWrite), <<>>),
   gen_server:cast(self(), Result),
   {noreply, State};
 
@@ -121,7 +121,7 @@ handle_cast({?XTT_RETURN_WANT_WRITE, BinToWrite},
 handle_cast({?XTT_RETURN_WANT_PREPARSESERVERATTEST},
     #state{handshake_state = HandshakeState} = State) ->
   lager:info("XTT_RETURN_WANT_PREPARSESERVERATTEST"),
-  Result = xtt_handshake_preparse_serverattest(HandshakeState),
+  Result = xtt_erlang:xtt_handshake_preparse_serverattest(HandshakeState),
   gen_server:cast(self(), Result),
   {noreply, State};
 
@@ -136,7 +136,7 @@ handle_cast({?XTT_RETURN_WANT_BUILDIDCLIENTATTEST, ClaimedRootId},
   case xtt_utils:lookup_cert(ClaimedRootId) of
     {ClaimedRootId, ServerCert} ->
         {ok, GroupCtx} = xtt_utils:maybe_init_group_context(GroupContext),
-        Result = xtt_handshake_build_idclientattest(ServerCert, RequestedClientId, IntendedServerId, GroupCtx, HandshakeState),
+        Result = xtt_erlang:xtt_handshake_build_idclientattest(ServerCert, RequestedClientId, IntendedServerId, GroupCtx, HandshakeState),
         gen_server:cast(self(), Result),
         {noreply, State};
     {error, Error} ->
@@ -151,7 +151,7 @@ handle_cast({?XTT_RETURN_WANT_BUILDIDCLIENTATTEST, ClaimedRootId},
 handle_cast({?XTT_RETURN_WANT_PARSEIDSERVERFINISHED},
   #state{handshake_state = HandshakeState} = State)->
   lager:info("XTT_RETURN_WANT_PARSEIDSERVERFINISHED"),
-  Result = xtt_handshake_parse_idserverfinished(HandshakeState),
+  Result = xtt_erlang:xtt_handshake_parse_idserverfinished(HandshakeState),
   gen_server:cast(self(), Result),
   {noreply, State};
 
