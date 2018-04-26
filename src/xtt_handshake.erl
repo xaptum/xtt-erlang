@@ -29,7 +29,6 @@
 -define(SERVER, ?MODULE).
 -define(TCP_OPTIONS, [binary, {packet, 0}, {keepalive, true}, {active, false}]).
 
-
 -record(state,
 {
   status,
@@ -130,13 +129,24 @@ handle_cast({?XTT_RETURN_WANT_BUILDIDCLIENTATTEST, ClaimedRootId},
     #state{handshake_state = HandshakeState,
       requested_client_id = RequestedClientId,
       intended_server_id = IntendedServerId,
-      group_context = GroupContext} = State)->
+      group_context = GroupContext,
+      xtt_version = XttVersion,
+      xtt_server_socket = XttServerSocket} = State)->
   lager:info("XTT_RETURN_WANT_BUILDIDCLIENTATTEST claimedRootId ~p", [ClaimedRootId]),
-  {ClaimedRootId, ServerCert} = xtt_utils:lookup_cert(ClaimedRootId),
-  {ok, GroupCtx} = xtt_utils:maybe_init_group_context(GroupContext),
-  Result = xtt_handshake_build_idclientattest(ServerCert, RequestedClientId, IntendedServerId, GroupCtx, HandshakeState),
-  gen_server:cast(self(), Result),
-  {noreply, State};
+  case xtt_utils:lookup_cert(ClaimedRootId) of
+    {ClaimedRootId, ServerCert} ->
+        {ok, GroupCtx} = xtt_utils:maybe_init_group_context(GroupContext),
+        Result = xtt_handshake_build_idclientattest(ServerCert, RequestedClientId, IntendedServerId, GroupCtx, HandshakeState),
+        gen_server:cast(self(), Result),
+        {noreply, State};
+    {error, Error} ->
+      lager:error("Failed to lookup cert context by claimed root id ~p due to error ~p", [ClaimedRootId, Error]),
+      ErrorMsg = xtt_erlang:xtt_build_error_msg(XttVersion),
+      ok = gen_tcp:send(XttServerSocket, ErrorMsg),
+      {stop, cert_lookup_failure, State}
+  end;
+
+
 
 handle_cast({?XTT_RETURN_WANT_PARSEIDSERVERFINISHED},
   #state{handshake_state = HandshakeState} = State)->

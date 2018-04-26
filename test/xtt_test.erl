@@ -29,9 +29,6 @@
 -define(ROOT_ID_FILE, "root_id.bin").
 -define(ROOT_PUBKEY_FILE, "root_pub.bin").
 
-
-%% TODO should we create NIF wrappers for each nvram object just to get the sizeof(correspondingStruct)
-%% to avoid redefining it here?
 -define(XTT_DAA_CRED_SIZE, 260).
 -define(XTT_DAA_GROUP_PUB_KEY_SIZE, 258).
 -define(XTT_DAA_ROOT_ID_SIZE, 16).

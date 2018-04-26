@@ -680,7 +680,7 @@ xtt_build_error_msg(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]){
    enif_alloc_binary((size_t) err_buff_len, err_buffer_bin);
    (void)build_error_msg(err_buffer_bin->data, err_buff_len, version);
 
-   return enif_make_binary(env, err_buffer_bin); // for writing by xtt_erlang.erl
+   return enif_make_binary(env, err_buffer_bin);
 }
 
 static ErlNifFunc nif_funcs[] = {

@@ -3,7 +3,6 @@
 %% API exports
 -export([
   init/0,
-  xtt_client_handshake/1,
   xtt_init_client_handshake_context/2,
   xtt_init_client_group_context/4,
   xtt_init_client_group_contextTPM/6,

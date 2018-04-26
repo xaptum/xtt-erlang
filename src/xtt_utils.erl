@@ -38,13 +38,12 @@ init_cert_db(RootId, RootPubkey)->
 lookup_cert(ClaimedRootId)->
   lager:info("Looking up server's certificate from its claimed root_id ~p", [ClaimedRootId]),
   case ets:lookup(?CERT_TABLE, ClaimedRootId) of
-    [CertCtx] -> CertCtx;
+    [{ClaimedRootId, CertCtx}] -> {ClaimedRootId, CertCtx};
     [] -> %% TODO TEMP HACK
-      RootId = ets:last(?CERT_TABLE),  %% TODO verify ClaimedRootId with
-%% IF not verified call xtt_build_error_msg NIF and send to server
+      RootId = ets:last(?CERT_TABLE),
       case ets:lookup(?CERT_TABLE, RootId) of
-        [CertCtx] -> CertCtx;
-        _Other -> lager:error("ERROR: cert table is empty!")
+        [{ClaimedRootId, CertCtx}] -> {ClaimedRootId, CertCtx};
+        _Other -> {error, doesnt_exist}
       end
   end.
 
