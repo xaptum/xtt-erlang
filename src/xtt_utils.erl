@@ -20,8 +20,8 @@
 -define(DEFAULT_ETS_OPTS, [named_table, set, public, {write_concurrency, true}, {read_concurrency, true}]).
 
 init_cert_db(RootId, RootPubkey)->
-  lager:info("Initializing cert db with RootId ~p and RootPubKey ~p", [RootId, print_bin(RootPubkey)]),
-  case xtt_init_server_root_certificate_context(RootId, RootPubkey) of
+  lager:info("Initializing cert db with RootId ~p and RootPubKey ~p", [RootId, RootPubkey]),
+  case xtt_erlang:xtt_init_server_root_certificate_context(RootId, RootPubkey) of
     {ok, CertContext} ->
       case lists:member(?CERT_TABLE, ets:all()) of
         false -> ets:new(?CERT_TABLE, ?DEFAULT_ETS_OPTS);
