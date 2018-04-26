@@ -9,7 +9,7 @@
 -author("iguberman").
 
 -record(priv_key_tpm,
-{key_handle, tpm_password="", tcti_context}).
+{key_handle, tpm_password="", tcti_context, tpm_host, tpm_port}).
 
 -record(group_context_inputs,
 {gpk, credential, basename, priv_key}).

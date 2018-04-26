@@ -152,7 +152,7 @@ group_context_inputs(#{
 
           Gid = crypto:hash(sha256, Gpk),
 
-          PrivKeyInputs = #priv_key_tpm{key_handle = ?KEY_HANDLE, tcti_context = TctiContext, tpm_password = TpmPassword},
+          PrivKeyInputs = #priv_key_tpm{key_handle = ?KEY_HANDLE, tpm_host = TpmHostname, tpm_port = TpmPort, tpm_password = TpmPassword},
 
           ok = initialize_certsTPM(SapiContext),
 

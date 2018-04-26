@@ -606,6 +606,8 @@ xtt_handshake_build_idclientattest(ErlNifEnv* env, int argc, const ERL_NIF_TERM 
                                                        group_ctx,
                                                        &(cs->ctx));
 
+     printf("FINISHED NIF: xtt_handshake_build_idclientattest with response %d\n", rc);
+
      ErlNifBinary temp_bin;
 
      return build_response(env, rc, cs, &temp_bin);
