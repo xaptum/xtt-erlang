@@ -59,7 +59,8 @@ test_params() ->
     port => ?XTT_SERVER_PORT,
     xtt_version => ?XTT_VERSION_ONE,
     xtt_suite  => ?XTT_X25519_LRSW_ED25519_AES256GCM_SHA512,
-    data_dir => example_data_dir()
+    data_dir => example_data_dir(),
+    use_tpm => false
  }.
 
 test_paramsTPM() ->
