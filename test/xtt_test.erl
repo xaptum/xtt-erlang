@@ -92,16 +92,16 @@ test_handshake(TestId, Params)->
 
 client_test()->
   Params = test_params(),
-  lager:md([{source, "FILE"}]),
+  lager:md([{source, "TEST_FILE"}]),
   lager:info("Staring client test with params ~p~n", [Params]),
-  test_handshake(xtt_test_file, Params).
+  test_handshake('TEST_FILE', Params).
 
 client_TPM_test()->
   Params = test_paramsTPM(),
   ensure_xtt_server_started(?XTT_SERVER_HOST, ?XTT_SERVER_PORT_TPM),
-  lager:md([{source, "TPM"}]),
-  lager:info("Staring client test with params ~p~n", [Params]),
-  test_handshake(xtt_test_tpm, Params).
+  lager:md([{source, "TEST_TPM"}]),
+  lager:info("Staring client tst with params ~p~n", [Params]),
+  test_handshake('TEST_TPM', Params).
 
 ensure_xtt_server_started(ServerHost, ServerPort)->
   %% Check if running or
