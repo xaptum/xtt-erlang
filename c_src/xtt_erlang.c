@@ -199,7 +199,7 @@ xtt_init_client_group_context(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[
     memcpy(xtt_daa_cred->data, daaCredBin.data, sizeof(xtt_daa_credential_lrsw));
 
     xtt_return_code_type rc = xtt_initialize_client_group_context_lrsw(group_ctx,
-                                  (xtt_group_id *) gpkBin.data
+                                  (xtt_group_id *) gpkBin.data,
                                   xtt_daa_priv_key,
                                   xtt_daa_cred,
                                   basenameBin.data,
