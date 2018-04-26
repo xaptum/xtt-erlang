@@ -192,13 +192,6 @@ xtt_init_client_group_context(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[
         return enif_make_badarg(env);
     }
 
-    puts("Starting xtt_initialize_client_group_context_lrsw with args:\n");
-
-    printf("gid: %s (size %zu)\n", gid.data, sizeof(gid));
-    printf("daaPrivKey: %s (size %lu)\n", daaPrivKeyBin.data, daaPrivKeyBin.size);
-    printf("daaCredBin: %s (size %lu)\n", daaCredBin.data, daaCredBin.size);
-    printf("basename: %s (size %lu)\n", basenameBin.data, basenameBin.size);
-
     xtt_daa_priv_key_lrsw  *xtt_daa_priv_key = enif_alloc_resource(STRUCT_RESOURCE_TYPE, sizeof(xtt_daa_priv_key_lrsw));
     xtt_daa_credential_lrsw *xtt_daa_cred = enif_alloc_resource(STRUCT_RESOURCE_TYPE, sizeof(xtt_daa_credential_lrsw));
 
@@ -306,14 +299,6 @@ puts("START NIF: xtt_init_client_group_contextTPM...\n");
         puts("Failed to allocate resource for struct xtt_client_group_context group_ctx!\n");
         return enif_make_tuple2(env, ATOM_ERROR, enif_make_int(env, 1));
     }
-
-    puts("Starting xtt_initialize_client_group_context_lrswTPM with args:\n");
-    printf("gid: %s (size %zu)\n", gid.data, sizeof(gid));
-    printf("daaCredBin: %s (size %lu)\n", daaCredBin.data, daaCredBin.size);
-    printf("basename: %s (size %lu)\n", basenameBin.data, basenameBin.size);
-    printf("key_handle: %lu\n", key_handle);
-    printf("tpm_password: %s of size %lu\n",
-        tpmPasswordBin.data, tpmPasswordBin.size);
 
     xtt_return_code_type rc = xtt_initialize_client_group_context_lrswTPM(group_ctx,
                                                                      (xtt_group_id *) gpkBin.data,
