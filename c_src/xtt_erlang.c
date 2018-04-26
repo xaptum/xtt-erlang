@@ -150,7 +150,7 @@ xtt_init_client_group_context(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[
             fprintf(stderr, "Bad arg at position 0\n");
             return enif_make_badarg(env);
     }
-    else if (gpkBin.size != sizeof(xtt_daa_group_pub_key_lrsw)){
+    else if (gpkBin.size != sizeof(xtt_group_id)){
         fprintf(stderr, "Bad arg at position 0: expecting xtt_daa_group_pub_key_lrsw size %lu got %zu\n",
         sizeof(xtt_daa_group_pub_key_lrsw), gpkBin.size);
         return enif_make_badarg(env);
