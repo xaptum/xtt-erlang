@@ -194,6 +194,7 @@ xtt_init_client_group_context(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[
 
     puts("Starting xtt_initialize_client_group_context_lrsw with args:\n");
 
+    // TODO remove
     xtt_group_id gid;
     int hash_ret = crypto_hash_sha256(gid.data, gpkBin.data, gpkBin.size);
     if (0 != hash_ret)
@@ -682,14 +683,10 @@ xtt_build_error_msg(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]){
         return enif_make_badarg(env);
    }
 
-//   unsigned char err_buffer[16]; // TODO fix
-  // (void)build_error_msg(err_buffer, &bytes_requested, version);
-
    uint16_t *err_buff_len = (uint16_t *) 16;
    ErlNifBinary *err_buffer_bin = NULL;
    enif_alloc_binary((size_t) err_buff_len, err_buffer_bin);
    (void)build_error_msg(err_buffer_bin->data, err_buff_len, version);
-   //         memcpy(err_buffer_bin->data, err_buffer, sizeof(err_buffer);
 
    return enif_make_binary(env, err_buffer_bin); // for writing by xtt_erlang.erl
 }
