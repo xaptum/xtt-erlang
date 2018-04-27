@@ -218,10 +218,8 @@ do_initialize_group_context(true = _UseTpm, _DataDir, Basename,
 
           {ok, Credential} = xaptum_tpm:tss2_sys_nv_read(?XTT_DAA_CRED_SIZE, ?CRED_HANDLE, SapiContext),
 
-          Gid = crypto:hash(sha256, Gpk),
-
           case xtt_init_client_group_contextTPM(
-                Gid, Credential, Basename, ?KEY_HANDLE, TpmPassword, TctiContext) of
+                Gpk, Credential, Basename, ?KEY_HANDLE, TpmPassword, TctiContext) of
             {ok, GroupCtxTPM} ->
               lager:info("Resulting GroupCtx: ~p", [GroupCtxTPM]),
               {ok, GroupCtxTPM};
