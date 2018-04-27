@@ -19,7 +19,7 @@
 
 -on_load(init/0).
 
--include("xtt.hrl").
+-include("../include/xtt.hrl").
 
 -define(XTT_APPNAME, xtt_erlang).
 -define(XTT_LIBNAME, 'xtt-erlang').
@@ -190,11 +190,11 @@ do_initialize_group_context(false = _UseTpm, DataDir, Basename, ParameterMap)->
 
   {ok, PrivKey} = file:read_file(PrivKeyFile),
 
-  %%Gid = crypto:hash(sha256, Gpk), TODO MOVE BACK INTO ERLANG?
+  Gid = crypto:hash(sha256, Gpk),
 
   lager:info("STARTing xtt_initialize_client_group_context(~p, ~p, ~p, ~p)",
-    [print_bin(Gpk), print_bin(PrivKey), print_bin(Credential), Basename]),
-  case xtt_init_client_group_context(Gpk, PrivKey, Credential, Basename) of
+    [print_bin(Gid), print_bin(PrivKey), print_bin(Credential), Basename]),
+  case xtt_init_client_group_context(Gid, PrivKey, Credential, Basename) of
     {ok, GroupCtx} ->
       lager:info("Resulting GroupCtx: ~p", [GroupCtx]),
       {ok, GroupCtx};
@@ -218,8 +218,10 @@ do_initialize_group_context(true = _UseTpm, _DataDir, Basename,
 
           {ok, Credential} = xaptum_tpm:tss2_sys_nv_read(?XTT_DAA_CRED_SIZE, ?CRED_HANDLE, SapiContext),
 
+          Gid = crypto:hash(sha256, Gpk),
+
           case xtt_init_client_group_contextTPM(
-                Gpk, Credential, Basename, ?KEY_HANDLE, TpmPassword, TctiContext) of
+                Gid, Credential, Basename, ?KEY_HANDLE, TpmPassword, TctiContext) of
             {ok, GroupCtxTPM} ->
               lager:info("Resulting GroupCtx: ~p", [GroupCtxTPM]),
               {ok, GroupCtxTPM};
