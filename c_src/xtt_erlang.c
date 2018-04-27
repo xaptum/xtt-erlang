@@ -113,7 +113,7 @@ build_response(ErlNifEnv* env, int rc, struct client_state *cs, ErlNifBinary *te
             response = enif_make_tuple1(env, ret_code);
             break;
         case XTT_RETURN_RECEIVED_ERROR_MSG:
-            puts("Building response for XTT_RETURN_WANT_PARSEIDSERVERFINISHED\n");
+            puts("Building response for XTT_RETURN_RECEIVED_ERROR_MSG\n");
             response = enif_make_tuple1(env, ret_code);
             break;
         default:
@@ -197,6 +197,7 @@ xtt_init_client_group_context(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[
 
     memcpy(xtt_daa_priv_key->data, daaPrivKeyBin.data, sizeof(xtt_daa_priv_key_lrsw));
     memcpy(xtt_daa_cred->data, daaCredBin.data, sizeof(xtt_daa_credential_lrsw));
+
 
     xtt_return_code_type rc = xtt_initialize_client_group_context_lrsw(group_ctx,
                                   (xtt_group_id *) gpkBin.data,
