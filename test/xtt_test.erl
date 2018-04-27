@@ -150,9 +150,6 @@ group_context_inputs(#{
 
           {ok, Credential} = xaptum_tpm:tss2_sys_nv_read(?XTT_DAA_CRED_SIZE, ?CRED_HANDLE, SapiContext),
 
-          %% TODO: temporarily using Gpk (and hashing inside NIFs)
-          %% using Gid instead of Gpk inside TPM group context creation
-          %% later causes error 28 during xtt_handshake_build_idclientattest
           Gid = crypto:hash(sha256, Gpk),
 
           PrivKeyInputs = #priv_key_tpm{key_handle = ?KEY_HANDLE,
@@ -161,7 +158,14 @@ group_context_inputs(#{
 
           ok = initialize_certsTPM(SapiContext),
 
-          {ok, #group_context_inputs{gpk = Gpk, credential = Credential, basename = Basename, priv_key = PrivKeyInputs}};
+          %% TODO: temporarily using Gpk (and do hashing inside the NIF)
+          %% using Gid instead of Gpk inside TPM group context creation
+          %% later causes error 28 during xtt_handshake_build_idclientattest
+          {ok, #group_context_inputs{
+            gpk = Gpk,
+            credential = Credential,
+            basename = Basename,
+            priv_key = PrivKeyInputs}};
         {error, _ErrorCode} -> {error, init_tss2_sys_failed}
       end;
     {error, _ErrorCode} -> {error, init_tss2_tcti_failed}
