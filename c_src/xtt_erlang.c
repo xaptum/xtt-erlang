@@ -150,7 +150,7 @@ xtt_init_client_group_context(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[
             fprintf(stderr, "Bad arg at position 0\n");
             return enif_make_badarg(env);
     }
-    else if (gpkBin.size != sizeof(xtt_group_id)){
+    else if (gpkBin.size != sizeof(xtt_daa_group_pub_key_lrsw)){
         fprintf(stderr, "Bad arg at position 0: expecting xtt_daa_group_pub_key_lrsw size %lu got %zu\n",
         sizeof(xtt_daa_group_pub_key_lrsw), gpkBin.size);
         return enif_make_badarg(env);
@@ -160,7 +160,7 @@ xtt_init_client_group_context(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[
             fprintf(stderr, "Bad arg at position 1\n");
             return enif_make_badarg(env);
     }
-    else if (daaPrivKeyBin.size != sizeof(xtt_group_id)){
+    else if (daaPrivKeyBin.size != sizeof(xtt_daa_priv_key_lrsw)){
         fprintf(stderr, "Bad arg at position 1: expecting xtt_daa_priv_key_lrsw size %lu got %zu\n",
         sizeof(xtt_daa_priv_key_lrsw), daaPrivKeyBin.size);
         return enif_make_badarg(env);
@@ -192,15 +192,19 @@ xtt_init_client_group_context(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[
         return enif_make_badarg(env);
     }
 
+    xtt_group_id gid;
+    int hash_ret = crypto_hash_sha256(gid.data, gpkBin.data, gpkBin.size);
+    if (0 != hash_ret)
+        return enif_make_int(env, -1);
+
     xtt_daa_priv_key_lrsw  *xtt_daa_priv_key = enif_alloc_resource(STRUCT_RESOURCE_TYPE, sizeof(xtt_daa_priv_key_lrsw));
     xtt_daa_credential_lrsw *xtt_daa_cred = enif_alloc_resource(STRUCT_RESOURCE_TYPE, sizeof(xtt_daa_credential_lrsw));
 
     memcpy(xtt_daa_priv_key->data, daaPrivKeyBin.data, sizeof(xtt_daa_priv_key_lrsw));
     memcpy(xtt_daa_cred->data, daaCredBin.data, sizeof(xtt_daa_credential_lrsw));
 
-
     xtt_return_code_type rc = xtt_initialize_client_group_context_lrsw(group_ctx,
-                                  (xtt_group_id *) gpkBin.data,
+                                  &gid,
                                   xtt_daa_priv_key,
                                   xtt_daa_cred,
                                   basenameBin.data,
@@ -242,7 +246,7 @@ puts("START NIF: xtt_init_client_group_contextTPM...\n");
             fprintf(stderr, "Bad arg at position 0\n");
             return enif_make_badarg(env);
     }
-    else if (gpkBin.size != sizeof(xtt_group_id)){
+    else if (gpkBin.size != sizeof(xtt_daa_group_pub_key_lrsw)){
         fprintf(stderr, "Bad arg at position 1: expecting xtt_daa_group_pub_key_lrsw size %lu got %zu\n",
         sizeof(xtt_daa_group_pub_key_lrsw), gpkBin.size);
         return enif_make_badarg(env);
@@ -301,8 +305,13 @@ puts("START NIF: xtt_init_client_group_contextTPM...\n");
         return enif_make_tuple2(env, ATOM_ERROR, enif_make_int(env, 1));
     }
 
+    xtt_group_id gid;
+    int hash_ret = crypto_hash_sha256(gid.data, gpkBin.data, gpkBin.size);
+    if (0 != hash_ret)
+        return enif_make_int(env, -1);
+
     xtt_return_code_type rc = xtt_initialize_client_group_context_lrswTPM(group_ctx,
-                                                                     (xtt_group_id *) gpkBin.data,
+                                                                     &gid,
                                                                      (xtt_daa_credential_lrsw *) daaCredBin.data,
                                                                      basenameBin.data,
                                                                      basenameBin.size,
