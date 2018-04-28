@@ -142,33 +142,29 @@ group_context_inputs(#{
   tpm_password := TpmPassword} = ParameterMap)->
   BasenameFile = maps:get(base_filename, ParameterMap, filename:join([DataDir, ?BASENAME_FILE])),
   {ok, Basename} = file:read_file(BasenameFile),
-  case xaptum_tpm:tss2_tcti_initialize_socket(TpmHostname, TpmPort) of
-    {ok, TctiContext} ->
-      case  xaptum_tpm:tss2_sys_initialize(TctiContext) of
-        {ok, SapiContext} ->
-          {ok, Gpk} = xaptum_tpm:tss2_sys_nv_read(?XTT_DAA_GROUP_PUB_KEY_SIZE, ?GPK_HANDLE, SapiContext),
+  case xaptum_tpm:tss2_sys_maybe_initialize(TpmHostname, TpmPort) of
+    {ok, SapiContext} ->
+      {ok, Gpk} = xaptum_tpm:tss2_sys_nv_read(?XTT_DAA_GROUP_PUB_KEY_SIZE, ?GPK_HANDLE, SapiContext),
 
-          {ok, Credential} = xaptum_tpm:tss2_sys_nv_read(?XTT_DAA_CRED_SIZE, ?CRED_HANDLE, SapiContext),
+      {ok, Credential} = xaptum_tpm:tss2_sys_nv_read(?XTT_DAA_CRED_SIZE, ?CRED_HANDLE, SapiContext),
 
-          Gid = crypto:hash(sha256, Gpk),
+      Gid = crypto:hash(sha256, Gpk),
 
-          PrivKeyInputs = #priv_key_tpm{key_handle = ?KEY_HANDLE,
-            tcti_context = TctiContext,
-            tpm_host = TpmHostname, tpm_port = TpmPort, tpm_password = TpmPassword},
+      PrivKeyInputs = #priv_key_tpm{key_handle = ?KEY_HANDLE,
+        tcti_context = undefined,
+        tpm_host = TpmHostname, tpm_port = TpmPort, tpm_password = TpmPassword},
 
-          ok = initialize_certsTPM(SapiContext),
+      ok = initialize_certsTPM(SapiContext),
 
-          %% TODO: temporarily using Gpk (and do hashing inside the NIF)
-          %% using Gid instead of Gpk inside TPM group context creation
-          %% later causes error 28 during xtt_handshake_build_idclientattest
-          {ok, #group_context_inputs{
-            gpk = Gpk,
-            credential = Credential,
-            basename = Basename,
-            priv_key = PrivKeyInputs}};
-        {error, _ErrorCode} -> {error, init_tss2_sys_failed}
-      end;
-    {error, _ErrorCode} -> {error, init_tss2_tcti_failed}
+      %% TODO: temporarily using Gpk (and do hashing inside the NIF)
+      %% using Gid instead of Gpk inside TPM group context creation
+      %% later causes error 28 during xtt_handshake_build_idclientattest
+      {ok, #group_context_inputs{
+        gpk = Gpk,
+        credential = Credential,
+        basename = Basename,
+        priv_key = PrivKeyInputs}};
+    {error, _ErrorCode} -> {error, init_tss2_sys_failed}
   end.
 
 initialize_certs(#{data_dir := DataDir} = ParameterMap)->

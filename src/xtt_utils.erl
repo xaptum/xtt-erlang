@@ -51,7 +51,7 @@ maybe_init_group_context(GroupContext) when is_reference(GroupContext)->
   {ok, GroupContext};
 maybe_init_group_context(#group_context_inputs{
   priv_key = #priv_key_tpm{tcti_context = undefined, tpm_host = TpmHost, tpm_port = TpmPort} = PrivKeyTpm} = GroupContextInputs) ->
-  case xaptum_tpm:tss2_tcti_initialize_socket(TpmHost , TpmPort) of
+  case xaptum_tpm:tss2_tcti_maybe_initialize_socket(TpmHost , TpmPort) of
     {ok, TctiContext} -> maybe_init_group_context(GroupContextInputs#group_context_inputs{priv_key = PrivKeyTpm#priv_key_tpm{tcti_context = TctiContext}});
     {error, ErrorCode} -> lager:error("Failed to initialize tcti context with error ~p", [ErrorCode]),
       {error, init_tss2_sys_failed}

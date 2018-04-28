@@ -49,7 +49,7 @@ priv_key(KeyHandle, TctiContext) when is_integer(KeyHandle)->
 priv_key(KeyHandle, TpmPassword, TctiContext) when is_integer(KeyHandle), is_list(TpmPassword), is_reference(TctiContext)->
   #priv_key_tpm{key_handle = KeyHandle, tpm_password = TpmPassword, tcti_context = TctiContext};
 priv_key(KeyHandle, TpmPassword, {TpmHostname, TpmPort} = _TctiContextCredentials) when is_integer(KeyHandle), is_list(TpmPassword) ->
-  {ok, TctiContext} = xaptum_tpm:tss2_tcti_initialize_socket(TpmHostname, TpmPort),
+  {ok, TctiContext} = xaptum_tpm:tss2_tcti_maybe_initialize_socket(TpmHostname, TpmPort),
   priv_key(KeyHandle, TpmPassword, TctiContext).
 
 group_context(Gpk, Credential, Basename, PrivKey) when is_binary(PrivKey); is_tuple(PrivKey)->
