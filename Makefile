@@ -8,9 +8,6 @@ compile:
 xref:
 	$(REBAR) xref
 
-eunit: compile
-	$(REBAR) eunit
-
 ct: compile
 	$(REBAR) ct --dir $(BASEDIR)/ct --logdir $(BASEDIR)/ct/logs
 
