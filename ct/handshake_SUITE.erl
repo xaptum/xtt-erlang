@@ -59,6 +59,7 @@ init_per_suite(Config)->
 test_file(Config) ->
   lager:md([{source, "TEST_FILE"}]),
   DataDir = ?config(data_dir, Config),
+  ct:print("test_file DataDir is ~p~n", [DataDir]),
   {ok, GroupContextInputs} = group_context_inputs(DataDir),
   test_handshake(Config, 'TEST_FILE', ?XTT_SERVER_PORT, GroupContextInputs),
   Config.
@@ -66,6 +67,7 @@ test_file(Config) ->
 test_tpm(Config) ->
   lager:md([{source, "TEST_TPM"}]),
   DataDir = ?config(data_dir, Config),
+  ct:print("test_tpm: DataDir is ~p~n", [DataDir]),
   {ok, GroupContextInputsTpm} = group_context_inputs_tpm(DataDir),
   test_handshake(Config, 'TEST_TPM', ?XTT_SERVER_PORT_TPM, GroupContextInputsTpm),
   Config.
@@ -110,7 +112,7 @@ group_context_inputs(DataDir) ->
   {ok, #group_context_inputs{gpk=Gid, credential = Credential, basename = Basename, priv_key = PrivKey}}.
 
 group_context_inputs_tpm(DataDir)->
-  ct:print("DataDir is ~p~", [DataDir]),
+  ct:print("DataDir is ~p~n", [DataDir]),
   BasenameFile = filename:join([DataDir, ?BASENAME_FILE]),
   {ok, Basename} = file:read_file(BasenameFile),
   case xaptum_tpm:tss2_sys_maybe_initialize(?TPM_HOSTNAME, ?TPM_PORT) of
@@ -139,7 +141,7 @@ group_context_inputs_tpm(DataDir)->
   end.
 
 initialize_certs(DataDir)->
-  ct:print("DataDir is ~p~", [DataDir]),
+  ct:print("DataDir is ~p~n", [DataDir]),
   RootIdFilename = filename:join(DataDir, ?ROOT_ID_FILE),
   RootPubkeyFilename = filename:join(DataDir, ?ROOT_PUBKEY_FILE),
 
@@ -155,7 +157,7 @@ initialize_certsTPM(SapiContext)->
 
 
 initialize_ids(DataDir)->
-  ct:print("DataDir is ~p~", [DataDir]),
+  ct:print("DataDir is ~p~n", [DataDir]),
   RequestedClientIdFile = filename:join([DataDir, ?REQUESTED_CLIENT_ID_FILE]),
   IntendedServerIdFile = filename:join([DataDir, ?SERVER_ID_FILE]),
 
