@@ -721,7 +721,7 @@ xtt_get_my_longterm_private_key(ErlNifEnv* env, int argc, const ERL_NIF_TERM arg
 }
 
 static ERL_NIF_TERM
-xtt_get_my_identity(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]){
+xtt_get_my_id(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]){
     if(argc != 1){
         return enif_make_badarg(env);
     }
@@ -789,7 +789,7 @@ static ErlNifFunc nif_funcs[] = {
     {"xtt_init_server_root_certificate_context", 2, xtt_init_server_root_certificate_context, ERL_NIF_DIRTY_JOB_CPU_BOUND},
     {"xtt_get_my_longterm_key", 1, xtt_get_my_longterm_key, 0},
     {"xtt_get_my_longterm_private_key", 1, xtt_get_my_longterm_private_key, 0},
-    {"xtt_get_my_identity", 1, xtt_get_my_identity, 0},
+    {"xtt_get_my_id", 1, xtt_get_my_id, 0},
     {"xtt_get_my_pseudonym", 1, xtt_get_my_pseudonym, 0}
 };
 

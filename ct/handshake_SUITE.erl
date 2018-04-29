@@ -98,7 +98,7 @@ validate_handshake_context(HandshakeContext)->
   {ok, LongTermPrivKey} = xtt_erlang:xtt_get_my_longterm_private_key(HandshakeContext),
   ct:print("LongTermPrivKey: ~p~n", [LongTermPrivKey]),
 
-  {ok, Identity} = xtt_erlang:xtt_get_my_identity(HandshakeContext),
+  {ok, Identity} = xtt_erlang:xtt_get_my_id(HandshakeContext),
   ct:print("Identity: ~p~n", [Identity]),
 
   {ok, Pseudonym} = xtt_erlang:xtt_get_my_pseudonym(HandshakeContext),
