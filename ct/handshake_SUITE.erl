@@ -50,7 +50,7 @@
 -define(TPM_PORT,  "2321").
 -define(TPM_PASSWORD, <<>>).
 
-all() -> [test1,test2].
+all() -> [test_tpm,test_file].
 
 init_per_suite(Config)->
   application:ensure_all_started(lager),
