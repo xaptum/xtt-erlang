@@ -686,7 +686,7 @@ xtt_get_my_longterm_key(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]){
        ErlNifBinary *longterm_key_bin = NULL;
        enif_alloc_binary(sizeof(xtt_ed25519_pub_key), longterm_key_bin);
        memcpy(longterm_key_bin->data, clients_longterm_key, sizeof(xtt_ed25519_pub_key));
-       return enif_make_tuple2(env, ATOM_OK, enif_make_binary(env, longterm_key_bin);
+       return enif_make_tuple2(env, ATOM_OK, enif_make_binary(env, longterm_key_bin));
     }
 }
 
@@ -716,7 +716,7 @@ xtt_get_my_longterm_private_key(ErlNifEnv* env, int argc, const ERL_NIF_TERM arg
         ErlNifBinary *longterm_priv_key_bin = NULL;
         enif_alloc_binary(sizeof(xtt_ed25519_priv_key), longterm_priv_key_bin);
         memcpy(longterm_priv_key_bin->data, my_longterm_priv_key, sizeof(xtt_ed25519_priv_key));
-        return enif_make_tuple2(env, ATOM_OK, enif_make_binary(env, longterm_priv_key_bin);
+        return enif_make_tuple2(env, ATOM_OK, enif_make_binary(env, longterm_priv_key_bin));
     }
 }
 
@@ -744,7 +744,7 @@ xtt_get_my_identity(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]){
        ErlNifBinary *client_id_bin = NULL;
        enif_alloc_binary(sizeof(xtt_identity_type), client_id_bin);
        memcpy(client_id_bin->data, client_id, sizeof(xtt_identity_type));
-       return enif_make_tuple2(env, ATOM_OK, enif_make_binary(env, client_id_bin);
+       return enif_make_tuple2(env, ATOM_OK, enif_make_binary(env, client_id_bin));
     }
 }
 
@@ -772,7 +772,7 @@ xtt_get_my_pseudonym(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]){
        ErlNifBinary *pseudonym_bin = NULL;
        enif_alloc_binary(sizeof(xtt_daa_pseudonym_lrsw), pseudonym_bin);
        memcpy(pseudonym_bin->data, pseudonym, sizeof(xtt_daa_pseudonym_lrsw));
-       return enif_make_tuple2(env, ATOM_OK, enif_make_binary(env, pseudonym_bin);
+       return enif_make_tuple2(env, ATOM_OK, enif_make_binary(env, pseudonym_bin));
     }
 }
 
