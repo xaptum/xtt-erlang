@@ -12,7 +12,11 @@
   xtt_handshake_preparse_serverattest/1,
   xtt_handshake_build_idclientattest/5,
   xtt_handshake_parse_idserverfinished/1,
-  xtt_build_error_msg/1]).
+  xtt_build_error_msg/1,
+  xtt_get_my_longterm_key/1,
+  xtt_get_my_longterm_private_key/1,
+  xtt_get_my_identity/1,
+  xtt_get_my_pseudonym/1]).
 
 -export([priv_dir/0]).
 
@@ -91,6 +95,18 @@ xtt_handshake_parse_idserverfinished(_HandsakeState)->
   erlang:nif_error(?LINE).
 
 xtt_build_error_msg(_XttVersion)->
+  erlang:nif_error(?LINE).
+
+xtt_get_my_longterm_key(_HandsakeState)->
+  erlang:nif_error(?LINE).
+
+xtt_get_my_longterm_private_key(_HandsakeState)->
+  erlang:nif_error(?LINE).
+
+xtt_get_my_identity(_HandsakeState)->
+  erlang:nif_error(?LINE).
+
+xtt_get_my_pseudonym(_HandsakeState)->
   erlang:nif_error(?LINE).
 
 

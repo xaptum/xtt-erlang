@@ -84,14 +84,28 @@ test_handshake(DataDir, TestId, XttServerPort, GroupContextInputs)->
     RequestedClientId, IntendedServerId,
     ?XTT_VERSION, ?XTT_SUITE,
     GroupContextInputs),
-  timer:sleep(5000),
+  timer:sleep(5000), %% TODO wait for handshake to finish by adding separate status field to xtt_handshake state
   {ok, HandshakeContext} = gen_server:call(TestId, get_handshake_context, 100000),
   ok = validate_handshake_context(HandshakeContext).
 
 
-validate_handshake_context(_HandshakeContext)->
+validate_handshake_context(HandshakeContext)->
   lager:info("Validating handshake context..."),
-  %% TODO create and test here NIFs that retreive various bits of info from post-handshake context
+
+  {ok, LongTermKey} = xtt_erlang:xtt_get_my_longterm_key(HandshakeContext),
+  ct:print("LongTermKey: ~p~n", [LongTermKey]),
+
+  {ok, LongTermPrivKey} = xtt_erlang:xtt_get_my_longterm_private_key(HandshakeContext),
+  ct:print("LongTermPrivKey: ~p~n", [LongTermPrivKey]),
+
+  {ok, Identity} = xtt_erlang:xtt_get_my_identity(HandshakeContext),
+  ct:print("Identity: ~p~n", [Identity]),
+
+  {ok, Pseudonym} = xtt_erlang:xtt_get_my_pseudonym(HandshakeContext),
+  ct:print("Psuedonym: ~p~n", [Pseudonym]),
+
+  true = false,
+
   ok.
 
 group_context_inputs(DataDir) ->
