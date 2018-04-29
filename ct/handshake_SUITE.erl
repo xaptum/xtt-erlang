@@ -58,7 +58,8 @@ init_per_suite(Config)->
 
 test_file(Config) ->
   lager:md([{source, "TEST_FILE"}]),
-  DataDir = ?config(data_dir, Config),
+%%  DataDir = ?config(data_dir, Config),
+  DataDir = proplists:get_value(data_dir, Config),
   ct:print("test_file DataDir is ~p~n", [DataDir]),
   {ok, GroupContextInputs} = group_context_inputs(DataDir),
   test_handshake(Config, 'TEST_FILE', ?XTT_SERVER_PORT, GroupContextInputs),
@@ -66,7 +67,8 @@ test_file(Config) ->
 
 test_tpm(Config) ->
   lager:md([{source, "TEST_TPM"}]),
-  DataDir = ?config(data_dir, Config),
+%%  DataDir = ?config(data_dir, Config),
+  DataDir = proplists:get_value(data_dir, Config),
   ct:print("test_tpm: DataDir is ~p~n", [DataDir]),
   {ok, GroupContextInputsTpm} = group_context_inputs_tpm(DataDir),
   test_handshake(Config, 'TEST_TPM', ?XTT_SERVER_PORT_TPM, GroupContextInputsTpm),
@@ -141,7 +143,6 @@ group_context_inputs_tpm(DataDir)->
   end.
 
 initialize_certs(DataDir)->
-  ct:print("DataDir is ~p~n", [DataDir]),
   RootIdFilename = filename:join(DataDir, ?ROOT_ID_FILE),
   RootPubkeyFilename = filename:join(DataDir, ?ROOT_PUBKEY_FILE),
 
@@ -157,7 +158,6 @@ initialize_certsTPM(SapiContext)->
 
 
 initialize_ids(DataDir)->
-  ct:print("DataDir is ~p~n", [DataDir]),
   RequestedClientIdFile = filename:join([DataDir, ?REQUESTED_CLIENT_ID_FILE]),
   IntendedServerIdFile = filename:join([DataDir, ?SERVER_ID_FILE]),
 
