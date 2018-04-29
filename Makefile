@@ -12,7 +12,7 @@ eunit: compile
 	$(REBAR) eunit
 
 ct: compile
-	$(REBAR) ct
+	$(REBAR) ct --dir $(BASEDIR)/ct --logdir $(BASEDIR)/ct/logs
 
 clean:
 	rm -rf _build

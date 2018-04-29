@@ -12,7 +12,7 @@
 -include_lib("common_test/include/ct.hrl").
 -include("../include/xtt.hrl").
 
--export([all/0]).
+-export([all/0, init_per_suite/1]).
 -export([test_file/1, test_tpm/1]).
 
 %% DEFAULT FILENAMES
@@ -65,6 +65,7 @@ test_file(Config) ->
 
 test_tpm(Config) ->
   lager:md([{source, "TEST_TPM"}]),
+  DataDir = ?config(data_dir, Config),
   {ok, GroupContextInputsTpm} = group_context_inputs_tpm(DataDir),
   test_handshake(Config, 'TEST_TPM', ?XTT_SERVER_PORT_TPM, GroupContextInputsTpm),
   Config.
@@ -83,7 +84,7 @@ test_handshake(DataDir, TestId, XttServerPort, GroupContextInputs)->
   ok = validate_handshake_context(HandshakeContext).
 
 
-validate_handshake_context(HandshakeContext)->
+validate_handshake_context(_HandshakeContext)->
   lager:info("Validating handshake context..."),
   %% TODO create and test here NIFs that retreive various bits of info from post-handshake context
   ok.
