@@ -12,7 +12,7 @@
 -include_lib("common_test/include/ct.hrl").
 -include("../include/xtt.hrl").
 
--export([all/0, init_per_suite/1]).
+-export([all/0, init_per_suite/1, end_per_suite/1]).
 -export([test_file/1, test_tpm/1]).
 
 %% DEFAULT FILENAMES
@@ -55,6 +55,9 @@ all() -> [test_tpm,test_file].
 init_per_suite(Config)->
   application:ensure_all_started(lager),
   Config.
+
+end_per_suite(Config) ->
+  ok.
 
 test_file(Config) ->
   lager:md([{source, "TEST_FILE"}]),
