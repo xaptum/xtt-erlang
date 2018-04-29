@@ -1,5 +1,6 @@
 PROJECT = xtt-erlang
 REBAR = rebar3
+BASEDIR = $(shell pwd)
 
 compile:
 	$(REBAR) compile
@@ -7,8 +8,11 @@ compile:
 xref:
 	$(REBAR) xref
 
-test: compile
+eunit: compile
 	$(REBAR) eunit
+
+ct: compile
+	$(REBAR) ct
 
 clean:
 	rm -rf _build
