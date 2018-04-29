@@ -110,6 +110,7 @@ group_context_inputs(DataDir) ->
   {ok, #group_context_inputs{gpk=Gid, credential = Credential, basename = Basename, priv_key = PrivKey}}.
 
 group_context_inputs_tpm(DataDir)->
+  ct:print("DataDir is ~p~", [DataDir]),
   BasenameFile = filename:join([DataDir, ?BASENAME_FILE]),
   {ok, Basename} = file:read_file(BasenameFile),
   case xaptum_tpm:tss2_sys_maybe_initialize(?TPM_HOSTNAME, ?TPM_PORT) of
@@ -138,6 +139,7 @@ group_context_inputs_tpm(DataDir)->
   end.
 
 initialize_certs(DataDir)->
+  ct:print("DataDir is ~p~", [DataDir]),
   RootIdFilename = filename:join(DataDir, ?ROOT_ID_FILE),
   RootPubkeyFilename = filename:join(DataDir, ?ROOT_PUBKEY_FILE),
 
@@ -153,6 +155,7 @@ initialize_certsTPM(SapiContext)->
 
 
 initialize_ids(DataDir)->
+  ct:print("DataDir is ~p~", [DataDir]),
   RequestedClientIdFile = filename:join([DataDir, ?REQUESTED_CLIENT_ID_FILE]),
   IntendedServerIdFile = filename:join([DataDir, ?SERVER_ID_FILE]),
 
