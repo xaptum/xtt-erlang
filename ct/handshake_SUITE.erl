@@ -58,20 +58,18 @@ init_per_suite(Config)->
 
 test_file(Config) ->
   lager:md([{source, "TEST_FILE"}]),
-%%  DataDir = ?config(data_dir, Config),
-  DataDir = proplists:get_value(data_dir, Config),
+  DataDir = ?config(data_dir, Config),
   ct:print("test_file DataDir is ~p~n", [DataDir]),
   {ok, GroupContextInputs} = group_context_inputs(DataDir),
-  test_handshake(Config, 'TEST_FILE', ?XTT_SERVER_PORT, GroupContextInputs),
+  test_handshake(DataDir, 'TEST_FILE', ?XTT_SERVER_PORT, GroupContextInputs),
   Config.
 
 test_tpm(Config) ->
   lager:md([{source, "TEST_TPM"}]),
-%%  DataDir = ?config(data_dir, Config),
-  DataDir = proplists:get_value(data_dir, Config),
+  DataDir = ?config(data_dir, Config),
   ct:print("test_tpm: DataDir is ~p~n", [DataDir]),
   {ok, GroupContextInputsTpm} = group_context_inputs_tpm(DataDir),
-  test_handshake(Config, 'TEST_TPM', ?XTT_SERVER_PORT_TPM, GroupContextInputsTpm),
+  test_handshake(DataDir, 'TEST_TPM', ?XTT_SERVER_PORT_TPM, GroupContextInputsTpm),
   Config.
 
 
