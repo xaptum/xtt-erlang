@@ -15,7 +15,7 @@
   xtt_build_error_msg/1,
   xtt_get_my_longterm_key/1,
   xtt_get_my_longterm_private_key/1,
-  xtt_get_my_identity/1,
+  xtt_get_my_id/1,
   xtt_get_my_pseudonym/1]).
 
 -export([priv_dir/0]).

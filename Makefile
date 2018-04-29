@@ -8,7 +8,7 @@ compile:
 xref:
 	$(REBAR) xref
 
-ct: compile
+test: compile
 	$(REBAR) ct --dir $(BASEDIR)/ct --logdir $(BASEDIR)/ct/logs
 
 clean:
