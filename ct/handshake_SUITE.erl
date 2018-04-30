@@ -119,7 +119,7 @@ validate_handshake_context(HandshakeContext)->
   {ok, Pseudonym} = xtt_erlang:xtt_get_my_pseudonym(HandshakeContext),
   ct:print("Psuedonym: ~p~n", [Pseudonym]),
 
-  {ok, Cert} = xtt_erlang:xtt_x509_from_keypair(LongTermPrivKey, LongTermPrivKey, Identity),
+  {ok, Cert} = xtt_erlang:xtt_x509_from_keypair(LongTermKey, LongTermPrivKey, Identity),
   ct:print("Cert: ~p~n", [Cert]),
 
   {ok, Asn1} = xtt_erlang:xtt_asn1_from_private_key(LongTermPrivKey),
