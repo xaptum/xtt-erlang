@@ -86,12 +86,24 @@ test_handshake(DataDir, TestId, XttServerPort, GroupContextInputs)->
     ?XTT_VERSION, ?XTT_SUITE,
     GroupContextInputs),
   timer:sleep(5000), %% TODO wait for handshake to finish by adding separate status field to xtt_handshake state
-  {ok, HandshakeContext} = gen_server:call(TestId, get_handshake_context, 100000),
-  ct:print("Validating handshake context ~p~n", [HandshakeContext]),
-  validate_handshake_context(HandshakeContext).
+  process_handshake_result(TestId).
 
+process_handshake_result(TestId)->
+  process_handshake_result(TestId, gen_server:call(TestId, get_handshake_context, 10000)).
+
+process_handshake_result(_TestId, {ok, HandshakeContext})->
+  validate_handshake_context(HandshakeContext);
+process_handshake_result(TestId, {error, {in_progress, CurrentStatus}})->
+  ct:print("Waiting for handshake to finish, current status ~p~n", [CurrentStatus]),
+  timer:sleep(100),
+  process_handshake_result(TestId, gen_server:call(TestId, get_handshake_context, 10000));
+process_handshake_result(_TestId, TotalFailure)->
+  ct:print("Handshake failed: ~p~n", [TotalFailure]),
+  {error, TotalFailure}.
 
 validate_handshake_context(HandshakeContext)->
+  ct:print("Handshake finished, validating results!~n"),
+
   {ok, LongTermKey} = xtt_erlang:xtt_get_my_longterm_key(HandshakeContext),
   ct:print("LongTermKey: ~p~n", [LongTermKey]),
 
@@ -104,7 +116,7 @@ validate_handshake_context(HandshakeContext)->
   {ok, Pseudonym} = xtt_erlang:xtt_get_my_pseudonym(HandshakeContext),
   ct:print("Psuedonym: ~p~n", [Pseudonym]),
 
-  ok.
+  {ok, handshake_valid}.
 
 group_context_inputs(DataDir) ->
   BasenameFile = filename:join([DataDir, ?BASENAME_FILE]),

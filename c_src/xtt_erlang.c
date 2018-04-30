@@ -664,6 +664,9 @@ xtt_build_error_msg(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]){
 
 static ERL_NIF_TERM
 xtt_get_my_longterm_key(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]){
+
+    puts("START NIF: xtt_get_my_longterm_key...\n");
+
     if(argc != 1){
         return enif_make_badarg(env);
     }
@@ -694,6 +697,8 @@ xtt_get_my_longterm_key(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]){
 static ERL_NIF_TERM
 xtt_get_my_longterm_private_key(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]){
 
+    puts("START NIF: xtt_get_my_longterm_private_key...\n");
+
     if(argc != 1){
         return enif_make_badarg(env);
     }
@@ -722,6 +727,9 @@ xtt_get_my_longterm_private_key(ErlNifEnv* env, int argc, const ERL_NIF_TERM arg
 
 static ERL_NIF_TERM
 xtt_get_my_id(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]){
+
+    puts("START NIF: xtt_get_my_id...\n");
+
     if(argc != 1){
         return enif_make_badarg(env);
     }
@@ -750,6 +758,9 @@ xtt_get_my_id(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]){
 
 static ERL_NIF_TERM
 xtt_get_my_pseudonym(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]){
+
+    puts("START NIF: xtt_get_my_pseudonym...\n");
+
     if(argc != 1){
         return enif_make_badarg(env);
     }

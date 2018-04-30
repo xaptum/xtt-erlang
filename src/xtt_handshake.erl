@@ -31,7 +31,7 @@
 
 -record(state,
 {
-  status,
+  handshake_status,
   xtt_server_host, xtt_server_port, xtt_server_socket,
   requested_client_id, intended_server_id,
   xtt_version = ?XTT_VERSION_ONE,  xtt_suite = ?XTT_X25519_LRSW_ED25519_AES256GCM_SHA512,
@@ -83,6 +83,7 @@ init([XttServerHost, XttServerPort,
   lager:md([{source, atom_to_list(RegName)}]),
   gen_server:cast(self(), start_handshake),
   {ok, #state{
+    handshake_state = initialized,
     xtt_server_host = XttServerHost,
     xtt_server_port = XttServerPort,
     xtt_server_socket = XttServerSocket,
@@ -94,14 +95,16 @@ init([XttServerHost, XttServerPort,
     handshake_state = XttClientHandshakeState
     }}.
 
-handle_call(get_handshake_context, _From, #state{handshake_state = HandshakeState} = State) ->
-  {reply, {ok, HandshakeState}, State}.
+handle_call(get_handshake_context, _From, #state{handshake_status=success, handshake_state = HandshakeState} = State) ->
+  {reply, {ok, HandshakeState}, State};
+handle_call(get_handshake_context, _From, #state{handshake_status=AnythingOtherThanSuccess, handshake_state = HandshakeState} = State) ->
+  {reply, {error, {in_progress, AnythingOtherThanSuccess}}, State}.
 
 handle_cast(start_handshake, #state{handshake_state = HandshakeState} = State) ->
   Result = xtt_erlang:xtt_start_client_handshake(HandshakeState),
   lager:info("Result of start_client_handshake ~p", [Result]),
   gen_server:cast(self(), Result),
-  {noreply, State};
+  {noreply, State#state{handshake_status = starting}};
 
 handle_cast({?XTT_RETURN_WANT_READ, BytesRequested},
     #state{xtt_server_socket = Socket, handshake_state = HandshakeState} = State)->
@@ -109,7 +112,7 @@ handle_cast({?XTT_RETURN_WANT_READ, BytesRequested},
   {ok, Bin} = gen_tcp:recv(Socket, BytesRequested),
   Result = xtt_erlang:xtt_client_handshake(HandshakeState, 0, Bin),
   gen_server:cast(self(), Result),
-  {noreply, State};
+  {noreply, State#state{handshake_status = want_read_finished}};
 
 handle_cast({?XTT_RETURN_WANT_WRITE, BinToWrite},
     #state{xtt_server_socket = XttServerSocket, handshake_state = HandshakeState} = State)->
@@ -117,7 +120,7 @@ handle_cast({?XTT_RETURN_WANT_WRITE, BinToWrite},
   ok = gen_tcp:send(XttServerSocket, BinToWrite),
   Result = xtt_erlang:xtt_client_handshake(HandshakeState, size(BinToWrite), <<>>),
   gen_server:cast(self(), Result),
-  {noreply, State};
+  {noreply, State#state{handshake_status = want_write_finished}};
 
 
 handle_cast({?XTT_RETURN_WANT_PREPARSESERVERATTEST},
@@ -125,7 +128,7 @@ handle_cast({?XTT_RETURN_WANT_PREPARSESERVERATTEST},
   lager:info("XTT_RETURN_WANT_PREPARSESERVERATTEST"),
   Result = xtt_erlang:xtt_handshake_preparse_serverattest(HandshakeState),
   gen_server:cast(self(), Result),
-  {noreply, State};
+  {noreply, State#state{handshake_status = preparseserverattest_finished}};
 
 handle_cast({?XTT_RETURN_WANT_BUILDIDCLIENTATTEST, ClaimedRootId},
     #state{handshake_state = HandshakeState,
@@ -140,26 +143,24 @@ handle_cast({?XTT_RETURN_WANT_BUILDIDCLIENTATTEST, ClaimedRootId},
         {ok, GroupCtx} = xtt_utils:maybe_init_group_context(GroupContext),
         Result = xtt_erlang:xtt_handshake_build_idclientattest(ServerCert, RequestedClientId, IntendedServerId, GroupCtx, HandshakeState),
         gen_server:cast(self(), Result),
-        {noreply, State};
+        {noreply, State#state{handshake_status = buildidclientattest_finished}};
     {error, Error} ->
       lager:error("Failed to lookup cert context by claimed root id ~p due to error ~p", [ClaimedRootId, Error]),
       ErrorMsg = xtt_erlang:xtt_build_error_msg(XttVersion),
       ok = gen_tcp:send(XttServerSocket, ErrorMsg),
-      {stop, cert_lookup_failure, State}
+      {stop, cert_lookup_failure, State#state{handshake_status = cert_lookup_failure}}
   end;
-
-
 
 handle_cast({?XTT_RETURN_WANT_PARSEIDSERVERFINISHED},
   #state{handshake_state = HandshakeState} = State)->
   lager:info("XTT_RETURN_WANT_PARSEIDSERVERFINISHED"),
   Result = xtt_erlang:xtt_handshake_parse_idserverfinished(HandshakeState),
   gen_server:cast(self(), Result),
-  {noreply, State};
+  {noreply, State#state{handshake_status = parseidserver_finished}};
 
 handle_cast({?XTT_RETURN_RECEIVED_ERROR_MSG}, State)->
   lager:error("Received error message from server"),
-  {stop, ?XTT_RETURN_FAILURE, State};
+  {stop, ?XTT_RETURN_FAILURE, State#state{handshake_status = error_msg_from_server}};
 
 handle_cast({DefaultError, ErrMsg},
     #state{xtt_server_socket = XttServerSocket} = State)->
@@ -170,15 +171,15 @@ handle_cast({DefaultError, ErrMsg},
     {error, Reason} ->
       lager:error("Filed to send error message ~p to server due to TCP send error ~p", [ErrMsg, Reason])
   end,
-  {stop, ?XTT_RETURN_FAILURE, State};
+  {stop, ?XTT_RETURN_FAILURE, State#state{handshake_status = client_error}};
 
 handle_cast({?XTT_RETURN_HANDSHAKE_FINISHED}, State)->
   lager:info("SUCCESS!"),
-  {noreply, State};
+  {noreply, State#state{handshake_status = success}};
 
 handle_cast(Unexpected, State)->
   lager:error("Unexpected result during handshake: ~p", [Unexpected]),
-  {stop, ?XTT_RETURN_FAILURE, State}.
+  {stop, ?XTT_RETURN_FAILURE, State#state{handshake_status = unexpected_result}}.
 
 handle_info(_Info, State) ->
   {noreply, State}.
