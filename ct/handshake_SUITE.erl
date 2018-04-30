@@ -110,8 +110,12 @@ validate_handshake_context(HandshakeContext)->
   {ok, LongTermPrivKey} = xtt_erlang:xtt_get_my_longterm_private_key(HandshakeContext),
   lager:info("LongTermPrivKey: ~p", [LongTermPrivKey]),
 
+
   {ok, Identity} = xtt_erlang:xtt_get_my_id(HandshakeContext),
   lager:info("Identity: ~p", [Identity]),
+
+  <<IP1:16,IP2:16,IP3:16,IP4:16,IP5:16,IP6:16, IP7:16,IP8:16>> = Identity,
+  lager:info("Ipv6: ~p", [inet:ntoa({IP1, IP2, IP3, IP4, IP5, IP6, IP7, IP8})]),
 
   {ok, IdStr} = xtt_erlang:xtt_id_to_string(Identity),
   lager:info("Converted identity string: ~p", [IdStr]),
