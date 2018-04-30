@@ -681,6 +681,8 @@ xtt_get_my_longterm_key(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]){
 
     xtt_return_code_type rc = xtt_get_my_longterm_key_ed25519(&clients_longterm_key, &(cs->ctx));
 
+    printf("Result of xtt_get_my_longterm_key_ed25519 is %d\n", rc);
+
     if (XTT_RETURN_SUCCESS != rc) {
         printf("Error getting the client's public longterm key!\n");
         return enif_make_tuple2(env, ATOM_ERROR, enif_make_int(env, rc));
@@ -713,6 +715,8 @@ xtt_get_my_longterm_private_key(ErlNifEnv* env, int argc, const ERL_NIF_TERM arg
 
     xtt_return_code_type rc = xtt_get_my_longterm_private_key_ed25519(&my_longterm_priv_key, &(cs->ctx));
 
+    printf("Result of xtt_get_my_longterm_private_key_ed25519 is %d\n", rc);
+
     if (XTT_RETURN_SUCCESS != rc) {
         printf("Error getting the client's private longterm key!\n");
         return enif_make_tuple2(env, ATOM_ERROR, enif_make_int(env, rc));
@@ -744,6 +748,8 @@ xtt_get_my_id(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]){
 
     xtt_return_code_type rc = xtt_get_my_identity(&client_id, &(cs->ctx));
 
+    printf("Result of xtt_get_my_identity is %d\n", rc);
+
     if (XTT_RETURN_SUCCESS != rc) {
         printf("Error getting the client's identity!\n");
         return enif_make_tuple2(env, ATOM_ERROR, enif_make_int(env, rc));
@@ -774,6 +780,8 @@ xtt_get_my_pseudonym(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]){
     xtt_daa_pseudonym_lrsw pseudonym;
 
     xtt_return_code_type rc = xtt_get_my_pseudonym_lrsw(&pseudonym, &(cs->ctx));
+
+    printf("Result of xtt_get_my_pseudonym_lrsw is %d\n", rc);
 
     if (XTT_RETURN_SUCCESS != rc) {
         printf("Error getting the client's pseudonym!\n");
