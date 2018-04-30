@@ -83,7 +83,7 @@ init([XttServerHost, XttServerPort,
   lager:md([{source, atom_to_list(RegName)}]),
   gen_server:cast(self(), start_handshake),
   {ok, #state{
-    handshake_state = initialized,
+    handshake_status = initialized,
     xtt_server_host = XttServerHost,
     xtt_server_port = XttServerPort,
     xtt_server_socket = XttServerSocket,
