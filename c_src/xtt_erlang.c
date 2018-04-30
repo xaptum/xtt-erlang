@@ -9,8 +9,6 @@
 
 extern ErlNifResourceType* TCTI_RESOURCE_TYPE;
 
-//#define USE_TPM 1
-
 ERL_NIF_TERM ATOM_OK;
 ERL_NIF_TERM ATOM_ERROR;
 
@@ -72,7 +70,7 @@ load(ErlNifEnv* env, void** priv, ERL_NIF_TERM load_info)
 // *************** INTERNAL FUNCTIONS *****************
 
 static ERL_NIF_TERM
-build_response(ErlNifEnv* env, int rc, ERL_NIF_TERM *cs_term, struct client_state *cs, ErlNifBinary *temp_bin){
+build_response(ErlNifEnv* env, int rc, struct client_state *cs, ErlNifBinary *temp_bin){
 
     printf("Building response with ret code %d when context state is %d\n", rc, cs->ctx.state);
 
@@ -82,7 +80,7 @@ build_response(ErlNifEnv* env, int rc, ERL_NIF_TERM *cs_term, struct client_stat
     switch(rc){
         case XTT_RETURN_WANT_READ:
             puts("Building response for XTT_RETURN_WANT_READ\n");
-            response = enif_make_tuple3(env, ret_code, enif_make_int(env, cs->bytes_requested), *cs_term);
+            response = enif_make_tuple2(env, ret_code, enif_make_int(env, cs->bytes_requested));
             break;
         case XTT_RETURN_WANT_WRITE:
             puts("Building response for XTT_RETURN_WANT_WRITE\n");
@@ -90,7 +88,7 @@ build_response(ErlNifEnv* env, int rc, ERL_NIF_TERM *cs_term, struct client_stat
             enif_alloc_binary(cs->bytes_requested, temp_bin);
             memcpy(temp_bin->data, cs->io_ptr, cs->bytes_requested);
 
-            response = enif_make_tuple3(env, ret_code, enif_make_binary(env, temp_bin), *cs_term);
+            response = enif_make_tuple2(env, ret_code, enif_make_binary(env, temp_bin));
             break;
         case XTT_RETURN_WANT_BUILDIDCLIENTATTEST:
             puts("Building response for XTT_RETURN_WANT_BUILDIDCLIENTATTEST\n");
@@ -98,30 +96,30 @@ build_response(ErlNifEnv* env, int rc, ERL_NIF_TERM *cs_term, struct client_stat
             //typedef struct {unsigned char data[16];} xtt_certificate_root_id;
             enif_alloc_binary(sizeof(xtt_certificate_root_id), temp_bin);
             memcpy(temp_bin->data, &(cs->claimed_root_id), sizeof(xtt_certificate_root_id));
-            response = enif_make_tuple3(env, ret_code, enif_make_binary(env, temp_bin), *cs_term);
+            response = enif_make_tuple2(env, ret_code, enif_make_binary(env, temp_bin));
             break;
         case XTT_RETURN_WANT_PREPARSESERVERATTEST:
             puts("Building response for XTT_RETURN_WANT_PREPARSESERVERATTEST\n");
-            response = enif_make_tuple2(env, ret_code, *cs_term);
+            response = enif_make_tuple1(env, ret_code);
             break;
         case XTT_RETURN_WANT_PARSEIDSERVERFINISHED:
             puts("Building response for XTT_RETURN_WANT_PARSEIDSERVERFINISHED\n");
-            response = enif_make_tuple2(env, ret_code, *cs_term);
+            response = enif_make_tuple1(env, ret_code);
             break;
         case XTT_RETURN_HANDSHAKE_FINISHED:
             puts("Building response for XTT_RETURN_HANDSHAKE_FINISHED\n");
-            response = enif_make_tuple2(env, ret_code, *cs_term);
+            response = enif_make_tuple1(env, ret_code);
             break;
         case XTT_RETURN_RECEIVED_ERROR_MSG:
-            puts("Building response for XTT_RETURN_WANT_PARSEIDSERVERFINISHED\n");
-            response = enif_make_tuple2(env, ret_code, *cs_term);
+            puts("Building response for XTT_RETURN_RECEIVED_ERROR_MSG\n");
+            response = enif_make_tuple1(env, ret_code);
             break;
         default:
             printf("Building default response for %d\n", rc);
             printf("Creating write err_buffer of length %d from %p\n", cs->bytes_requested, cs->io_ptr);
             enif_alloc_binary(cs->bytes_requested, temp_bin);
             memcpy(temp_bin->data, cs->io_ptr, cs->bytes_requested);
-            response = enif_make_tuple3(env, ret_code, enif_make_binary(env, temp_bin), *cs_term);
+            response = enif_make_tuple2(env, ret_code, enif_make_binary(env, temp_bin));
     }
 
     return response;
@@ -150,7 +148,7 @@ xtt_init_client_group_context(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[
             fprintf(stderr, "Bad arg at position 0\n");
             return enif_make_badarg(env);
     }
-    else if (gpkBin.size != sizeof(xtt_daa_group_pub_key_lrsw)){
+    else if (gpkBin.size != sizeof(xtt_group_id)){
         fprintf(stderr, "Bad arg at position 0: expecting xtt_daa_group_pub_key_lrsw size %lu got %zu\n",
         sizeof(xtt_daa_group_pub_key_lrsw), gpkBin.size);
         return enif_make_badarg(env);
@@ -192,18 +190,6 @@ xtt_init_client_group_context(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[
         return enif_make_badarg(env);
     }
 
-    puts("Starting xtt_initialize_client_group_context_lrsw with args:\n");
-
-    xtt_group_id gid;
-    int hash_ret = crypto_hash_sha256(gid.data, gpkBin.data, gpkBin.size);
-    if (0 != hash_ret)
-        return enif_make_int(env, -1);
-
-    printf("gid: %s (size %zu)\n", gid.data, sizeof(gid));
-    printf("daaPrivKey: %s (size %lu)\n", daaPrivKeyBin.data, daaPrivKeyBin.size);
-    printf("daaCredBin: %s (size %lu)\n", daaCredBin.data, daaCredBin.size);
-    printf("basename: %s (size %lu)\n", basenameBin.data, basenameBin.size);
-
     xtt_daa_priv_key_lrsw  *xtt_daa_priv_key = enif_alloc_resource(STRUCT_RESOURCE_TYPE, sizeof(xtt_daa_priv_key_lrsw));
     xtt_daa_credential_lrsw *xtt_daa_cred = enif_alloc_resource(STRUCT_RESOURCE_TYPE, sizeof(xtt_daa_credential_lrsw));
 
@@ -211,7 +197,7 @@ xtt_init_client_group_context(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[
     memcpy(xtt_daa_cred->data, daaCredBin.data, sizeof(xtt_daa_credential_lrsw));
 
     xtt_return_code_type rc = xtt_initialize_client_group_context_lrsw(group_ctx,
-                                  &gid,
+                                  (xtt_group_id *) gpkBin.data,
                                   xtt_daa_priv_key,
                                   xtt_daa_cred,
                                   basenameBin.data,
@@ -316,14 +302,6 @@ puts("START NIF: xtt_init_client_group_contextTPM...\n");
     int hash_ret = crypto_hash_sha256(gid.data, gpkBin.data, gpkBin.size);
     if (0 != hash_ret)
         return enif_make_int(env, -1);
-
-    puts("Starting xtt_initialize_client_group_context_lrswTPM with args:\n");
-    printf("gid: %s (size %zu)\n", gid.data, sizeof(gid));
-    printf("daaCredBin: %s (size %lu)\n", daaCredBin.data, daaCredBin.size);
-    printf("basename: %s (size %lu)\n", basenameBin.data, basenameBin.size);
-    printf("key_handle: %lu\n", key_handle);
-    printf("tpm_password: %s of size %lu\n",
-        tpmPasswordBin.data, tpmPasswordBin.size);
 
     xtt_return_code_type rc = xtt_initialize_client_group_context_lrswTPM(group_ctx,
                                                                      &gid,
@@ -488,9 +466,7 @@ xtt_start_client_handshake(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 
     struct client_state *cs;
 
-    ERL_NIF_TERM cs_term = argv[0];
-
-    if(!enif_get_resource(env, cs_term, CLIENT_STATE_RESOURCE_TYPE, (void**) &cs)) {
+    if(!enif_get_resource(env, argv[0], CLIENT_STATE_RESOURCE_TYPE, (void**) &cs)) {
         return enif_make_badarg(env);
     }
 
@@ -500,7 +476,7 @@ xtt_start_client_handshake(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 
     ErlNifBinary temp_bin;
 
-    return build_response(env, rc, &cs_term, cs, &temp_bin);
+    return build_response(env, rc, cs, &temp_bin);
 }
 
 static ERL_NIF_TERM
@@ -514,9 +490,7 @@ xtt_client_handshake(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]){
 
     struct client_state *cs;
 
-    ERL_NIF_TERM cs_term = argv[0];
-
-    if(!enif_get_resource(env, cs_term, CLIENT_STATE_RESOURCE_TYPE, (void**) &cs)) {
+    if(!enif_get_resource(env, argv[0], CLIENT_STATE_RESOURCE_TYPE, (void**) &cs)) {
         return enif_make_badarg(env);
     }
 
@@ -550,7 +524,7 @@ xtt_client_handshake(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]){
 
     ErlNifBinary temp_bin;
 
-    return build_response(env, rc, &cs_term, cs, &temp_bin);
+    return build_response(env, rc, cs, &temp_bin);
 }
 
 static ERL_NIF_TERM
@@ -564,9 +538,7 @@ xtt_handshake_preparse_serverattest(ErlNifEnv* env, int argc, const ERL_NIF_TERM
 
     struct client_state *cs;
 
-    ERL_NIF_TERM cs_term = argv[0];
-
-    if(!enif_get_resource(env, cs_term, CLIENT_STATE_RESOURCE_TYPE, (void**) &cs)) {
+    if(!enif_get_resource(env, argv[0], CLIENT_STATE_RESOURCE_TYPE, (void**) &cs)) {
         return enif_make_badarg(env);
     }
 
@@ -577,7 +549,7 @@ xtt_handshake_preparse_serverattest(ErlNifEnv* env, int argc, const ERL_NIF_TERM
 
     ErlNifBinary temp_bin;
 
-    return build_response(env, rc, &cs_term, cs, &temp_bin);
+    return build_response(env, rc, cs, &temp_bin);
 }
 
 static ERL_NIF_TERM
@@ -625,9 +597,7 @@ xtt_handshake_build_idclientattest(ErlNifEnv* env, int argc, const ERL_NIF_TERM 
                 return enif_make_badarg(env);
     }
 
-    ERL_NIF_TERM cs_term = argv[4];
-
-    if(!enif_get_resource(env, cs_term, CLIENT_STATE_RESOURCE_TYPE, (void**) &cs)) {
+    if(!enif_get_resource(env, argv[4], CLIENT_STATE_RESOURCE_TYPE, (void**) &cs)) {
             return enif_make_badarg(env);
     }
 
@@ -639,9 +609,11 @@ xtt_handshake_build_idclientattest(ErlNifEnv* env, int argc, const ERL_NIF_TERM 
                                                        group_ctx,
                                                        &(cs->ctx));
 
+     printf("FINISHED NIF: xtt_handshake_build_idclientattest with response %d\n", rc);
+
      ErlNifBinary temp_bin;
 
-     return build_response(env, rc, &cs_term, cs, &temp_bin);
+     return build_response(env, rc, cs, &temp_bin);
 }
 
 static ERL_NIF_TERM
@@ -655,9 +627,7 @@ xtt_handshake_parse_idserverfinished(ErlNifEnv* env, int argc, const ERL_NIF_TER
 
     struct client_state *cs;
 
-    ERL_NIF_TERM cs_term = argv[0];
-
-    if(!enif_get_resource(env, cs_term, CLIENT_STATE_RESOURCE_TYPE, (void**) &cs)) {
+    if(!enif_get_resource(env, argv[0], CLIENT_STATE_RESOURCE_TYPE, (void**) &cs)) {
         return enif_make_badarg(env);
     }
 
@@ -666,7 +636,7 @@ xtt_handshake_parse_idserverfinished(ErlNifEnv* env, int argc, const ERL_NIF_TER
                                                      &(cs->ctx));
     ErlNifBinary temp_bin;
 
-    return build_response(env, rc, &cs_term, cs, &temp_bin);
+    return build_response(env, rc, cs, &temp_bin);
 }
 
 static ERL_NIF_TERM
@@ -682,17 +652,283 @@ xtt_build_error_msg(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]){
         return enif_make_badarg(env);
    }
 
-//   unsigned char err_buffer[16]; // TODO fix
-  // (void)build_error_msg(err_buffer, &bytes_requested, version);
-
    uint16_t *err_buff_len = (uint16_t *) 16;
    ErlNifBinary *err_buffer_bin = NULL;
    enif_alloc_binary((size_t) err_buff_len, err_buffer_bin);
    (void)build_error_msg(err_buffer_bin->data, err_buff_len, version);
-   //         memcpy(err_buffer_bin->data, err_buffer, sizeof(err_buffer);
 
-   return enif_make_binary(env, err_buffer_bin); // for writing by xtt_erlang.erl
+   return enif_make_binary(env, err_buffer_bin);
 }
+
+static ERL_NIF_TERM
+xtt_get_my_longterm_key(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]){
+
+    puts("START NIF: xtt_get_my_longterm_key...\n");
+
+    if(argc != 1){
+        return enif_make_badarg(env);
+    }
+
+    struct client_state *cs;
+
+    if(!enif_get_resource(env, argv[0], CLIENT_STATE_RESOURCE_TYPE, (void**) &cs)) {
+        return enif_make_badarg(env);
+    }
+
+    xtt_ed25519_pub_key clients_longterm_key;
+
+    xtt_return_code_type rc = xtt_get_my_longterm_key_ed25519(&clients_longterm_key, &(cs->ctx));
+
+    printf("Result of xtt_get_my_longterm_key_ed25519 is %d\n", rc);
+
+    if (XTT_RETURN_SUCCESS != rc) {
+        printf("Error getting the client's public longterm key!\n");
+        return enif_make_tuple2(env, ATOM_ERROR, enif_make_int(env, rc));
+    }
+    else{
+       ErlNifBinary longterm_key_bin;
+       enif_alloc_binary(sizeof(xtt_ed25519_pub_key), &longterm_key_bin);
+       memcpy(longterm_key_bin.data, clients_longterm_key.data, sizeof(xtt_ed25519_pub_key));
+       return enif_make_tuple2(env, ATOM_OK, enif_make_binary(env, &longterm_key_bin));
+    }
+}
+
+
+static ERL_NIF_TERM
+xtt_get_my_longterm_private_key(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]){
+
+    puts("START NIF: xtt_get_my_longterm_private_key...\n");
+
+    if(argc != 1){
+        return enif_make_badarg(env);
+    }
+
+    struct client_state *cs;
+
+    if(!enif_get_resource(env, argv[0], CLIENT_STATE_RESOURCE_TYPE, (void**) &cs)) {
+        return enif_make_badarg(env);
+    }
+
+    xtt_ed25519_priv_key my_longterm_priv_key;
+
+    xtt_return_code_type rc = xtt_get_my_longterm_private_key_ed25519(&my_longterm_priv_key, &(cs->ctx));
+
+    printf("Result of xtt_get_my_longterm_private_key_ed25519 is %d\n", rc);
+
+    if (XTT_RETURN_SUCCESS != rc) {
+        printf("Error getting the client's private longterm key!\n");
+        return enif_make_tuple2(env, ATOM_ERROR, enif_make_int(env, rc));
+    }
+    else{
+        ErlNifBinary longterm_priv_key_bin;
+        enif_alloc_binary(sizeof(xtt_ed25519_priv_key), &longterm_priv_key_bin);
+        memcpy(longterm_priv_key_bin.data, my_longterm_priv_key.data, sizeof(xtt_ed25519_priv_key));
+        return enif_make_tuple2(env, ATOM_OK, enif_make_binary(env, &longterm_priv_key_bin));
+    }
+}
+
+static ERL_NIF_TERM
+xtt_get_my_id(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]){
+
+    puts("START NIF: xtt_get_my_id...\n");
+
+    if(argc != 1){
+        return enif_make_badarg(env);
+    }
+
+    struct client_state *cs;
+
+    if(!enif_get_resource(env, argv[0], CLIENT_STATE_RESOURCE_TYPE, (void**) &cs)) {
+        return enif_make_badarg(env);
+    }
+
+    xtt_identity_type client_id;
+
+    xtt_return_code_type rc = xtt_get_my_identity(&client_id, &(cs->ctx));
+
+    printf("Result of xtt_get_my_identity is %d\n", rc);
+
+    if (XTT_RETURN_SUCCESS != rc) {
+        printf("Error getting the client's identity!\n");
+        return enif_make_tuple2(env, ATOM_ERROR, enif_make_int(env, rc));
+    }
+    else{
+       ErlNifBinary client_id_bin;
+       enif_alloc_binary(sizeof(xtt_identity_type), &client_id_bin);
+       memcpy(client_id_bin.data, client_id.data, sizeof(xtt_identity_type));
+       return enif_make_tuple2(env, ATOM_OK, enif_make_binary(env, &client_id_bin));
+    }
+}
+
+static ERL_NIF_TERM
+xtt_get_my_pseudonym(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]){
+
+    puts("START NIF: xtt_get_my_pseudonym...\n");
+
+    if(argc != 1){
+        return enif_make_badarg(env);
+    }
+
+    struct client_state *cs;
+
+    if(!enif_get_resource(env, argv[0], CLIENT_STATE_RESOURCE_TYPE, (void**) &cs)) {
+        return enif_make_badarg(env);
+    }
+
+    xtt_daa_pseudonym_lrsw pseudonym;
+
+    xtt_return_code_type rc = xtt_get_my_pseudonym_lrsw(&pseudonym, &(cs->ctx));
+
+    printf("Result of xtt_get_my_pseudonym_lrsw is %d\n", rc);
+
+    if (XTT_RETURN_SUCCESS != rc) {
+        printf("Error getting the client's pseudonym!\n");
+        return enif_make_tuple2(env, ATOM_ERROR, enif_make_int(env, rc));
+    }
+    else{
+       ErlNifBinary pseudonym_bin;
+       enif_alloc_binary((size_t) sizeof(xtt_daa_pseudonym_lrsw), &pseudonym_bin);
+       memcpy(pseudonym_bin.data, pseudonym.data, sizeof(xtt_daa_pseudonym_lrsw));
+       return enif_make_tuple2(env, ATOM_OK, enif_make_binary(env, &pseudonym_bin));
+    }
+}
+
+static ERL_NIF_TERM
+xtt_id_to_string(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]){
+
+    puts("START NIF: xtt_id_to_string...\n");
+
+    if(argc != 1){
+        return enif_make_badarg(env);
+    }
+
+    ErlNifBinary my_assigned_id;
+
+    if(!enif_inspect_binary(env, argv[0], &my_assigned_id) ) {
+        fprintf(stderr, "Bad 'my_assigned_id' arg\n");
+        return enif_make_badarg(env);
+    }
+    else if (my_assigned_id.size != sizeof(xtt_identity_type)){
+        fprintf(stderr, "Bad arg at position 0: expecting 'my_assigned_id' of size %lu got %zu\n",
+        sizeof(xtt_identity_type), my_assigned_id.size);
+        return enif_make_badarg(env);
+    }
+
+    xtt_identity_string my_assigned_id_as_string;
+    int convert_ret = xtt_identity_to_string(
+                                    (xtt_identity_type *) my_assigned_id.data,
+                                    &my_assigned_id_as_string
+                                );
+    if (0 != convert_ret) {
+        fprintf(stderr, "Error converting assigned id %s to string\n", my_assigned_id.data);
+        return enif_make_tuple2(env, ATOM_ERROR, enif_make_int(env, convert_ret));
+    }
+
+    printf("Converted my_assigned_id %s to string %s\n", my_assigned_id.data, my_assigned_id_as_string.data);
+
+    ErlNifBinary id_str_bin;
+    enif_alloc_binary((size_t) sizeof(xtt_identity_string), &id_str_bin);
+    memcpy(id_str_bin.data, my_assigned_id_as_string.data, sizeof(xtt_identity_string));
+    return enif_make_tuple2(env, ATOM_OK, enif_make_binary(env, &id_str_bin));
+}
+
+static ERL_NIF_TERM
+xtt_x509_from_keypair(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]){
+
+    puts("START NIF: xtt_x509_from_keypair...\n");
+
+    if(argc != 3){
+        return enif_make_badarg(env);
+    }
+
+    ErlNifBinary my_longterm_key;
+    ErlNifBinary my_longterm_priv_key;
+    ErlNifBinary my_assigned_id;
+
+    if(!enif_inspect_binary(env, argv[0], &my_longterm_key) ) {
+        fprintf(stderr, "Bad 'my_longterm_key' arg\n");
+        return enif_make_badarg(env);
+    }
+    else if (my_longterm_key.size != sizeof(xtt_ed25519_pub_key)){
+        fprintf(stderr, "Bad arg at position 0: expecting 'my_longterm_key' of size %lu got %zu\n",
+        sizeof(xtt_ed25519_pub_key), my_longterm_key.size);
+        return enif_make_badarg(env);
+    }
+
+    if(!enif_inspect_binary(env, argv[1], &my_longterm_priv_key) ) {
+        fprintf(stderr, "Bad 'my_longterm_priv_key' arg\n");
+        return enif_make_badarg(env);
+    }
+    else if (my_longterm_priv_key.size != sizeof(xtt_ed25519_priv_key)){
+        fprintf(stderr, "Bad arg at position 1: expecting 'my_longterm_priv_key' of size %lu got %zu\n",
+        sizeof(xtt_ed25519_priv_key), my_longterm_priv_key.size);
+        return enif_make_badarg(env);
+    }
+
+    if(!enif_inspect_binary(env, argv[2], &my_assigned_id) ) {
+        fprintf(stderr, "Bad 'my_assigned_id' arg\n");
+        return enif_make_badarg(env);
+    }
+    else if (my_assigned_id.size != sizeof(xtt_identity_type)){
+        fprintf(stderr, "Bad arg at position 0: expecting 'my_assigned_id' of size %lu got %zu\n",
+        sizeof(xtt_identity_type), my_assigned_id.size);
+        return enif_make_badarg(env);
+    }
+
+    // Save longterm keypair as X509 certificate
+    unsigned char cert_buf[XTT_X509_CERTIFICATE_LENGTH];
+
+    if (0 != xtt_x509_from_ed25519_keypair((xtt_ed25519_pub_key *) my_longterm_key.data,
+                                           (xtt_ed25519_priv_key *) my_longterm_priv_key.data,
+                                           (xtt_identity_type *) my_assigned_id.data,
+                                           cert_buf)) {
+
+        fprintf(stderr, "Error creating X509 certificate\n");
+        return enif_make_tuple2(env, ATOM_ERROR, enif_make_int(env, 1));
+    }
+    else{
+        ErlNifBinary cert_bin;
+        enif_alloc_binary((size_t) XTT_X509_CERTIFICATE_LENGTH, &cert_bin);
+        memcpy(cert_bin.data, cert_buf, XTT_X509_CERTIFICATE_LENGTH);
+        return enif_make_tuple2(env, ATOM_OK, enif_make_binary(env, &cert_bin));
+    }
+}
+
+
+static ERL_NIF_TERM
+xtt_asn1_from_private_key(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]){
+
+    puts("START NIF: xtt_asn1_from_private_key...\n");
+
+    if(argc != 1){
+        return enif_make_badarg(env);
+    }
+
+    ErlNifBinary my_longterm_priv_key;
+
+    if(!enif_inspect_binary(env, argv[0], &my_longterm_priv_key) ) {
+        fprintf(stderr, "Bad 'my_longterm_priv_key' arg\n");
+        return enif_make_badarg(env);
+    }
+    else if (my_longterm_priv_key.size != sizeof(xtt_ed25519_priv_key)){
+        fprintf(stderr, "Bad arg at position 0: expecting 'my_longterm_priv_key' of size %lu got %zu\n",
+        sizeof(xtt_ed25519_priv_key), my_longterm_priv_key.size);
+        return enif_make_badarg(env);
+    }
+
+    unsigned char asn1_priv_buf[XTT_ASN1_PRIVATE_KEY_LENGTH];
+    if (0 != xtt_asn1_from_ed25519_private_key((xtt_ed25519_priv_key *) my_longterm_priv_key.data, asn1_priv_buf)) {
+        fprintf(stderr, "Error creating ASN.1 private key\n");
+        return enif_make_tuple2(env, ATOM_ERROR, enif_make_int(env, 1));
+    }
+    else{
+        ErlNifBinary asn1_priv_bin;
+        enif_alloc_binary((size_t) XTT_ASN1_PRIVATE_KEY_LENGTH, &asn1_priv_bin);
+        memcpy(asn1_priv_bin.data, asn1_priv_buf, XTT_ASN1_PRIVATE_KEY_LENGTH);
+        return enif_make_tuple2(env, ATOM_OK, enif_make_binary(env, &asn1_priv_bin));
+    }
+}
+
 
 static ErlNifFunc nif_funcs[] = {
     {"xtt_init_client_handshake_context", 2, xtt_init_client_handshake_context, ERL_NIF_DIRTY_JOB_CPU_BOUND},
@@ -704,7 +940,14 @@ static ErlNifFunc nif_funcs[] = {
     {"xtt_build_error_msg", 1, xtt_build_error_msg, ERL_NIF_DIRTY_JOB_CPU_BOUND},
     {"xtt_init_client_group_context", 4, xtt_init_client_group_context, ERL_NIF_DIRTY_JOB_CPU_BOUND},
     {"xtt_init_client_group_contextTPM", 6, xtt_init_client_group_contextTPM, ERL_NIF_DIRTY_JOB_CPU_BOUND},
-    {"xtt_init_server_root_certificate_context", 2, xtt_init_server_root_certificate_context, ERL_NIF_DIRTY_JOB_CPU_BOUND}
+    {"xtt_init_server_root_certificate_context", 2, xtt_init_server_root_certificate_context, ERL_NIF_DIRTY_JOB_CPU_BOUND},
+    {"xtt_get_my_longterm_key", 1, xtt_get_my_longterm_key, 0},
+    {"xtt_get_my_longterm_private_key", 1, xtt_get_my_longterm_private_key, 0},
+    {"xtt_get_my_id", 1, xtt_get_my_id, 0},
+    {"xtt_get_my_pseudonym", 1, xtt_get_my_pseudonym, 0},
+    {"xtt_id_to_string", 1, xtt_id_to_string, 0},
+    {"xtt_x509_from_keypair", 3, xtt_x509_from_keypair, 0},
+    {"xtt_asn1_from_private_key", 1, xtt_asn1_from_private_key, 0}
 };
 
 ERL_NIF_INIT(xtt_erlang, nif_funcs, &load, NULL, NULL, NULL);
