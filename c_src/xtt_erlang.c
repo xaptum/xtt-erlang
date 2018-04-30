@@ -817,7 +817,10 @@ xtt_id_to_string(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]){
     }
 
     xtt_identity_string my_assigned_id_as_string;
-    int convert_ret = xtt_identity_to_string(my_assigned_id.data, &my_assigned_id_as_string);
+    int convert_ret = xtt_identity_to_string(
+                                    (xtt_identity_type *) my_assigned_id.data,
+                                    &my_assigned_id_as_string
+                                );
     if (0 != convert_ret) {
         fprintf(stderr, "Error converting assigned id %s to string\n", my_assigned_id.data);
         return enif_make_tuple2(env, ATOM_ERROR, enif_make_int(env, convert_ret));
