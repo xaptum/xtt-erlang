@@ -9,8 +9,6 @@
 
 extern ErlNifResourceType* TCTI_RESOURCE_TYPE;
 
-//#define USE_TPM 1
-
 ERL_NIF_TERM ATOM_OK;
 ERL_NIF_TERM ATOM_ERROR;
 
@@ -826,13 +824,111 @@ xtt_id_to_string(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]){
         return enif_make_tuple2(env, ATOM_ERROR, enif_make_int(env, convert_ret));
     }
 
-    printf("Converted my_assigned_id %s to string %s\n", my_assigned_id, my_assigned_id_as_string);
+    printf("Converted my_assigned_id %s to string %s\n", my_assigned_id.data, my_assigned_id_as_string.data);
 
     ErlNifBinary id_str_bin;
     enif_alloc_binary((size_t) sizeof(xtt_identity_string), &id_str_bin);
     memcpy(id_str_bin.data, my_assigned_id_as_string.data, sizeof(xtt_identity_string));
     return enif_make_tuple2(env, ATOM_OK, enif_make_binary(env, &id_str_bin));
 }
+
+static ERL_NIF_TERM
+xtt_x509_from_keypair(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]){
+
+    puts("START NIF: xtt_x509_from_keypair...\n");
+
+    if(argc != 3){
+        return enif_make_badarg(env);
+    }
+
+    ErlNifBinary my_longterm_key;
+    ErlNifBinary my_longterm_priv_key;
+    ErlNifBinary my_assigned_id;
+
+    if(!enif_inspect_binary(env, argv[0], &my_longterm_key) ) {
+        fprintf(stderr, "Bad 'my_longterm_key' arg\n");
+        return enif_make_badarg(env);
+    }
+    else if (my_longterm_key.size != sizeof(xtt_ed25519_pub_key)){
+        fprintf(stderr, "Bad arg at position 0: expecting 'my_longterm_key' of size %lu got %zu\n",
+        sizeof(xtt_ed25519_pub_key), my_longterm_key.size);
+        return enif_make_badarg(env);
+    }
+
+    if(!enif_inspect_binary(env, argv[1], &my_longterm_priv_key) ) {
+        fprintf(stderr, "Bad 'my_longterm_priv_key' arg\n");
+        return enif_make_badarg(env);
+    }
+    else if (my_longterm_priv_key.size != sizeof(xtt_ed25519_priv_key)){
+        fprintf(stderr, "Bad arg at position 1: expecting 'my_longterm_priv_key' of size %lu got %zu\n",
+        sizeof(xtt_ed25519_priv_key), my_longterm_priv_key.size);
+        return enif_make_badarg(env);
+    }
+
+    if(!enif_inspect_binary(env, argv[2], &my_assigned_id) ) {
+        fprintf(stderr, "Bad 'my_assigned_id' arg\n");
+        return enif_make_badarg(env);
+    }
+    else if (my_assigned_id.size != sizeof(xtt_identity_type)){
+        fprintf(stderr, "Bad arg at position 0: expecting 'my_assigned_id' of size %lu got %zu\n",
+        sizeof(xtt_identity_type), my_assigned_id.size);
+        return enif_make_badarg(env);
+    }
+
+    // Save longterm keypair as X509 certificate
+    unsigned char cert_buf[XTT_X509_CERTIFICATE_LENGTH];
+
+    if (0 != xtt_x509_from_ed25519_keypair((xtt_ed25519_pub_key *) my_longterm_key.data,
+                                           (xtt_ed25519_priv_key *) my_longterm_private_key.data,
+                                           (xtt_identity_type *) my_assigned_id.data,
+                                           cert_buf)) {
+
+        fprintf(stderr, "Error creating X509 certificate\n");
+        return enif_make_tuple2(env, ATOM_ERROR, enif_make_int(env, 1));
+    }
+    else{
+        ErlNifBinary cert_bin;
+        enif_alloc_binary((size_t) XTT_X509_CERTIFICATE_LENGTH, &cert_bin);
+        memcpy(cert_bin.data, cert_buf, XTT_X509_CERTIFICATE_LENGTH);
+        return enif_make_tuple2(env, ATOM_OK, enif_make_binary(env, &cert_bin));
+    }
+}
+
+
+static ERL_NIF_TERM
+xtt_asn1_from_private_key(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]){
+
+    puts("START NIF: xtt_asn1_from_private_key...\n");
+
+    if(argc != 1){
+        return enif_make_badarg(env);
+    }
+
+    ErlNifBinary my_longterm_priv_key;
+
+    if(!enif_inspect_binary(env, argv[0], &my_longterm_priv_key) ) {
+        fprintf(stderr, "Bad 'my_longterm_priv_key' arg\n");
+        return enif_make_badarg(env);
+    }
+    else if (my_longterm_priv_key.size != sizeof(xtt_ed25519_priv_key)){
+        fprintf(stderr, "Bad arg at position 0: expecting 'my_longterm_priv_key' of size %lu got %zu\n",
+        sizeof(xtt_ed25519_priv_key), my_longterm_priv_key.size);
+        return enif_make_badarg(env);
+    }
+
+    unsigned char asn1_priv_buf[XTT_ASN1_PRIVATE_KEY_LENGTH];
+    if (0 != xtt_asn1_from_ed25519_private_key(&my_longterm_private_key, asn1_priv_buf)) {
+        fprintf(stderr, "Error creating ASN.1 private key\n");
+        return enif_make_tuple2(env, ATOM_ERROR, enif_make_int(env, 1));
+    }
+    else{
+        ErlNifBinary asn1_priv_bin;
+        enif_alloc_binary((size_t) XTT_ASN1_PRIVATE_KEY_LENGTH, &asn1_priv_bin);
+        memcpy(asn1_priv_bin.data, asn1_priv_buf, XTT_ASN1_PRIVATE_KEY_LENGTH);
+        return enif_make_tuple2(env, ATOM_OK, enif_make_binary(env, &asn1_priv_bin));
+    }
+}
+
 
 static ErlNifFunc nif_funcs[] = {
     {"xtt_init_client_handshake_context", 2, xtt_init_client_handshake_context, ERL_NIF_DIRTY_JOB_CPU_BOUND},
@@ -849,7 +945,9 @@ static ErlNifFunc nif_funcs[] = {
     {"xtt_get_my_longterm_private_key", 1, xtt_get_my_longterm_private_key, 0},
     {"xtt_get_my_id", 1, xtt_get_my_id, 0},
     {"xtt_get_my_pseudonym", 1, xtt_get_my_pseudonym, 0},
-    {"xtt_id_to_string", 1, xtt_id_to_string, 0}
+    {"xtt_id_to_string", 1, xtt_id_to_string, 0},
+    {"xtt_x509_from_keypair", 3, xtt_x509_from_keypair, 0},
+    {"xtt_asn1_from_private_key", 1, xtt_asn1_from_private_key, 0}
 };
 
 ERL_NIF_INIT(xtt_erlang, nif_funcs, &load, NULL, NULL, NULL);

@@ -16,8 +16,10 @@
   xtt_get_my_longterm_key/1,
   xtt_get_my_longterm_private_key/1,
   xtt_get_my_id/1,
+  xtt_get_my_pseudonym/1,
   xtt_id_to_string/1,
-  xtt_get_my_pseudonym/1]).
+  xtt_x509_from_keypair/3,
+  xtt_asn1_from_private_key/1]).
 
 -export([priv_dir/0]).
 
@@ -107,12 +109,17 @@ xtt_get_my_longterm_private_key(_HandsakeState)->
 xtt_get_my_id(_HandsakeState)->
   erlang:nif_error(?LINE).
 
-xtt_id_to_string(_Identity)->
-  erlang:nif_error(?LINE).
-
 xtt_get_my_pseudonym(_HandsakeState)->
   erlang:nif_error(?LINE).
 
+xtt_id_to_string(_Identity)->
+  erlang:nif_error(?LINE).
+
+xtt_x509_from_keypair(_LongtermKey, _LongtermPrivKey, _Identity)->
+  erlang:nif_error(?LINE).
+
+xtt_asn1_from_private_key(_LongtermPrivKey)->
+  erlang:nif_error(?LINE).
 
 %%====================================================================
 %% Internal functions
