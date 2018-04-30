@@ -823,7 +823,7 @@ xtt_id_to_string(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]){
         return enif_make_tuple2(env, ATOM_ERROR, enif_make_int(env, convert_ret));
     }
 
-    printf("Converted my_assigned_id %s to string %s\n", my_assigned_id, my_assigned_id_as_string)
+    printf("Converted my_assigned_id %s to string %s\n", my_assigned_id, my_assigned_id_as_string);
 
     ErlNifBinary id_str_bin;
     enif_alloc_binary((size_t) sizeof(xtt_identity_string), &id_str_bin);
