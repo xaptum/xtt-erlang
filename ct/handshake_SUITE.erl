@@ -113,6 +113,9 @@ validate_handshake_context(HandshakeContext)->
   {ok, Identity} = xtt_erlang:xtt_get_my_id(HandshakeContext),
   ct:print("Identity: ~p~n", [Identity]),
 
+  {ok, IdStr} = xtt_erlang:xtt_id_to_string(Identity),
+  ct:print("Converted identity string: ~p~n", [IdStr]),
+
   {ok, Pseudonym} = xtt_erlang:xtt_get_my_pseudonym(HandshakeContext),
   ct:print("Psuedonym: ~p~n", [Pseudonym]),
 

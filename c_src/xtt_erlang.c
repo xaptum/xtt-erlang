@@ -795,6 +795,42 @@ xtt_get_my_pseudonym(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]){
     }
 }
 
+static ERL_NIF_TERM
+xtt_id_to_string(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]){
+
+    puts("START NIF: xtt_id_to_string...\n");
+
+    if(argc != 1){
+        return enif_make_badarg(env);
+    }
+
+    ErlNifBinary my_assigned_id;
+
+    if(!enif_inspect_binary(env, argv[0], &my_assigned_id) ) {
+        fprintf(stderr, "Bad 'my_assigned_id' arg\n");
+        return enif_make_badarg(env);
+    }
+    else if (my_assigned_id.size != sizeof(xtt_identity_type)){
+        fprintf(stderr, "Bad arg at position 0: expecting 'my_assigned_id' of size %lu got %zu\n",
+        sizeof(xtt_identity_type), my_assigned_id.size);
+        return enif_make_badarg(env);
+    }
+
+    xtt_identity_string my_assigned_id_as_string;
+    int convert_ret = xtt_identity_to_string(my_assigned_id.data, &my_assigned_id_as_string);
+    if (0 != convert_ret) {
+        fprintf(stderr, "Error converting assigned id %s to string\n", my_assigned_id.data);
+        return enif_make_tuple2(env, ATOM_ERROR, enif_make_int(env, convert_ret));
+    }
+
+    printf("Converted my_assigned_id %s to string %s\n", my_assigned_id, my_assigned_id_as_string)
+
+    ErlNifBinary id_str_bin;
+    enif_alloc_binary((size_t) sizeof(xtt_identity_string), &id_str_bin);
+    memcpy(id_str_bin.data, my_assigned_id_as_string.data, sizeof(xtt_identity_string));
+    return enif_make_tuple2(env, ATOM_OK, enif_make_binary(env, &id_str_bin));
+}
+
 static ErlNifFunc nif_funcs[] = {
     {"xtt_init_client_handshake_context", 2, xtt_init_client_handshake_context, ERL_NIF_DIRTY_JOB_CPU_BOUND},
     {"xtt_start_client_handshake", 1, xtt_start_client_handshake, ERL_NIF_DIRTY_JOB_CPU_BOUND},
@@ -809,7 +845,8 @@ static ErlNifFunc nif_funcs[] = {
     {"xtt_get_my_longterm_key", 1, xtt_get_my_longterm_key, 0},
     {"xtt_get_my_longterm_private_key", 1, xtt_get_my_longterm_private_key, 0},
     {"xtt_get_my_id", 1, xtt_get_my_id, 0},
-    {"xtt_get_my_pseudonym", 1, xtt_get_my_pseudonym, 0}
+    {"xtt_get_my_pseudonym", 1, xtt_get_my_pseudonym, 0},
+    {"xtt_id_to_string", 1, xtt_id_to_string, 0}
 };
 
 ERL_NIF_INIT(xtt_erlang, nif_funcs, &load, NULL, NULL, NULL);
