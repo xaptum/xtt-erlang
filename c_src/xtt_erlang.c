@@ -756,7 +756,7 @@ xtt_get_my_id(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]){
     }
     else{
        ErlNifBinary client_id_bin;
-       enif_alloc_binary(sizeof(xtt_identity_type), client_id_bin);
+       enif_alloc_binary(sizeof(xtt_identity_type), &client_id_bin);
        memcpy(client_id_bin.data, client_id.data, sizeof(xtt_identity_type));
        return enif_make_tuple2(env, ATOM_OK, enif_make_binary(env, &client_id_bin));
     }
@@ -789,7 +789,7 @@ xtt_get_my_pseudonym(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]){
     }
     else{
        ErlNifBinary pseudonym_bin;
-       enif_alloc_binary((size_t) sizeof(xtt_daa_pseudonym_lrsw), pseudonym_bin);
+       enif_alloc_binary((size_t) sizeof(xtt_daa_pseudonym_lrsw), &pseudonym_bin);
        memcpy(pseudonym_bin.data, pseudonym.data, sizeof(xtt_daa_pseudonym_lrsw));
        return enif_make_tuple2(env, ATOM_OK, enif_make_binary(env, &pseudonym_bin));
     }
