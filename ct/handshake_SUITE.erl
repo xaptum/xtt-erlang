@@ -63,7 +63,7 @@ end_per_suite(Config) ->
 test_file(Config) ->
   lager:md([{source, "TEST_FILE"}]),
   DataDir = ?config(data_dir, Config),
-  ct:print("test_file DataDir is ~p~n", [DataDir]),
+  lager:info("test_file DataDir is ~p", [DataDir]),
   {ok, GroupContextInputs} = group_context_inputs(DataDir),
   test_handshake(DataDir, 'TEST_FILE', ?XTT_SERVER_PORT, GroupContextInputs),
   Config.
@@ -71,7 +71,7 @@ test_file(Config) ->
 test_tpm(Config) ->
   lager:md([{source, "TEST_TPM"}]),
   DataDir = ?config(data_dir, Config),
-  ct:print("test_tpm: DataDir is ~p~n", [DataDir]),
+  lager:info("test_tpm: DataDir is ~p", [DataDir]),
   {ok, GroupContextInputsTpm} = group_context_inputs_tpm(DataDir),
   test_handshake(DataDir, 'TEST_TPM', ?XTT_SERVER_PORT_TPM, GroupContextInputsTpm),
   Config.
@@ -94,38 +94,36 @@ process_handshake_result(TestId)->
 process_handshake_result(_TestId, {ok, HandshakeContext})->
   validate_handshake_context(HandshakeContext);
 process_handshake_result(TestId, {error, {in_progress, CurrentStatus}})->
-  ct:print("Waiting for handshake to finish, current status ~p~n", [CurrentStatus]),
+  lager:info("Waiting for handshake to finish, current status ~p", [CurrentStatus]),
   timer:sleep(100),
   process_handshake_result(TestId, gen_server:call(TestId, get_handshake_context, 10000));
 process_handshake_result(_TestId, TotalFailure)->
-  ct:print("Handshake failed: ~p~n", [TotalFailure]),
+  lager:info("Handshake failed: ~p", [TotalFailure]),
   {error, TotalFailure}.
 
 validate_handshake_context(HandshakeContext)->
-  ct:print("Handshake finished, validating results!~n"),
+  lager:info("Handshake finished, validating results!"),
 
   {ok, LongTermKey} = xtt_erlang:xtt_get_my_longterm_key(HandshakeContext),
-  ct:print("LongTermKey: ~p~n", [LongTermKey]),
+  lager:info("LongTermKey: ~p", [LongTermKey]),
 
   {ok, LongTermPrivKey} = xtt_erlang:xtt_get_my_longterm_private_key(HandshakeContext),
-  ct:print("LongTermPrivKey: ~p~n", [LongTermPrivKey]),
+  lager:info("LongTermPrivKey: ~p", [LongTermPrivKey]),
 
   {ok, Identity} = xtt_erlang:xtt_get_my_id(HandshakeContext),
-  ct:print("Identity: ~p~n", [Identity]),
+  lager:info("Identity: ~p", [Identity]),
 
   {ok, IdStr} = xtt_erlang:xtt_id_to_string(Identity),
-  ct:print("Converted identity string: ~p~n", [IdStr]),
+  lager:info("Converted identity string: ~p", [IdStr]),
 
   {ok, Pseudonym} = xtt_erlang:xtt_get_my_pseudonym(HandshakeContext),
-  ct:print("Psuedonym: ~p~n", [Pseudonym]),
+  lager:info("Psuedonym: ~p", [Pseudonym]),
 
   {ok, Cert} = xtt_erlang:xtt_x509_from_keypair(LongTermKey, LongTermPrivKey, Identity),
-  ct:print("Cert: ~p~n", [Cert]),
+  lager:info("Cert: ~p", [Cert]),
 
   {ok, Asn1} = xtt_erlang:xtt_asn1_from_private_key(LongTermPrivKey),
-  ct:print("Asn1: ~p~n", [Asn1]),
-
-  true = false,
+  lager:info("Asn1: ~p", [Asn1]),
 
   {ok, handshake_valid}.
 
@@ -150,7 +148,7 @@ group_context_inputs(DataDir) ->
   {ok, #group_context_inputs{gpk=Gid, credential = Credential, basename = Basename, priv_key = PrivKey}}.
 
 group_context_inputs_tpm(DataDir)->
-  ct:print("DataDir is ~p~n", [DataDir]),
+  lager:info("DataDir is ~p~n", [DataDir]),
   BasenameFile = filename:join([DataDir, ?BASENAME_FILE]),
   {ok, Basename} = file:read_file(BasenameFile),
   case xaptum_tpm:tss2_sys_maybe_initialize(?TPM_HOSTNAME, ?TPM_PORT) of
