@@ -690,7 +690,7 @@ xtt_get_my_longterm_key(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]){
     else{
        ErlNifBinary longterm_key_bin;
        enif_alloc_binary(sizeof(xtt_ed25519_pub_key), &longterm_key_bin);
-       memcpy(longterm_key_bin->data, clients_longterm_key.data, sizeof(xtt_ed25519_pub_key));
+       memcpy(longterm_key_bin.data, clients_longterm_key.data, sizeof(xtt_ed25519_pub_key));
        return enif_make_tuple2(env, ATOM_OK, enif_make_binary(env, &longterm_key_bin));
     }
 }
