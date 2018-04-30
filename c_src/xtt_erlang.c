@@ -677,9 +677,9 @@ xtt_get_my_longterm_key(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]){
         return enif_make_badarg(env);
     }
 
-    ErlNifBinary *longterm_key_bin = NULL;
+    ErlNifBinary longterm_key_bin;
     printf("Allocating binary of size %d/n", sizeof(xtt_ed25519_pub_key));
-    enif_alloc_binary(sizeof(xtt_ed25519_pub_key), longterm_key_bin);
+    enif_alloc_binary(sizeof(xtt_ed25519_pub_key), &longterm_key_bin);
 
     xtt_ed25519_pub_key clients_longterm_key;
 
