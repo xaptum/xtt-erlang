@@ -14,6 +14,7 @@
 
 -export([all/0, init_per_suite/1, end_per_suite/1]).
 -export([test_file/1, test_tpm/1]).
+-export([test_handshake/4, group_context_inputs_tpm/1]).
 
 %% DEFAULT FILENAMES
 -define(REQUESTED_CLIENT_ID_FILE, "requested_client_id.bin").
@@ -86,12 +87,11 @@ test_handshake(DataDir, TestId, XttServerPort, GroupContextInputs)->
     GroupContextInputs),
   timer:sleep(5000), %% TODO wait for handshake to finish by adding separate status field to xtt_handshake state
   {ok, HandshakeContext} = gen_server:call(TestId, get_handshake_context, 100000),
-  ok = validate_handshake_context(HandshakeContext).
+  ct:print("Validating handshake context ~p~n", [HandshakeContext]),
+  validate_handshake_context(HandshakeContext).
 
 
 validate_handshake_context(HandshakeContext)->
-  lager:info("Validating handshake context..."),
-
   {ok, LongTermKey} = xtt_erlang:xtt_get_my_longterm_key(HandshakeContext),
   ct:print("LongTermKey: ~p~n", [LongTermKey]),
 
@@ -103,8 +103,6 @@ validate_handshake_context(HandshakeContext)->
 
   {ok, Pseudonym} = xtt_erlang:xtt_get_my_pseudonym(HandshakeContext),
   ct:print("Psuedonym: ~p~n", [Pseudonym]),
-
-  true = false,
 
   ok.
 

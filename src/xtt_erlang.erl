@@ -106,6 +106,9 @@ xtt_get_my_longterm_private_key(_HandsakeState)->
 xtt_get_my_id(_HandsakeState)->
   erlang:nif_error(?LINE).
 
+xtt_id_to_string(Identity)->
+  erlang:nif_error(?LINE).
+
 xtt_get_my_pseudonym(_HandsakeState)->
   erlang:nif_error(?LINE).
 
