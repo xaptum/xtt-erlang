@@ -677,9 +677,13 @@ xtt_get_my_longterm_key(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]){
         return enif_make_badarg(env);
     }
 
-    xtt_ed25519_pub_key *clients_longterm_key;
+    ErlNifBinary *longterm_key_bin = NULL;
+    printf("Allocating binary of size %d/n", sizeof(xtt_ed25519_pub_key));
+    enif_alloc_binary(sizeof(xtt_ed25519_pub_key), longterm_key_bin);
 
-    xtt_return_code_type rc = xtt_get_my_longterm_key_ed25519(clients_longterm_key, &(cs->ctx));
+    xtt_ed25519_pub_key clients_longterm_key;
+
+    xtt_return_code_type rc = xtt_get_my_longterm_key_ed25519(&clients_longterm_key, &(cs->ctx));
 
     printf("Result of xtt_get_my_longterm_key_ed25519 is %d\n", rc);
 
@@ -688,9 +692,6 @@ xtt_get_my_longterm_key(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]){
         return enif_make_tuple2(env, ATOM_ERROR, enif_make_int(env, rc));
     }
     else{
-       ErlNifBinary *longterm_key_bin = NULL;
-       printf("Allocating binary of size %d/n", sizeof(xtt_ed25519_pub_key);
-       enif_alloc_binary(sizeof(xtt_ed25519_pub_key), longterm_key_bin);
        memcpy(longterm_key_bin->data, clients_longterm_key.data, sizeof(xtt_ed25519_pub_key));
        return enif_make_tuple2(env, ATOM_OK, enif_make_binary(env, longterm_key_bin));
     }
