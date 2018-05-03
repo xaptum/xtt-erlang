@@ -72,6 +72,23 @@ load(ErlNifEnv* env, void** priv, ERL_NIF_TERM load_info)
     return 0;
 }
 
+
+static int write_buffer_to_file(const char *filename, unsigned char *buffer, size_t bytes_to_write)
+{
+    FILE *ptr;
+
+    ptr = fopen(filename, "wb");
+    if (NULL == ptr)
+        return -1;
+
+    size_t bytes_written = fwrite(buffer, 1, bytes_to_write, ptr);
+
+    (void)fclose(ptr);
+
+
+    return (int)bytes_written;
+}
+
 // *************** INTERNAL FUNCTIONS *****************
 
 static ERL_NIF_TERM
