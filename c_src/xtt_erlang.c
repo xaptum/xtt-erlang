@@ -1,4 +1,5 @@
 #include <string.h>
+#include <openssl/ssl.h>
 #include <ecdaa.h>
 #include <xtt.h>
 #include <erl_nif.h>
@@ -6,7 +7,7 @@
 // TODO REMOVE
 #include <tss2/tss2_sys.h>
 #include <tss2/tss2_tcti_socket.h>
-#include <openssl/ssl.h>
+
 
 extern ErlNifResourceType* TCTI_RESOURCE_TYPE;
 
