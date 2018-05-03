@@ -13,6 +13,9 @@ extern ErlNifResourceType* TCTI_RESOURCE_TYPE;
 ERL_NIF_TERM ATOM_OK;
 ERL_NIF_TERM ATOM_ERROR;
 
+const char *longterm_public_key_out_file = "longterm_certificate.asn1.bin";
+const char *longterm_private_key_out_file = "longterm_priv.asn1.bin";
+
 ErlNifResourceType* STRUCT_RESOURCE_TYPE;
 ErlNifResourceType* CLIENT_STATE_RESOURCE_TYPE;
 ErlNifResourceType* GROUP_CONTEXT_RESOURCE_TYPE;
@@ -895,6 +898,13 @@ xtt_x509_from_keypair(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]){
         ErlNifBinary cert_bin;
         enif_alloc_binary((size_t) XTT_X509_CERTIFICATE_LENGTH, &cert_bin);
         memcpy(cert_bin.data, cert_buf, XTT_X509_CERTIFICATE_LENGTH);
+
+        write_ret = write_buffer_to_file(longterm_public_key_out_file, cert_buf, sizeof(cert_buf));
+        if (sizeof(cert_buf) != write_ret) {
+            fprintf(stderr, "Error writing longterm public key certificate to file\n");
+            return 1;
+        }
+
         return enif_make_tuple2(env, ATOM_OK, enif_make_binary(env, &cert_bin));
     }
 }
@@ -930,6 +940,13 @@ xtt_asn1_from_private_key(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]){
         ErlNifBinary asn1_priv_bin;
         enif_alloc_binary((size_t) XTT_ASN1_PRIVATE_KEY_LENGTH, &asn1_priv_bin);
         memcpy(asn1_priv_bin.data, asn1_priv_buf, XTT_ASN1_PRIVATE_KEY_LENGTH);
+
+        write_ret = write_buffer_to_file(longterm_private_key_out_file, asn1_priv_buf, sizeof(asn1_priv_buf));
+        if (sizeof(asn1_priv_buf) != write_ret) {
+            fprintf(stderr, "Error writing longterm private key to ASN.1 file\n");
+        }
+
+
         return enif_make_tuple2(env, ATOM_OK, enif_make_binary(env, &asn1_priv_bin));
     }
 }
