@@ -6,6 +6,7 @@
 // TODO REMOVE
 #include <tss2/tss2_sys.h>
 #include <tss2/tss2_tcti_socket.h>
+#include <openssl/ssl.h>
 
 extern ErlNifResourceType* TCTI_RESOURCE_TYPE;
 
@@ -883,10 +884,14 @@ xtt_x509_from_keypair(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]){
                                            (xtt_identity_type *) my_assigned_id.data,
                                            cert_buf)) {
 
+
+
         fprintf(stderr, "Error creating X509 certificate\n");
         return enif_make_tuple2(env, ATOM_ERROR, enif_make_int(env, 1));
     }
     else{
+        X509 * temp_x509 = (X509 *) cert_buf;
+
         ErlNifBinary cert_bin;
         enif_alloc_binary((size_t) XTT_X509_CERTIFICATE_LENGTH, &cert_bin);
         memcpy(cert_bin.data, cert_buf, XTT_X509_CERTIFICATE_LENGTH);
