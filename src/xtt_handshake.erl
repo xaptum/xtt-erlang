@@ -89,7 +89,7 @@ start_handshake(
 
 handshake_complete(HandshakeIdOrPid)->
   gen_server:stop(HandshakeIdOrPid),
-  undefined = process_info(HandshakeIdOrPid).
+  undefined = whereis(HandshakeIdOrPid). %% sanity check
 
 
 %%%===================================================================
