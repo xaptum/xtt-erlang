@@ -13,11 +13,97 @@
 
 %% API
 -export([
+  get_handshake_result/1,
+  group_context_inputs/7,
+  group_context_inputs_tpm/5,
+  initialize_certs/3,
+  initialize_certsTPM/1,
   init_cert_db/2,
   lookup_cert/1,
-  maybe_init_group_context/1]).
+  maybe_init_group_context/1,
+  initialize_ids/3,
+  identity_to_ipv6_str/1]).
 
 -define(DEFAULT_ETS_OPTS, [named_table, set, public, {write_concurrency, true}, {read_concurrency, true}]).
+
+
+get_handshake_result(HandshakeId)->
+  wait_for_handshake_result(HandshakeId, gen_server:call(HandshakeId, get_handshake_context, 10000)).
+
+wait_for_handshake_result(_HandshakeId, {ok, HandshakeContext})->
+  {ok, HandshakeContext};
+wait_for_handshake_result(HandshakeId, {error, {in_progress, CurrentStatus}})->
+  lager:info("Waiting for handshake to finish, current status ~p", [CurrentStatus]),
+  timer:sleep(100),
+  wait_for_handshake_result(HandshakeId, gen_server:call(HandshakeId, get_handshake_context, 10000));
+wait_for_handshake_result(HandshakeId, TotalFailure)->
+  lager:info("Handshake ~p failed: ~p", [HandshakeId, TotalFailure]),
+  {error, TotalFailure}.
+
+group_context_inputs(DataDir, BasenameFile, GpkFile, CredFile, SecretkeyFile, RootIdFile, RootPubkeyFile) ->
+  BasenameFileName = filename:join([DataDir, BasenameFile]),
+  GpkFileName = filename:join([DataDir, GpkFile]),
+  CredFileName = filename:join([DataDir, CredFile]),
+  PrivKeyFileName = filename:join([DataDir, SecretkeyFile]),
+
+  {ok, Basename} = file:read_file(BasenameFileName),
+
+  {ok, Gpk} = file:read_file(GpkFileName),
+
+  {ok, Credential} = file:read_file(CredFileName),
+
+  {ok, PrivKey} = file:read_file(PrivKeyFileName),
+
+  Gid = crypto:hash(sha256, Gpk),
+
+  ok = xtt_utils:initialize_certs(DataDir, RootIdFile, RootPubkeyFile), %% do it here for symmetry with below TPM group_context_inputs
+
+  {ok, #group_context_inputs{gpk=Gid, credential = Credential, basename = Basename, priv_key = PrivKey}}.
+
+
+group_context_inputs_tpm(DataDir, BasenameFile, TpmHost, TpmPort, TpmPassword)->
+  BasenameFileName = filename:join([DataDir, BasenameFile]),
+  {ok, Basename} = file:read_file(BasenameFileName),
+  case xaptum_tpm:tss2_sys_maybe_initialize(TpmHost, TpmPort) of
+    {ok, SapiContext} ->
+      {ok, Gpk} = xaptum_tpm:tss2_sys_nv_read(?XTT_DAA_GROUP_PUB_KEY_SIZE, ?GPK_HANDLE, SapiContext),
+
+      {ok, Credential} = xaptum_tpm:tss2_sys_nv_read(?XTT_DAA_CRED_SIZE, ?CRED_HANDLE, SapiContext),
+
+      _Gid = crypto:hash(sha256, Gpk),
+
+      PrivKeyInputs = #priv_key_tpm{key_handle = ?KEY_HANDLE,
+        tcti_context = undefined,
+        tpm_host = TpmHost, tpm_port = TpmPort, tpm_password = TpmPassword},
+
+      ok = xtt_utils:initialize_certsTPM(SapiContext),
+
+      %% TODO: temporarily using Gpk (and do hashing inside the NIF)
+      %% using Gid instead of Gpk inside TPM group context creation
+      %% later causes error 28 during xtt_handshake_build_idclientattest
+      {ok, #group_context_inputs{
+        gpk = Gpk,
+        credential = Credential,
+        basename = Basename,
+        priv_key = PrivKeyInputs}};
+    {error, _ErrorCode} -> {error, init_tss2_sys_failed}
+  end.
+
+
+initialize_certs(DataDir, RootIdFile, RootPubkeyFile)->
+  RootIdFilename = filename:join(DataDir, RootIdFile),
+  RootPubkeyFilename = filename:join(DataDir, RootPubkeyFile),
+
+  {ok, RootId} = file:read_file(RootIdFilename),
+  {ok, RootPubKey} = file:read_file(RootPubkeyFilename),
+
+  xtt_utils:init_cert_db(RootId, RootPubKey).
+
+initialize_certsTPM(SapiContext)->
+  {ok, RootId} = xaptum_tpm:tss2_sys_nv_read(?XTT_DAA_ROOT_ID_SIZE, ?ROOT_ID_HANDLE, SapiContext),
+  {ok, RootPubKey} = xaptum_tpm:tss2_sys_nv_read(?XTT_DAA_ROOT_PUB_KEY_SIZE, ?ROOT_PUBKEY_HANDLE, SapiContext),
+  xtt_utils:init_cert_db(RootId, RootPubKey).
+
 
 init_cert_db(RootId, RootPubkey)->
   lager:info("Initializing cert db with RootId ~p and RootPubKey ~p", [RootId, RootPubkey]),
@@ -81,4 +167,25 @@ maybe_init_group_context(#group_context_inputs{
 
 
 
+initialize_ids(DataDir, RequestedClientIdFile, ServerIdFile)->
+  RequestedClientIdFileName = filename:join([DataDir, RequestedClientIdFile]),
+  IntendedServerIdFileName = filename:join([DataDir, ServerIdFile]),
 
+  RequestedClientId =
+    case file:read_file(RequestedClientIdFileName) of
+      {ok, ?XTT_REQUEST_ID_FROM_SERVER} -> ?XTT_NULL_IDENTITY;
+      {ok, ClientId} when size(ClientId) =/= ?XTT_IDENTITY_SIZE ->
+        lager:error("Invalid requested client id ~p of size ~b while expecting size ~b in file ~p",
+          [ClientId, size(ClientId), ?XTT_IDENTITY_SIZE, RequestedClientIdFileName]),
+        false = true;
+      {ok, ClientId} when size(ClientId) =:= ?XTT_IDENTITY_SIZE -> ClientId
+    end,
+
+  {ok, IntendedServerId} = file:read_file(IntendedServerIdFileName),
+
+  {RequestedClientId, IntendedServerId}.
+
+
+identity_to_ipv6_str(Identity)->
+  <<IP1:16,IP2:16,IP3:16,IP4:16,IP5:16,IP6:16, IP7:16,IP8:16>> = Identity,
+  inet:ntoa({IP1, IP2, IP3, IP4, IP5, IP6, IP7, IP8}).
