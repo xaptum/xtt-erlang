@@ -153,20 +153,20 @@ maybe_init_group_context(#group_context_inputs{
 
 
 initialize_ids(DataDir, RequestedClientIdFile, ServerIdFile)->
-  RequestedClientIdFile = filename:join([DataDir, RequestedClientIdFile]),
-  IntendedServerIdFile = filename:join([DataDir, ServerIdFile]),
+  RequestedClientIdFileName = filename:join([DataDir, RequestedClientIdFile]),
+  IntendedServerIdFileName = filename:join([DataDir, ServerIdFile]),
 
   RequestedClientId =
-    case file:read_file(RequestedClientIdFile) of
+    case file:read_file(RequestedClientIdFileName) of
       {ok, ?XTT_REQUEST_ID_FROM_SERVER} -> ?XTT_NULL_IDENTITY;
       {ok, ClientId} when size(ClientId) =/= ?XTT_IDENTITY_SIZE ->
         lager:error("Invalid requested client id ~p of size ~b while expecting size ~b in file ~p",
-          [ClientId, size(ClientId), ?XTT_IDENTITY_SIZE, RequestedClientIdFile]),
+          [ClientId, size(ClientId), ?XTT_IDENTITY_SIZE, RequestedClientIdFileName]),
         false = true;
       {ok, ClientId} when size(ClientId) =:= ?XTT_IDENTITY_SIZE -> ClientId
     end,
 
-  {ok, IntendedServerId} = file:read_file(IntendedServerIdFile),
+  {ok, IntendedServerId} = file:read_file(IntendedServerIdFileName),
 
   {RequestedClientId, IntendedServerId}.
 
