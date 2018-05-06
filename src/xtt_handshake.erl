@@ -69,7 +69,7 @@ start_handshake(
     XttVersion, XttSuite,
     GroupContext) ->
   %% enforce only one handshake per xtt_host:port
-  HandshakeId = tpm_handshake_reg_name(XttServerHost, XttServerPort),
+  HandshakeId = xtt_handshake_reg_name(XttServerHost, XttServerPort),
   case process_info(HandshakeId) of
     undefined -> gen_server:start_link({local, HandshakeId}, ?MODULE,
       [ XttServerHost, XttServerPort,
@@ -79,12 +79,11 @@ start_handshake(
     _AnotherHandshakeRunning ->
       lager:info("Blocked while another handshake running on ~p:~p", [XttServerHost, XttServerPort]),
       timer:sleep(1000),
-      start_handshake(HandshakeId, XttServerHost,
-        XttServerPort,
-        RequestedClientId,
-        IntendedServerId,
-        XttVersion,
-        XttSuite,
+
+      start_handshake(
+        XttServerHost, XttServerPort,
+        RequestedClientId, IntendedServerId,
+        XttVersion, XttSuite,
         GroupContext)
   end.
 
@@ -209,7 +208,10 @@ handle_cast(Unexpected, State)->
 handle_info(_Info, State) ->
   {noreply, State}.
 
-terminate(_Reason, _State) ->
+terminate(_Reason, #{handshake_status=success}) ->
+  ok;
+terminate(_Rason, #{handshake_status = NotSuccess}) ->
+  lager:error("Abnormal termination of handshake during status ~p", [NotSuccess]),
   ok.
 
 code_change(_OldVsn, State, _Extra) ->
