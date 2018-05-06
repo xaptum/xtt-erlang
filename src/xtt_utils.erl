@@ -21,7 +21,8 @@
   init_cert_db/2,
   lookup_cert/1,
   maybe_init_group_context/1,
-  initialize_ids/3]).
+  initialize_ids/3,
+  identity_to_ipv6_str/1]).
 
 -define(DEFAULT_ETS_OPTS, [named_table, set, public, {write_concurrency, true}, {read_concurrency, true}]).
 
@@ -185,3 +186,6 @@ initialize_ids(DataDir, RequestedClientIdFile, ServerIdFile)->
   {RequestedClientId, IntendedServerId}.
 
 
+identity_to_ipv6_str(Identity)->
+  <<IP1:16,IP2:16,IP3:16,IP4:16,IP5:16,IP6:16, IP7:16,IP8:16>> = Identity,
+  inet:ntoa({IP1, IP2, IP3, IP4, IP5, IP6, IP7, IP8}).

@@ -41,31 +41,30 @@ end_per_suite(Config) ->
 test_file(Config) ->
   lager:md([{source, "TEST_FILE"}]),
   DataDir = ?config(data_dir, Config),
-  lager:info("test_file DataDir is ~p", [DataDir]),
   {ok, GroupContextInputs} = group_context_inputs(DataDir),
-  test_handshake(DataDir, 'TEST_FILE', ?XTT_SERVER_PORT, GroupContextInputs),
+  test_handshake(DataDir, ?XTT_SERVER_PORT, GroupContextInputs),
   Config.
 
 test_tpm(Config) ->
   lager:md([{source, "TEST_TPM"}]),
   DataDir = ?config(data_dir, Config),
-  lager:info("test_tpm: DataDir is ~p", [DataDir]),
   {ok, GroupContextInputsTpm} = group_context_inputs_tpm(DataDir),
-  test_handshake(DataDir, 'TEST_TPM', ?XTT_SERVER_PORT_TPM, GroupContextInputsTpm),
+  test_handshake(DataDir, ?XTT_SERVER_PORT_TPM, GroupContextInputsTpm),
   Config.
 
-test_handshake(DataDir, TestId, XttServerPort, GroupContextInputs)->
+test_handshake(DataDir, XttServerPort, GroupContextInputs)->
   {RequestedClientId, IntendedServerId} =
     xtt_utils:initialize_ids(DataDir, ?REQUESTED_CLIENT_ID_FILE, ?SERVER_ID_FILE),
-  {ok, Pid} = xtt_handshake:start_link(TestId,
+  {ok, Pid} = xtt_handshake:start_handshake(
     ?XTT_SERVER_HOST, XttServerPort,
     RequestedClientId, IntendedServerId,
     ?XTT_VERSION, ?XTT_SUITE,
     GroupContextInputs),
-  process_handshake_result(TestId).
+  process_handshake_result(Pid),
+  xtt_handshake:handshake_complete(Pid).
 
-process_handshake_result(TestId)->
-  {ok, HandshakeContext} = xtt_utils:get_handshake_result(TestId),
+process_handshake_result(HandshakePid)->
+  {ok, HandshakeContext} = xtt_utils:get_handshake_result(HandshakePid),
   validate_handshake_context(HandshakeContext).
 
 validate_handshake_context(HandshakeContext)->
@@ -80,8 +79,7 @@ validate_handshake_context(HandshakeContext)->
   {ok, Identity} = xtt_erlang:xtt_get_my_id(HandshakeContext),
   lager:info("Identity: ~p", [Identity]),
 
-  <<IP1:16,IP2:16,IP3:16,IP4:16,IP5:16,IP6:16, IP7:16,IP8:16>> = Identity,
-  lager:info("Ipv6: ~p", [inet:ntoa({IP1, IP2, IP3, IP4, IP5, IP6, IP7, IP8})]),
+  lager:info("Ipv6: ~p", [xtt_utils:identity_to_ipv6_str(Identity)]),
 
   {ok, IdStr} = xtt_erlang:xtt_id_to_string(Identity),
   lager:info("Converted identity string: ~p", [IdStr]),

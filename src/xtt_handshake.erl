@@ -13,7 +13,10 @@
 
 -include("../include/xtt.hrl").
 %% API
--export([start_link/8,
+-export([
+  xtt_handshake_reg_name/2,
+  start_handshake/7,
+  handshake_complete/1,
   priv_key/2,
   priv_key/3,
   group_context/4]).
@@ -55,19 +58,41 @@ priv_key(KeyHandle, TpmPassword, {TpmHostname, TpmPort} = _TctiContextCredential
 group_context(Gpk, Credential, Basename, PrivKey) when is_binary(PrivKey); is_tuple(PrivKey)->
   #group_context_inputs{gpk = Gpk, credential = Credential, basename = Basename, priv_key = PrivKey}.
 
-start_link(HandshakeId,
-    XttServerHost,
-    XttServerPort,
-    RequestedClientId,
-    IntendedServerId,
-    XttVersion,
-    XttSuite,
-    GroupContext) when is_atom(HandshakeId) ->
-  gen_server:start_link({local, HandshakeId}, ?MODULE,
-    [ XttServerHost, XttServerPort,
-      RequestedClientId, IntendedServerId,
-      XttVersion, XttSuite,
-      GroupContext], []).
+xtt_handshake_reg_name(XttHost, XttPort) when is_integer(XttPort)->
+  xtt_handshake_reg_name(XttHost, integer_to_list(XttPort));
+xtt_handshake_reg_name( XttHost, XttPort) when is_list(XttPort)->
+  list_to_atom(lists:flatten(["XTT_", XttHost, ":", XttPort])).
+
+start_handshake(
+    XttServerHost, XttServerPort,
+    RequestedClientId, IntendedServerId,
+    XttVersion, XttSuite,
+    GroupContext) ->
+  %% enforce only one handshake per xtt_host:port
+  HandshakeId = tpm_handshake_reg_name(XttServerHost, XttServerPort),
+  case process_info(HandshakeId) of
+    undefined -> gen_server:start_link({local, HandshakeId}, ?MODULE,
+      [ XttServerHost, XttServerPort,
+        RequestedClientId, IntendedServerId,
+        XttVersion, XttSuite,
+        GroupContext], []);
+    _AnotherHandshakeRunning ->
+      lager:info("Blocked while another handshake running on ~p:~p", [XttServerHost, XttServerPort]),
+      timer:sleep(1000),
+      start_handshake(HandshakeId, XttServerHost,
+        XttServerPort,
+        RequestedClientId,
+        IntendedServerId,
+        XttVersion,
+        XttSuite,
+        GroupContext)
+  end.
+
+handshake_complete(HandshakeIdOrPid)->
+  gen_server:stop(HandshakeIdOrPid),
+  undefined = process_info(HandshakeIdOrPid).
+
+
 
 %%%===================================================================
 %%% gen_server callbacks
