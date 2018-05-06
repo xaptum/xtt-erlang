@@ -208,9 +208,9 @@ handle_cast(Unexpected, State)->
 handle_info(_Info, State) ->
   {noreply, State}.
 
-terminate(_Reason, #{handshake_status=success}) ->
+terminate(_Reason, #state{handshake_status=success}) ->
   ok;
-terminate(_Rason, #{handshake_status = NotSuccess}) ->
+terminate(_Rason, #state{handshake_status = NotSuccess}) ->
   lager:error("Abnormal termination of handshake during status ~p", [NotSuccess]),
   ok.
 
