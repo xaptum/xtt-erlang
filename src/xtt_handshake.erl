@@ -70,15 +70,15 @@ start_handshake(
     GroupContext) ->
   %% enforce only one handshake per xtt_host:port
   HandshakeId = xtt_handshake_reg_name(XttServerHost, XttServerPort),
-  case process_info(HandshakeId) of
+  case whereis(HandshakeId) of
     undefined -> gen_server:start_link({local, HandshakeId}, ?MODULE,
       [ XttServerHost, XttServerPort,
         RequestedClientId, IntendedServerId,
         XttVersion, XttSuite,
         GroupContext], []);
-    _AnotherHandshakeRunning ->
-      lager:info("Blocked while another handshake running on ~p:~p", [XttServerHost, XttServerPort]),
-      timer:sleep(1000),
+    RunningHandshakePid when is_pid(RunningHandshakePid) ->
+      lager:info("Blocked while another handshake running at ~p on ~p:~p", [RunningHandshakePid, XttServerHost, XttServerPort]),
+      timer:sleep(100),
 
       start_handshake(
         XttServerHost, XttServerPort,
@@ -90,7 +90,6 @@ start_handshake(
 handshake_complete(HandshakeIdOrPid)->
   gen_server:stop(HandshakeIdOrPid),
   undefined = process_info(HandshakeIdOrPid).
-
 
 
 %%%===================================================================
