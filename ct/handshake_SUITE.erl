@@ -75,17 +75,8 @@ test_handshake(DataDir, TestId, XttServerPort, GroupContextInputs)->
   process_handshake_result(TestId).
 
 process_handshake_result(TestId)->
-  process_handshake_result(TestId, gen_server:call(TestId, get_handshake_context, 10000)).
-
-process_handshake_result(_TestId, {ok, HandshakeContext})->
-  validate_handshake_context(HandshakeContext);
-process_handshake_result(TestId, {error, {in_progress, CurrentStatus}})->
-  lager:info("Waiting for handshake to finish, current status ~p", [CurrentStatus]),
-  timer:sleep(100),
-  process_handshake_result(TestId, gen_server:call(TestId, get_handshake_context, 10000));
-process_handshake_result(_TestId, TotalFailure)->
-  lager:info("Handshake failed: ~p", [TotalFailure]),
-  {error, TotalFailure}.
+  {ok, HandshakeContext} = xtt_utils:get_handshake_result(TestId),
+  validate_handshake_context(HandshakeContext).
 
 validate_handshake_context(HandshakeContext)->
   lager:info("Handshake finished, validating results!"),
@@ -95,7 +86,6 @@ validate_handshake_context(HandshakeContext)->
 
   {ok, LongTermPrivKey} = xtt_erlang:xtt_get_my_longterm_private_key(HandshakeContext),
   lager:info("LongTermPrivKey: ~p", [LongTermPrivKey]),
-
 
   {ok, Identity} = xtt_erlang:xtt_get_my_id(HandshakeContext),
   lager:info("Identity: ~p", [Identity]),

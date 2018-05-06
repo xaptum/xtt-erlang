@@ -13,6 +13,7 @@
 
 %% API
 -export([
+  get_handshake_result/1,
   group_context_inputs/7,
   group_context_inputs_tpm/5,
   initialize_certs/3,
@@ -24,6 +25,19 @@
 
 -define(DEFAULT_ETS_OPTS, [named_table, set, public, {write_concurrency, true}, {read_concurrency, true}]).
 
+
+get_handshake_result(HandshakeId)->
+  wait_for_handshake_result(HandshakeId, gen_server:call(HandshakeId, get_handshake_context, 10000)).
+
+wait_for_handshake_result(_HandshakeId, {ok, HandshakeContext})->
+  {ok, HandshakeContext};
+wait_for_handshake_result(HandshakeId, {error, {in_progress, CurrentStatus}})->
+  lager:info("Waiting for handshake to finish, current status ~p", [CurrentStatus]),
+  timer:sleep(100),
+  wait_for_handshake_result(HandshakeId, gen_server:call(HandshakeId, get_handshake_context, 10000));
+wait_for_handshake_result(HandshakeId, TotalFailure)->
+  lager:info("Handshake ~p failed: ~p", [HandshakeId, TotalFailure]),
+  {error, TotalFailure}.
 
 group_context_inputs(DataDir, BasenameFile, GpkFile, CredFile, SecretkeyFile, RootIdFile, RootPubkeyFile) ->
   BasenameFileName = filename:join([DataDir, BasenameFile]),
