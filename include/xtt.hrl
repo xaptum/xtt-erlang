@@ -57,3 +57,13 @@
 -define(CRED_HANDLE, 16#1410001).
 -define(ROOT_ID_HANDLE, 16#1410003).
 -define(ROOT_PUBKEY_HANDLE, 16#1410004).
+
+%% DEFAULT FILENAMES
+-define(REQUESTED_CLIENT_ID_FILE, "requested_client_id.bin").
+-define(SERVER_ID_FILE, "server_id.bin").
+-define(DAA_GPK_FILE, "daa_gpk.bin").
+-define(DAA_CRED_FILE, "daa_cred.bin").
+-define(DAA_SECRETKEY_FILE, "daa_secretkey.bin").
+-define(BASENAME_FILE, "basename.bin").
+-define(ROOT_ID_FILE, "root_id.bin").
+-define(ROOT_PUBKEY_FILE, "root_pub.bin").

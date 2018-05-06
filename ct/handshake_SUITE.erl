@@ -16,16 +16,6 @@
 -export([test_file/1, test_tpm/1]).
 -export([test_handshake/4, group_context_inputs_tpm/1]).
 
-%% DEFAULT FILENAMES
--define(REQUESTED_CLIENT_ID_FILE, "requested_client_id.bin").
--define(SERVER_ID_FILE, "server_id.bin").
--define(DAA_GPK_FILE, "daa_gpk.bin").
--define(DAA_CRED_FILE, "daa_cred.bin").
--define(DAA_SECRETKEY_FILE, "daa_secretkey.bin").
--define(BASENAME_FILE, "basename.bin").
--define(ROOT_ID_FILE, "root_id.bin").
--define(ROOT_PUBKEY_FILE, "root_pub.bin").
-
 %% Defaults
 -define(XTT_VERSION, ?XTT_VERSION_ONE).
 -define(XTT_SUITE, ?XTT_X25519_LRSW_ED25519_AES256GCM_SHA512).
@@ -67,7 +57,7 @@ test_tpm(Config) ->
 test_handshake(DataDir, TestId, XttServerPort, GroupContextInputs)->
   {RequestedClientId, IntendedServerId} =
     xtt_utils:initialize_ids(DataDir, ?REQUESTED_CLIENT_ID_FILE, ?SERVER_ID_FILE),
-  {ok, _Pid} = xtt_handshake:start_link(TestId,
+  {ok, Pid} = xtt_handshake:start_link(TestId,
     ?XTT_SERVER_HOST, XttServerPort,
     RequestedClientId, IntendedServerId,
     ?XTT_VERSION, ?XTT_SUITE,
