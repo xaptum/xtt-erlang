@@ -14,7 +14,7 @@
 
 -export([all/0, init_per_suite/1, end_per_suite/1]).
 -export([test_file/1, test_tpm/1]).
--export([test_handshake/4, group_context_inputs_tpm/1]).
+-export([test_handshake/3, group_context_inputs_tpm/1]).
 
 %% Defaults
 -define(XTT_VERSION, ?XTT_VERSION_ONE).
@@ -35,7 +35,7 @@ init_per_suite(Config)->
   application:ensure_all_started(lager),
   Config.
 
-end_per_suite(Config) ->
+end_per_suite(_Config) ->
   ok.
 
 test_file(Config) ->

@@ -70,7 +70,7 @@ group_context_inputs_tpm(DataDir, BasenameFile, TpmHost, TpmPort, TpmPassword)->
 
       {ok, Credential} = xaptum_tpm:tss2_sys_nv_read(?XTT_DAA_CRED_SIZE, ?CRED_HANDLE, SapiContext),
 
-      Gid = crypto:hash(sha256, Gpk),
+      _Gid = crypto:hash(sha256, Gpk),
 
       PrivKeyInputs = #priv_key_tpm{key_handle = ?KEY_HANDLE,
         tcti_context = undefined,
