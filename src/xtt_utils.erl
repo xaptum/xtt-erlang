@@ -26,18 +26,18 @@
 
 
 group_context_inputs(DataDir, BasenameFile, GpkFile, CredFile, SecretkeyFile, RootIdFile, RootPubkeyFile) ->
-  BasenameFile = filename:join([DataDir, BasenameFile]),
-  GpkFile = filename:join([DataDir, GpkFile]),
-  CredFile = filename:join([DataDir, CredFile]),
-  PrivKeyFile = filename:join([DataDir, SecretkeyFile]),
+  BasenameFileName = filename:join([DataDir, BasenameFile]),
+  GpkFileName = filename:join([DataDir, GpkFile]),
+  CredFileName = filename:join([DataDir, CredFile]),
+  PrivKeyFileName = filename:join([DataDir, SecretkeyFile]),
 
-  {ok, Basename} = file:read_file(BasenameFile),
+  {ok, Basename} = file:read_file(BasenameFileName),
 
-  {ok, Gpk} = file:read_file(GpkFile),
+  {ok, Gpk} = file:read_file(GpkFileName),
 
-  {ok, Credential} = file:read_file(CredFile),
+  {ok, Credential} = file:read_file(CredFileName),
 
-  {ok, PrivKey} = file:read_file(PrivKeyFile),
+  {ok, PrivKey} = file:read_file(PrivKeyFileName),
 
   Gid = crypto:hash(sha256, Gpk),
 
@@ -47,8 +47,8 @@ group_context_inputs(DataDir, BasenameFile, GpkFile, CredFile, SecretkeyFile, Ro
 
 
 group_context_inputs_tpm(DataDir, BasenameFile, TpmHost, TpmPort, TpmPassword)->
-  BasenameFile = filename:join([DataDir, BasenameFile]),
-  {ok, Basename} = file:read_file(BasenameFile),
+  BasenameFileName = filename:join([DataDir, BasenameFile]),
+  {ok, Basename} = file:read_file(BasenameFileName),
   case xaptum_tpm:tss2_sys_maybe_initialize(TpmHost, TpmPort) of
     {ok, SapiContext} ->
       {ok, Gpk} = xaptum_tpm:tss2_sys_nv_read(?XTT_DAA_GROUP_PUB_KEY_SIZE, ?GPK_HANDLE, SapiContext),
