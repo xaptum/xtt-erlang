@@ -10,7 +10,8 @@
 -author("iguberman").
 
 -include_lib("common_test/include/ct.hrl").
--include("../include/xtt.hrl").
+
+-include_lib("xtt_erlang/include/xtt.hrl").
 
 -export([all/0, init_per_suite/1, end_per_suite/1]).
 -export([test_file/1, test_tpm/1]).
