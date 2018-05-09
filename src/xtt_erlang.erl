@@ -25,7 +25,7 @@
 
 -on_load(init/0).
 
--include("../include/xtt.hrl").
+-include("xtt.hrl").
 
 -define(XTT_APPNAME, xtt_erlang).
 -define(XTT_LIBNAME, 'xtt-erlang').
@@ -35,16 +35,28 @@ init() ->
     {lager_console_backend, [{level, info}, {formatter, lager_default_formatter},
       {formatter_config, [time," [",source,"][",severity,"] ", message, "\n"]}]}]),
   application:ensure_all_started(lager),
-  SoName = filename:join([priv_dir(), ?XTT_LIBNAME]),
+  PrivDir = priv_dir(),
+  case try_load(PrivDir, ?XTT_LIBNAME) of
+    {error, _Error} ->
+      case try_load(PrivDir, ?XTT_APPNAME) of
+        {error, Error} -> lager:error("Error loading either NIF lib ~p or app ~p: ~p", [?XTT_LIBNAME, ?XTT_APPNAME, Error]);
+        ok -> ok
+      end;
+    ok -> ok
+  end.
+
+try_load(PrivDir, SoNameSuffix)->
+  SoName = filename:join([PrivDir, SoNameSuffix]),
   lager:info("Loading XTT NIFs from ~p", [SoName]),
   case erlang:load_nif(SoName, 0) of
     ok ->
       lager:info("Successfully loaded NIFs from ~p", [SoName]);
     {error, {reload, ReloadMessage}} ->
-      lager:info("Reload attempt: ~p", [ReloadMessage]),
       ok;
-    {error, RealError} -> lager:error("Error loading NIF library: ~p", [RealError])
+    {error, RealError} ->
+      {error, RealError}
   end.
+
 
 priv_dir() ->
   case code:priv_dir(?XTT_APPNAME) of

@@ -11,7 +11,8 @@
 
 -behaviour(gen_server).
 
--include("../include/xtt.hrl").
+-include("xtt.hrl").
+
 %% API
 -export([
   xtt_handshake_reg_name/2,

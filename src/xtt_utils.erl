@@ -9,7 +9,7 @@
 -module(xtt_utils).
 -author("iguberman").
 
--include("../include/xtt.hrl").
+-include("xtt.hrl").
 
 %% API
 -export([
