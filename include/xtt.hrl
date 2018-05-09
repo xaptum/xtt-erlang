@@ -71,3 +71,4 @@
 -define(ROOT_PUBKEY_FILE, "root_pub.bin").
 
 -endif.
+
