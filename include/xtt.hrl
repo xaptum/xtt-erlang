@@ -8,6 +8,9 @@
 %%%-------------------------------------------------------------------
 -author("iguberman").
 
+-ifndef('__xtt_hrl__').
+-define('__xtt_hrl__',true).
+
 -record(priv_key_tpm,
 {key_handle, tpm_password="", tcti_context, tpm_host, tpm_port}).
 
@@ -51,7 +54,6 @@
 -define(XTT_DAA_ROOT_ID_SIZE, 16).
 -define(XTT_DAA_ROOT_PUB_KEY_SIZE, 32).
 
-
 -define(KEY_HANDLE, 16#81800000).
 -define(GPK_HANDLE, 16#1410000).
 -define(CRED_HANDLE, 16#1410001).
@@ -67,3 +69,5 @@
 -define(BASENAME_FILE, "basename.bin").
 -define(ROOT_ID_FILE, "root_id.bin").
 -define(ROOT_PUBKEY_FILE, "root_pub.bin").
+
+-endif.
