@@ -110,4 +110,4 @@ group_context_inputs(DataDir) ->
 
 group_context_inputs_tpm(DataDir)->
   BasenameFile = filename:join([DataDir, ?BASENAME_FILE]),
-  xtt_utils:group_context_inputs_tpm(BasenameFile, ?BASENAME_FILE, ?TPM_HOSTNAME, ?TPM_PORT, ?TPM_PASSWORD).
+  xtt_utils:group_context_inputs_tpm(BasenameFile, ?TPM_HOSTNAME, ?TPM_PORT, ?TPM_PASSWORD).
