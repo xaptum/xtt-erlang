@@ -54,8 +54,11 @@ test_tpm(Config) ->
   Config.
 
 test_handshake(DataDir, XttServerPort, GroupContextInputs)->
+  RequestedClientIdFile = filename:join([DataDir, ?REQUESTED_CLIENT_ID_FILE]),
+  IntendedServerIdFile = filename:join([DataDir, ?SERVER_ID_FILE]),
+
   {RequestedClientId, IntendedServerId} =
-    xtt_utils:initialize_ids(DataDir, ?REQUESTED_CLIENT_ID_FILE, ?SERVER_ID_FILE),
+    xtt_utils:initialize_ids(RequestedClientIdFile, IntendedServerIdFile),
   {ok, Pid} = xtt_handshake:start_handshake(
     ?XTT_SERVER_HOST, XttServerPort,
     RequestedClientId, IntendedServerId,

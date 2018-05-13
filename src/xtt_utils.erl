@@ -21,7 +21,7 @@
   init_cert_db/2,
   lookup_cert/1,
   maybe_init_group_context/1,
-  initialize_ids/3,
+  initialize_ids/2,
   identity_to_ipv6_str/1]).
 
 -define(DEFAULT_ETS_OPTS, [named_table, set, public, {write_concurrency, true}, {read_concurrency, true}]).
@@ -158,22 +158,18 @@ maybe_init_group_context(#group_context_inputs{
   end.
 
 
-
-initialize_ids(DataDir, RequestedClientIdFile, ServerIdFile)->
-  RequestedClientIdFileName = filename:join([DataDir, RequestedClientIdFile]),
-  IntendedServerIdFileName = filename:join([DataDir, ServerIdFile]),
-
+initialize_ids(RequestedClientIdFile, IntendedServerIdFile)->
   RequestedClientId =
-    case file:read_file(RequestedClientIdFileName) of
+    case file:read_file(RequestedClientIdFile) of
       {ok, ?XTT_REQUEST_ID_FROM_SERVER} -> ?XTT_NULL_IDENTITY;
       {ok, ClientId} when size(ClientId) =/= ?XTT_IDENTITY_SIZE ->
         lager:error("Invalid requested client id ~p of size ~b while expecting size ~b in file ~p",
-          [ClientId, size(ClientId), ?XTT_IDENTITY_SIZE, RequestedClientIdFileName]),
+          [ClientId, size(ClientId), ?XTT_IDENTITY_SIZE, RequestedClientIdFile]),
         false = true;
       {ok, ClientId} when size(ClientId) =:= ?XTT_IDENTITY_SIZE -> ClientId
     end,
 
-  {ok, IntendedServerId} = file:read_file(IntendedServerIdFileName),
+  {ok, IntendedServerId} = file:read_file(IntendedServerIdFile),
 
   {RequestedClientId, IntendedServerId}.
 
