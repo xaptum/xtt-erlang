@@ -14,9 +14,9 @@
 %% API
 -export([
   get_handshake_result/1,
-  group_context_inputs/7,
-  group_context_inputs_tpm/5,
-  initialize_certs/3,
+  group_context_inputs/6,
+  group_context_inputs_tpm/4,
+  initialize_certs/2,
   initialize_certsTPM/1,
   init_cert_db/2,
   lookup_cert/1,
@@ -40,30 +40,25 @@ wait_for_handshake_result(HandshakeId, TotalFailure)->
   lager:info("Handshake ~p failed: ~p", [HandshakeId, TotalFailure]),
   {error, TotalFailure}.
 
-group_context_inputs(DataDir, BasenameFile, GpkFile, CredFile, SecretkeyFile, RootIdFile, RootPubkeyFile) ->
-  BasenameFileName = filename:join([DataDir, BasenameFile]),
-  GpkFileName = filename:join([DataDir, GpkFile]),
-  CredFileName = filename:join([DataDir, CredFile]),
-  PrivKeyFileName = filename:join([DataDir, SecretkeyFile]),
+group_context_inputs(BasenameFile, GpkFile, CredFile, SecretkeyFile, RootIdFile, RootPubkeyFile) ->
 
-  {ok, Basename} = file:read_file(BasenameFileName),
+  {ok, Basename} = file:read_file(BasenameFile),
 
-  {ok, Gpk} = file:read_file(GpkFileName),
+  {ok, Gpk} = file:read_file(GpkFile),
 
-  {ok, Credential} = file:read_file(CredFileName),
+  {ok, Credential} = file:read_file(CredFile),
 
-  {ok, PrivKey} = file:read_file(PrivKeyFileName),
+  {ok, PrivKey} = file:read_file(SecretkeyFile),
 
   Gid = crypto:hash(sha256, Gpk),
 
-  ok = xtt_utils:initialize_certs(DataDir, RootIdFile, RootPubkeyFile), %% do it here for symmetry with below TPM group_context_inputs
+  ok = xtt_utils:initialize_certs(RootIdFile, RootPubkeyFile), %% do it here for symmetry with below TPM group_context_inputs
 
   {ok, #group_context_inputs{gpk=Gid, credential = Credential, basename = Basename, priv_key = PrivKey}}.
 
 
-group_context_inputs_tpm(DataDir, BasenameFile, TpmHost, TpmPort, TpmPassword)->
-  BasenameFileName = filename:join([DataDir, BasenameFile]),
-  {ok, Basename} = file:read_file(BasenameFileName),
+group_context_inputs_tpm(BasenameFile, TpmHost, TpmPort, TpmPassword)->
+  {ok, Basename} = file:read_file(BasenameFile),
   case xaptum_tpm:tss2_sys_maybe_initialize(TpmHost, TpmPort) of
     {ok, SapiContext} ->
       {ok, Gpk} = xaptum_tpm:tss2_sys_nv_read(?XTT_DAA_GROUP_PUB_KEY_SIZE, ?GPK_HANDLE, SapiContext),
@@ -90,12 +85,9 @@ group_context_inputs_tpm(DataDir, BasenameFile, TpmHost, TpmPort, TpmPassword)->
   end.
 
 
-initialize_certs(DataDir, RootIdFile, RootPubkeyFile)->
-  RootIdFilename = filename:join(DataDir, RootIdFile),
-  RootPubkeyFilename = filename:join(DataDir, RootPubkeyFile),
-
-  {ok, RootId} = file:read_file(RootIdFilename),
-  {ok, RootPubKey} = file:read_file(RootPubkeyFilename),
+initialize_certs(RootIdFile, RootPubkeyFile)->
+  {ok, RootId} = file:read_file(RootIdFile),
+  {ok, RootPubKey} = file:read_file(RootPubkeyFile),
 
   xtt_utils:init_cert_db(RootId, RootPubKey).
 

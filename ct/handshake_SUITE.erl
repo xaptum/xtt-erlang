@@ -22,7 +22,7 @@
 -define(XTT_SUITE, ?XTT_X25519_LRSW_ED25519_AES256GCM_SHA512).
 -define(EXAMPLE_DATA_DIR, "example_data").
 
--define(XTT_SERVER_PORT, 4444).
+-define(XTT_SERVER_PORT, 4443).
 -define(XTT_SERVER_PORT_TPM, 4445).
 -define(XTT_SERVER_HOST, "localhost").
 
@@ -97,9 +97,17 @@ validate_handshake_context(HandshakeContext)->
   {ok, handshake_valid}.
 
 group_context_inputs(DataDir) ->
-  xtt_utils:group_context_inputs(DataDir,
-    ?BASENAME_FILE, ?DAA_GPK_FILE, ?DAA_CRED_FILE, ?DAA_SECRETKEY_FILE,
-     ?ROOT_ID_FILE, ?ROOT_PUBKEY_FILE).
+  BasenameFile = filename:join([DataDir, ?BASENAME_FILE]),
+  GpkFile = filename:join([DataDir, ?DAA_GPK_FILE]),
+  CredFile = filename:join([DataDir, ?DAA_CRED_FILE]),
+  PrivKeyFile = filename:join([DataDir, ?DAA_SECRETKEY_FILE]),
+  RootIdFile = filename:join([DataDir,?ROOT_ID_FILE]),
+  RootPubKeyFile = filename:join([DataDir, ?ROOT_PUBKEY_FILE]),
+
+  xtt_utils:group_context_inputs(
+      BasenameFile, GpkFile, CredFile, PrivKeyFile,
+      RootIdFile, RootPubKeyFile).
 
 group_context_inputs_tpm(DataDir)->
-  xtt_utils:group_context_inputs_tpm(DataDir, ?BASENAME_FILE, ?TPM_HOSTNAME, ?TPM_PORT, ?TPM_PASSWORD).
+  BasenameFile = filename:join([DataDir, ?BASENAME_FILE]),
+  xtt_utils:group_context_inputs_tpm(BasenameFile, ?BASENAME_FILE, ?TPM_HOSTNAME, ?TPM_PORT, ?TPM_PASSWORD).
