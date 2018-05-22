@@ -675,8 +675,8 @@ xtt_build_error_msg(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]){
    }
 
    uint16_t *err_buff_len = (uint16_t *) 16;
-   ErlNifBinary *err_buffer_bin = NULL;
-   enif_alloc_binary((size_t) err_buff_len, err_buffer_bin);
+   ErlNifBinary err_buffer_bin;
+   enif_alloc_binary((size_t) err_buff_len, &err_buffer_bin);
    (void)build_error_msg(err_buffer_bin->data, err_buff_len, version);
 
    return enif_make_binary(env, err_buffer_bin);
