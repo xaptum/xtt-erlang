@@ -40,7 +40,9 @@ init() ->
     {error, _Error} ->
       case try_load(PrivDir, ?XTT_APPNAME) of
         {error, Error} -> lager:error("Error loading either NIF lib ~p or app ~p: ~p", [?XTT_LIBNAME, ?XTT_APPNAME, Error]);
-        ok -> ok
+        ok -> 
+		      lager:info("Loaded ~p NIFs", [?XTT_APPNAME]),
+		      ok
       end;
     ok -> ok
   end.
