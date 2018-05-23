@@ -52,6 +52,7 @@ try_load(PrivDir, SoNameSuffix)->
     ok ->
       lager:info("Successfully loaded NIFs from ~p", [SoName]);
     {error, {reload, ReloadMessage}} ->
+		  lager:info("XTT NIFs already loaded"),
       ok;
     {error, RealError} ->
       {error, RealError}
