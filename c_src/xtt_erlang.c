@@ -950,7 +950,8 @@ xtt_asn1_from_private_key(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]){
     }
 
     unsigned char asn1_priv_buf[XTT_ASN1_PRIVATE_KEY_LENGTH];
-    if (0 != xtt_asn1_from_ed25519_private_key((xtt_ed25519_priv_key *) my_longterm_priv_key.data, asn1_priv_buf)) {
+    if (0 != xtt_asn1_from_ed25519_private_key((xtt_ed25519_priv_key *) my_longterm_priv_key.data,
+                                                asn1_priv_buf, sizeof(asn1_priv_buf))) {
         fprintf(stderr, "Error creating ASN.1 private key\n");
         return enif_make_tuple2(env, ATOM_ERROR, enif_make_int(env, 1));
     }
