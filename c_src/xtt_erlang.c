@@ -903,7 +903,7 @@ xtt_x509_from_keypair(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]){
     if (0 != xtt_x509_from_ed25519_keypair((xtt_ed25519_pub_key *) my_longterm_key.data,
                                            (xtt_ed25519_priv_key *) my_longterm_priv_key.data,
                                            (xtt_identity_type *) my_assigned_id.data,
-                                           cert_buf)) {
+                                           cert_buf, sizeof(cert_buf))) {
 
 
 
