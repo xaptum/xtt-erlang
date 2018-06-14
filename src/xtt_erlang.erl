@@ -12,7 +12,7 @@
   xtt_handshake_preparse_serverattest/1,
   xtt_handshake_build_idclientattest/5,
   xtt_handshake_parse_idserverfinished/1,
-  xtt_build_error_msg/1,
+  xtt_client_build_error_msg_nif/1,
   xtt_get_my_longterm_key/1,
   xtt_get_my_longterm_private_key/1,
   xtt_get_my_id/1,
@@ -112,7 +112,7 @@ xtt_handshake_build_idclientattest(_ServerCert, _RequestedClientId, _IntendedSer
 xtt_handshake_parse_idserverfinished(_HandsakeState)->
   erlang:nif_error(?LINE).
 
-xtt_build_error_msg(_XttVersion)->
+xtt_client_build_error_msg_nif(_XttVersion)->
   erlang:nif_error(?LINE).
 
 xtt_get_my_longterm_key(_HandsakeState)->

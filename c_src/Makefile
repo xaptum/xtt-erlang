@@ -2,6 +2,7 @@
 
 CURDIR := $(shell pwd)
 BASEDIR := $(abspath $(CURDIR)/..)
+LIBDIR := $(BASEDIR)/_build/default/lib
 
 PROJECT ?= $(notdir $(BASEDIR))
 PROJECT := $(strip $(PROJECT))
@@ -35,7 +36,7 @@ CFLAGS += -fPIC -I $(ERTS_INCLUDE_DIR) -I $(ERL_INTERFACE_INCLUDE_DIR)
 CXXFLAGS += -fPIC -I $(ERTS_INCLUDE_DIR) -I $(ERL_INTERFACE_INCLUDE_DIR)
 
 
-LDLIBS += -L $(ERL_INTERFACE_LIB_DIR) -lerl_interface -lei -lecdaa -Wl,-rpath,$(BASEDIR)/../xaptum_tpm_erlang/priv -L $(BASEDIR)/../xaptum_tpm_erlang/priv -lxaptum_tpm_erlang -lxtt
+LDLIBS += -L $(ERL_INTERFACE_LIB_DIR) -lerl_interface -lei -lecdaa -Wl,-rpath,$(LIBDIR)/xaptum_tpm_erlang/priv -L $(LIBDIR)/xaptum_tpm_erlang/priv -lxaptum_tpm_erlang -lxtt
 LDFLAGS += -shared
 
 # Verbosity.

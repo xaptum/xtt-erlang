@@ -170,7 +170,7 @@ handle_cast({?XTT_RETURN_WANT_BUILDIDCLIENTATTEST, ClaimedRootId},
         {noreply, State#state{handshake_status = buildidclientattest_finished}};
     {error, Error} ->
       lager:error("Failed to lookup cert context by claimed root id ~p due to error ~p", [ClaimedRootId, Error]),
-      ErrorMsg = xtt_erlang:xtt_build_error_msg(XttVersion),
+      ErrorMsg = xtt_erlang:xtt_client_build_error_msg_nif(XttVersion),
       ok = gen_tcp:send(XttServerSocket, ErrorMsg),
       {stop, cert_lookup_failure, State#state{handshake_status = cert_lookup_failure}}
   end;

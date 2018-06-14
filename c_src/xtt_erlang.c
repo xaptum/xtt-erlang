@@ -662,7 +662,7 @@ xtt_handshake_parse_idserverfinished(ErlNifEnv* env, int argc, const ERL_NIF_TER
 }
 
 static ERL_NIF_TERM
-xtt_build_error_msg(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]){
+xtt_client_build_error_msg_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]){
 
    if(argc != 1) {
            return enif_make_badarg(env);
@@ -677,7 +677,7 @@ xtt_build_error_msg(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]){
    uint16_t *err_buff_len = (uint16_t *) 16;
    ErlNifBinary err_buffer_bin;
    enif_alloc_binary((size_t) err_buff_len, &err_buffer_bin);
-   (void)build_error_msg(err_buffer_bin.data, err_buff_len, version);
+   (void)xtt_client_build_error_msg(err_buffer_bin.data, err_buff_len, version);
 
    return enif_make_binary(env, &err_buffer_bin);
 }
@@ -978,7 +978,7 @@ static ErlNifFunc nif_funcs[] = {
     {"xtt_handshake_preparse_serverattest", 1, xtt_handshake_preparse_serverattest, ERL_NIF_DIRTY_JOB_CPU_BOUND},
     {"xtt_handshake_build_idclientattest", 5, xtt_handshake_build_idclientattest, ERL_NIF_DIRTY_JOB_CPU_BOUND},
     {"xtt_handshake_parse_idserverfinished", 1, xtt_handshake_parse_idserverfinished, ERL_NIF_DIRTY_JOB_CPU_BOUND},
-    {"xtt_build_error_msg", 1, xtt_build_error_msg, ERL_NIF_DIRTY_JOB_CPU_BOUND},
+    {"xtt_client_build_error_msg_nif", 1, xtt_client_build_error_msg_nif, ERL_NIF_DIRTY_JOB_CPU_BOUND},
     {"xtt_init_client_group_context", 4, xtt_init_client_group_context, ERL_NIF_DIRTY_JOB_CPU_BOUND},
     {"xtt_init_client_group_contextTPM", 6, xtt_init_client_group_contextTPM, ERL_NIF_DIRTY_JOB_CPU_BOUND},
     {"xtt_init_server_root_certificate_context", 2, xtt_init_server_root_certificate_context, ERL_NIF_DIRTY_JOB_CPU_BOUND},
