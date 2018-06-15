@@ -14,6 +14,12 @@ ERL_INTERFACE_LIB_DIR ?= $(shell erl -noshell -s init stop -eval "io:format(\"~s
 C_SRC_DIR = $(CURDIR)
 C_SRC_OUTPUT ?= $(CURDIR)/../priv/$(PROJECT).so
 
+ifneq ("$(wildcard $(BASEDIR)/../xaptum_tpm_erlang/priv)","")
+	XAPTUM_TPM_ERLANG_LIBDIR := $(BASEDIR)/../xaptum_tpm_erlang/priv
+else
+	XAPTUM_TPM_ERLANG_LIBDIR := $(BASEDIR)/_build/default/lib/xaptum_tpm_erlang/priv
+endif
+
 # System type and C compiler/flags.
 
 UNAME_SYS := $(shell uname -s)
@@ -35,8 +41,7 @@ endif
 CFLAGS += -fPIC -I $(ERTS_INCLUDE_DIR) -I $(ERL_INTERFACE_INCLUDE_DIR)
 CXXFLAGS += -fPIC -I $(ERTS_INCLUDE_DIR) -I $(ERL_INTERFACE_INCLUDE_DIR)
 
-
-LDLIBS += -L $(ERL_INTERFACE_LIB_DIR) -lerl_interface -lei -lecdaa -Wl,-rpath,$(LIBDIR)/xaptum_tpm_erlang/priv -L $(LIBDIR)/xaptum_tpm_erlang/priv -lxaptum_tpm_erlang -lxtt
+LDLIBS += -L $(ERL_INTERFACE_LIB_DIR) -lerl_interface -lei -lecdaa -Wl,-rpath,$(XAPTUM_TPM_ERLANG_LIBDIR) -L $(XAPTUM_TPM_ERLANG_LIBDIR) -lxaptum_tpm_erlang -lxtt
 LDFLAGS += -shared
 
 # Verbosity.
