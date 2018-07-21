@@ -89,8 +89,7 @@ init([XttServerHost, XttServerPort,
   GroupContext]) ->
   {ok, XttClientHandshakeState} = xtt_erlang:xtt_init_client_handshake_context(XttVersion, XttSuite),
   {ok, XttServerSocket} = gen_tcp:connect(XttServerHost, XttServerPort, ?TCP_OPTIONS),
-  {registered_name, RegName} = process_info(self(), registered_name),
-  lager:md([{source, atom_to_list(RegName)}]),
+  lager:md([{source, XttServerHost ++ ":" ++ integer_to_list(XttServerPort) ++ "_" ++ tuple_to_list(RequestedClientId)}]),
   gen_server:cast(self(), start_handshake),
   {ok, #state{
     handshake_status = initialized,
