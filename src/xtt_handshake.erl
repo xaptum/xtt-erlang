@@ -38,7 +38,7 @@
   handshake_status,
   xtt_server_host, xtt_server_port, xtt_server_socket,
   requested_client_id, intended_server_id,
-  xtt_version = ?XTT_VERSION_ONE,  xtt_suite = ?XTT_X25519_LRSW_ED25519_AES256GCM_SHA512,
+  xtt_version = ?XTT_VERSION_ONE,  xtt_suite = ?XTT_X25519_LRSW_ECDSAP256_CHACHA20POLY1305_SHA512,
   group_context,
   handshake_state
 }).
