@@ -113,13 +113,17 @@ init_cert_db(RootId, RootPubkey)->
 
 lookup_cert(ClaimedRootId)->
   lager:info("Looking up server's certificate from its claimed root_id ~p", [ClaimedRootId]),
-  case ets:lookup(?CERT_TABLE, ClaimedRootId) of
-    [{ClaimedRootId, CertCtx}] -> {ClaimedRootId, CertCtx};
-    [] -> %% TODO TEMP HACK
-      RootId = ets:last(?CERT_TABLE),
-      case ets:lookup(?CERT_TABLE, RootId) of
+  case lists:member(?CERT_TABLE, ets:all()) of
+    false -> {error, cert_table_not_initialized};
+    _True ->
+      case ets:lookup(?CERT_TABLE, ClaimedRootId) of
         [{ClaimedRootId, CertCtx}] -> {ClaimedRootId, CertCtx};
-        _Other -> {error, doesnt_exist}
+        [] -> %% TODO TEMP HACK
+          RootId = ets:last(?CERT_TABLE),
+          case ets:lookup(?CERT_TABLE, RootId) of
+          [{ClaimedRootId, CertCtx}] -> {ClaimedRootId, CertCtx};
+          _Other -> {error, doesnt_exist}
+        end
       end
   end.
 
