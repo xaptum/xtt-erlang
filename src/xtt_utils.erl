@@ -24,9 +24,6 @@
   initialize_ids/2,
   identity_to_ipv6_str/1]).
 
--define(DEFAULT_ETS_OPTS, [named_table, set, public, {write_concurrency, true}, {read_concurrency, true}]).
-
-
 get_handshake_result(HandshakeId)->
   wait_for_handshake_result(HandshakeId, gen_server:call(HandshakeId, get_handshake_context, 10000)).
 
@@ -101,10 +98,6 @@ init_cert_db(RootId, RootPubkey)->
   lager:info("Initializing cert db with RootId ~p and RootPubKey ~p", [RootId, RootPubkey]),
   case xtt_erlang:xtt_init_server_root_certificate_context(RootId, RootPubkey) of
     {ok, CertContext} ->
-      case lists:member(?CERT_TABLE, ets:all()) of
-        false -> ets:new(?CERT_TABLE, ?DEFAULT_ETS_OPTS);
-        _True -> ok
-      end,
       ets:insert(?CERT_TABLE, {RootId, CertContext}), %% TODO DB: Should replace file reading stuff with write ets to disk?
       lager:info("Initialized Certificates in '~p' table: ~p", [?CERT_TABLE, ets:tab2list(?CERT_TABLE)]),
       ok;
