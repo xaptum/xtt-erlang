@@ -114,8 +114,8 @@ init_cert_db(RootId, RootPubkey)->
 lookup_cert(ClaimedRootId)->
   lager:info("Looking up server's certificate from its claimed root_id ~p", [ClaimedRootId]),
   case lists:member(?CERT_TABLE, ets:all()) of
-    false -> {error, cert_table_not_initialized};
-    _True ->
+    true ->
+      lager:debug("~p table exists", [?CERT_TABLE]),
       case ets:lookup(?CERT_TABLE, ClaimedRootId) of
         [{ClaimedRootId, CertCtx}] -> {ClaimedRootId, CertCtx};
         [] -> %% TODO TEMP HACK
@@ -123,8 +123,9 @@ lookup_cert(ClaimedRootId)->
           case ets:lookup(?CERT_TABLE, RootId) of
           [{ClaimedRootId, CertCtx}] -> {ClaimedRootId, CertCtx};
           _Other -> {error, doesnt_exist}
-        end
-      end
+          end
+      end;
+    _False -> {error, cert_table_not_initialized}
   end.
 
 maybe_init_group_context(GroupContext) when is_reference(GroupContext)->
