@@ -933,7 +933,7 @@ xtt_asn1_from_private_key(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]){
 
     puts("START NIF: xtt_asn1_from_private_key...\n");
 
-    if(argc != 21){
+    if(argc != 2){
         return enif_make_badarg(env);
     }
 
@@ -950,7 +950,7 @@ xtt_asn1_from_private_key(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]){
         return enif_make_badarg(env);
     }
 
-    if(!enif_inspect_binary(env, argv[0], &my_longterm_priv_key) ) {
+    if(!enif_inspect_binary(env, argv[1], &my_longterm_priv_key) ) {
         fprintf(stderr, "Bad 'my_longterm_priv_key' arg\n");
         return enif_make_badarg(env);
     }

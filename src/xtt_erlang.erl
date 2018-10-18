@@ -19,7 +19,7 @@
   xtt_get_my_pseudonym/1,
   xtt_id_to_string/1,
   xtt_x509_from_keypair/3,
-  xtt_asn1_from_private_key/1]).
+  xtt_asn1_from_private_key/2]).
 
 -export([priv_dir/0]).
 
@@ -133,7 +133,7 @@ xtt_id_to_string(_Identity)->
 xtt_x509_from_keypair(_LongtermKey, _LongtermPrivKey, _Identity)->
   erlang:nif_error(?LINE).
 
-xtt_asn1_from_private_key(_LongtermPrivKey)->
+xtt_asn1_from_private_key(_LontermKey, _LongtermPrivKey)->
   erlang:nif_error(?LINE).
 
 %%====================================================================

@@ -115,7 +115,6 @@ lookup_cert(ClaimedRootId)->
   lager:info("Looking up server's certificate from its claimed root_id ~p", [ClaimedRootId]),
   case lists:member(?CERT_TABLE, ets:all()) of
     true ->
-      lager:debug("~p table exists", [?CERT_TABLE]),
       case ets:lookup(?CERT_TABLE, ClaimedRootId) of
         [{ClaimedRootId, CertCtx}] -> {ClaimedRootId, CertCtx};
         [] -> %% TODO TEMP HACK
