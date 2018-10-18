@@ -14,7 +14,7 @@
 %% API
 -export([
   get_handshake_result/1,
-  group_context_inputs/6,
+  group_context_inputs/4,
   group_context_inputs_tpm/4,
   initialize_certs/2,
   initialize_certsTPM/1,
@@ -23,6 +23,9 @@
   maybe_init_group_context/1,
   initialize_ids/2,
   identity_to_ipv6_str/1]).
+
+-define(DEFAULT_ETS_OPTS, [named_table, set, public, {write_concurrency, true}, {read_concurrency, true}]).
+
 
 get_handshake_result(HandshakeId)->
   wait_for_handshake_result(HandshakeId, gen_server:call(HandshakeId, get_handshake_context, 10000)).
@@ -37,7 +40,7 @@ wait_for_handshake_result(HandshakeId, TotalFailure)->
   lager:info("Handshake ~p failed: ~p", [HandshakeId, TotalFailure]),
   {error, TotalFailure}.
 
-group_context_inputs(BasenameFile, GpkFile, CredFile, SecretkeyFile, RootIdFile, RootPubkeyFile) ->
+group_context_inputs(BasenameFile, GpkFile, CredFile, SecretkeyFile) ->
 
   {ok, Basename} = file:read_file(BasenameFile),
 
@@ -48,8 +51,6 @@ group_context_inputs(BasenameFile, GpkFile, CredFile, SecretkeyFile, RootIdFile,
   {ok, PrivKey} = file:read_file(SecretkeyFile),
 
   Gid = crypto:hash(sha256, Gpk),
-
-  ok = xtt_utils:initialize_certs(RootIdFile, RootPubkeyFile), %% do it here for symmetry with below TPM group_context_inputs
 
   {ok, #group_context_inputs{gpk=Gid, credential = Credential, basename = Basename, priv_key = PrivKey}}.
 
@@ -98,6 +99,10 @@ init_cert_db(RootId, RootPubkey)->
   lager:info("Initializing cert db with RootId ~p and RootPubKey ~p", [RootId, RootPubkey]),
   case xtt_erlang:xtt_init_server_root_certificate_context(RootId, RootPubkey) of
     {ok, CertContext} ->
+      case lists:member(?CERT_TABLE, ets:all()) of
+        false -> ets:new(?CERT_TABLE, ?DEFAULT_ETS_OPTS);
+        _True -> ok
+      end,
       ets:insert(?CERT_TABLE, {RootId, CertContext}), %% TODO DB: Should replace file reading stuff with write ets to disk?
       lager:info("Initialized Certificates in '~p' table: ~p", [?CERT_TABLE, ets:tab2list(?CERT_TABLE)]),
       ok;

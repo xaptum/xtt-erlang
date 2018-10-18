@@ -30,15 +30,11 @@
 -define(XTT_APPNAME, xtt_erlang).
 -define(XTT_LIBNAME, 'xtt-erlang').
 
--define(DEFAULT_ETS_OPTS, [named_table, set, public, {write_concurrency, true}, {read_concurrency, true}]).
-
-
 init() ->
   application:set_env(lager, handlers, [
     {lager_console_backend, [{level, info}, {formatter, lager_default_formatter},
       {formatter_config, [time," [",source,"][",severity,"] ", message, "\n"]}]}]),
   application:ensure_all_started(lager),
-  ets:new(?CERT_TABLE, ?DEFAULT_ETS_OPTS),
   PrivDir = priv_dir(),
   case try_load(PrivDir, ?XTT_LIBNAME) of
     {error, _Error} ->
