@@ -94,7 +94,7 @@ validate_handshake_context(HandshakeContext)->
   {ok, Cert} = xtt_erlang:xtt_x509_from_keypair(LongTermKey, LongTermPrivKey, Identity),
   lager:info("Cert: ~p", [Cert]),
 
-  {ok, Asn1} = xtt_erlang:xtt_asn1_from_private_key(LongTermPrivKey),
+  {ok, Asn1} = xtt_erlang:xtt_asn1_from_private_key(LongTermKey, LongTermPrivKey),
   lager:info("Asn1: ~p", [Asn1]),
 
   {ok, handshake_valid}.

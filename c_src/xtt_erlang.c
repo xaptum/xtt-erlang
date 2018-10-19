@@ -1000,7 +1000,7 @@ static ErlNifFunc nif_funcs[] = {
     {"xtt_get_my_pseudonym", 1, xtt_get_my_pseudonym, 0},
     {"xtt_id_to_string", 1, xtt_id_to_string, 0},
     {"xtt_x509_from_keypair", 3, xtt_x509_from_keypair, 0},
-    {"xtt_asn1_from_private_key", 1, xtt_asn1_from_private_key, 0}
+    {"xtt_asn1_from_private_key", 2, xtt_asn1_from_private_key, 0}
 };
 
 ERL_NIF_INIT(xtt_erlang, nif_funcs, &load, NULL, NULL, NULL);
