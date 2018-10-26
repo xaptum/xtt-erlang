@@ -157,7 +157,7 @@ xtt_init_client_group_context(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[
 
     puts("START NIF: xtt_init_client_group_context...\n");
 
-    if(argc != 4) {
+    if(argc != 5) {
         fprintf(stderr, "Bad arg error: expected 4 got %d\n", argc);
         return enif_make_badarg(env);
     }
@@ -166,6 +166,7 @@ xtt_init_client_group_context(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[
     ErlNifBinary daaPrivKeyBin;
     ErlNifBinary daaCredBin;
     ErlNifBinary basenameBin;
+    ErlNifBinary gidBin;
 
     if(!enif_inspect_binary(env, argv[0], &gpkBin) ) {
             fprintf(stderr, "Bad arg at position 0\n");
@@ -206,6 +207,15 @@ xtt_init_client_group_context(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[
         return enif_make_badarg(env);
     }
 
+     if(!enif_inspect_binary(env, argv[4], &gidBin) ) {
+        fprintf(stderr, "Bad arg at position 4\n");
+        return enif_make_badarg(env);
+     }
+     else if (gidBin.size != sizeof(xtt_group_id)){
+        fprintf(stderr, "Bad arg at position 4: size of gid %lu more than xtt_group_id %d\n", gidBin.size, sizeof(xtt_group_id));
+        return enif_make_badarg(env);
+     }
+
     struct xtt_client_group_context *group_ctx = enif_alloc_resource(GROUP_CONTEXT_RESOURCE_TYPE, sizeof(struct xtt_client_group_context));
 
     if(group_ctx == NULL){
@@ -219,26 +229,11 @@ xtt_init_client_group_context(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[
     memcpy(xtt_daa_priv_key->data, daaPrivKeyBin.data, sizeof(xtt_daa_priv_key_lrsw));
     memcpy(xtt_daa_cred->data, daaCredBin.data, sizeof(xtt_daa_credential_lrsw));
 
-
-
-    // 2) Generate gid from gpk (gid = SHA-256(gpk | basename))
-    xtt_group_id gid;
-    crypto_hash_sha256_state hash_state;
-    int hash_ret = crypto_hash_sha256_init(&hash_state);
-    if (0 != hash_ret)
-        return -1;
-    hash_ret = crypto_hash_sha256_update(&hash_state, gpkBin.data, gpkBin.size);
-    if (0 != hash_ret)
-        return -1;
-    hash_ret = crypto_hash_sha256_update(&hash_state, basenameBin.data, basenameBin.size);
-    if (0 != hash_ret)
-        return -1;
-    hash_ret = crypto_hash_sha256_final(&hash_state, gid.data);
-    if (0 != hash_ret)
-        return -1;
+    xtt_group_id *gid = enif_alloc_resource(STRUCT_RESOURCE_TYPE, sizeof(xtt_group_id));
+    memcpy(gid->data, gidBin.data, sizeof(xtt_group_id));
 
     xtt_return_code_type rc = xtt_initialize_client_group_context_lrsw(group_ctx,
-                                  &gid,
+                                  gid,
                                   xtt_daa_priv_key,
                                   xtt_daa_cred,
                                   basenameBin.data,

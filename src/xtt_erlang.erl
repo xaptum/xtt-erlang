@@ -4,7 +4,7 @@
 -export([
   init/0,
   xtt_init_client_handshake_context/2,
-  xtt_init_client_group_context/4,
+  xtt_init_client_group_context/5,
   xtt_init_client_group_contextTPM/6,
   xtt_init_server_root_certificate_context/2,
   xtt_start_client_handshake/1,
@@ -85,7 +85,7 @@ priv_dir() ->
 %% NIFs
 %%====================================================================
 
-xtt_init_client_group_context(_Gid, _PrivKey, _Credential, _Basename)->
+xtt_init_client_group_context(_Gpk, _PrivKey, _Credential, _Basename, _Gid)->
   erlang:nif_error(?LINE).
 
 xtt_init_client_group_contextTPM(_GId, _Credential, _Basename, _KeyHandle, _TPMPassword, _TctiContext)->

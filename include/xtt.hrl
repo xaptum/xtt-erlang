@@ -15,7 +15,7 @@
 {key_handle, tpm_password="", tcti_context, tpm_host, tpm_port}).
 
 -record(group_context_inputs,
-{gpk, credential, basename, priv_key}).
+{gpk, credential, basename, priv_key, gid}).
 
 -define(XTT_X25519_LRSW_ECDSAP256_CHACHA20POLY1305_SHA512, 1).
 -define(XTT_X25519_LRSW_ECDSAP256_CHACHA20POLY1305_BLAKE2B, 2).

@@ -117,9 +117,10 @@ group_context_inputs(DataDir) ->
   GpkFile = filename:join([DataDir, ?DAA_GPK_FILE]),
   CredFile = filename:join([DataDir, ?DAA_CRED_FILE]),
   PrivKeyFile = filename:join([DataDir, ?DAA_SECRETKEY_FILE]),
+  GidFile = filename:join([DataDir, ?DAA_GID_FILE]),
 
   xtt_utils:group_context_inputs(
-      BasenameFile, GpkFile, CredFile, PrivKeyFile).
+      GpkFile, CredFile, PrivKeyFile, BasenameFile, GidFile).
 
 group_context_inputs_tpm(DataDir)->
   BasenameFile = filename:join([DataDir, ?BASENAME_FILE]),

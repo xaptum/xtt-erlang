@@ -14,7 +14,7 @@
 %% API
 -export([
   get_handshake_result/1,
-  group_context_inputs/4,
+  group_context_inputs/5,
   group_context_inputs_tpm/4,
   initialize_certs/2,
   initialize_certsTPM/1,
@@ -40,7 +40,7 @@ wait_for_handshake_result(HandshakeId, TotalFailure)->
   lager:info("Handshake ~p failed: ~p", [HandshakeId, TotalFailure]),
   {error, TotalFailure}.
 
-group_context_inputs(BasenameFile, GpkFile, CredFile, SecretkeyFile) ->
+group_context_inputs(GpkFile, CredFile, SecretkeyFile, BasenameFile, GidFile) ->
 
   {ok, Basename} = file:read_file(BasenameFile),
 
@@ -50,9 +50,11 @@ group_context_inputs(BasenameFile, GpkFile, CredFile, SecretkeyFile) ->
 
   {ok, PrivKey} = file:read_file(SecretkeyFile),
 
+  {ok, Gid} = file:read_file(GidFile),
+
   Gid = crypto:hash(sha256, Gpk),
 
-  {ok, #group_context_inputs{gpk=Gid, credential = Credential, basename = Basename, priv_key = PrivKey}}.
+  {ok, #group_context_inputs{gpk=Gid, credential = Credential, basename = Basename, priv_key = PrivKey, gid = Gid}}.
 
 
 group_context_inputs_tpm(BasenameFile, TpmHost, TpmPort, TpmPassword)->
