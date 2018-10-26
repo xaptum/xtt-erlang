@@ -8,6 +8,7 @@
 #include <tss2/tss2_sys.h>
 #include <tss2/tss2_tcti_socket.h>
 
+#include <sodium.h>
 
 extern ErlNifResourceType* TCTI_RESOURCE_TYPE;
 
@@ -226,10 +227,10 @@ xtt_init_client_group_context(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[
     int hash_ret = crypto_hash_sha256_init(&hash_state);
     if (0 != hash_ret)
         return -1;
-    hash_ret = crypto_hash_sha256_update(&hash_state, gpkBin.data, sizeof(gpkBin));
+    hash_ret = crypto_hash_sha256_update(&hash_state, gpkBin.data, gpkBin.size);
     if (0 != hash_ret)
         return -1;
-    hash_ret = crypto_hash_sha256_update(&hash_state, basename, basename_len);
+    hash_ret = crypto_hash_sha256_update(&hash_state, basenameBin.data, basenameBin.size);
     if (0 != hash_ret)
         return -1;
     hash_ret = crypto_hash_sha256_final(&hash_state, gid.data);
