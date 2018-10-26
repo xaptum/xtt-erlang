@@ -218,8 +218,26 @@ xtt_init_client_group_context(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[
     memcpy(xtt_daa_priv_key->data, daaPrivKeyBin.data, sizeof(xtt_daa_priv_key_lrsw));
     memcpy(xtt_daa_cred->data, daaCredBin.data, sizeof(xtt_daa_credential_lrsw));
 
+
+
+    // 2) Generate gid from gpk (gid = SHA-256(gpk | basename))
+    xtt_group_id gid;
+    crypto_hash_sha256_state hash_state;
+    int hash_ret = crypto_hash_sha256_init(&hash_state);
+    if (0 != hash_ret)
+        return -1;
+    hash_ret = crypto_hash_sha256_update(&hash_state, gpkBin.data, sizeof(gpkBin));
+    if (0 != hash_ret)
+        return -1;
+    hash_ret = crypto_hash_sha256_update(&hash_state, basename, basename_len);
+    if (0 != hash_ret)
+        return -1;
+    hash_ret = crypto_hash_sha256_final(&hash_state, gid.data);
+    if (0 != hash_ret)
+        return -1;
+
     xtt_return_code_type rc = xtt_initialize_client_group_context_lrsw(group_ctx,
-                                  (xtt_group_id *) gpkBin.data,
+                                  &gid,
                                   xtt_daa_priv_key,
                                   xtt_daa_cred,
                                   basenameBin.data,

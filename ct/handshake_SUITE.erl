@@ -49,6 +49,7 @@ test_file(Config) ->
   {ok, GroupContextInputs} = group_context_inputs(DataDir),
 
   test_handshake(DataDir, ?XTT_SERVER_PORT, GroupContextInputs),
+
   Config.
 
 test_tpm(Config) ->
