@@ -66,6 +66,7 @@
 -define(DAA_CRED_FILE, "daa_cred.bin").
 -define(DAA_SECRETKEY_FILE, "daa_secretkey.bin").
 -define(BASENAME_FILE, "basename.bin").
+-define(DAA_GID_FILE, "daa_gid.bin").
 -define(ROOT_ID_FILE, "root_id.bin").
 -define(ROOT_PUBKEY_FILE, "root_pub.bin").
 
