@@ -14,7 +14,7 @@
 %% API
 -export([
   get_handshake_result/1,
-  group_context_inputs/6,
+  group_context_inputs/5,
   group_context_inputs_tpm/4,
   initialize_certs/2,
   initialize_certsTPM/1,
@@ -40,21 +40,19 @@ wait_for_handshake_result(HandshakeId, TotalFailure)->
   lager:info("Handshake ~p failed: ~p", [HandshakeId, TotalFailure]),
   {error, TotalFailure}.
 
-group_context_inputs(BasenameFile, GpkFile, CredFile, SecretkeyFile, RootIdFile, RootPubkeyFile) ->
+group_context_inputs(GpkFile, CredFile, SecretkeyFile, BasenameFile, GidFile) ->
 
   {ok, Basename} = file:read_file(BasenameFile),
 
-  {ok, Gpk} = file:read_file(GpkFile),
+  {ok, _Gpk} = file:read_file(GpkFile),
 
   {ok, Credential} = file:read_file(CredFile),
 
   {ok, PrivKey} = file:read_file(SecretkeyFile),
 
-  Gid = crypto:hash(sha256, Gpk),
+  {ok, Gid} = file:read_file(GidFile),
 
-  ok = xtt_utils:initialize_certs(RootIdFile, RootPubkeyFile), %% do it here for symmetry with below TPM group_context_inputs
-
-  {ok, #group_context_inputs{gpk=Gid, credential = Credential, basename = Basename, priv_key = PrivKey}}.
+  {ok, #group_context_inputs{gpk=Gid, credential = Credential, basename = Basename, priv_key = PrivKey, gid = Gid}}.
 
 
 group_context_inputs_tpm(BasenameFile, TpmHost, TpmPort, TpmPassword)->
@@ -85,7 +83,7 @@ group_context_inputs_tpm(BasenameFile, TpmHost, TpmPort, TpmPassword)->
   end.
 
 
-initialize_certs(RootIdFile, RootPubkeyFile)->
+initialize_certs(RootIdFile, RootPubkeyFile) ->
   {ok, RootId} = file:read_file(RootIdFile),
   {ok, RootPubKey} = file:read_file(RootPubkeyFile),
 
@@ -115,14 +113,18 @@ init_cert_db(RootId, RootPubkey)->
 
 lookup_cert(ClaimedRootId)->
   lager:info("Looking up server's certificate from its claimed root_id ~p", [ClaimedRootId]),
-  case ets:lookup(?CERT_TABLE, ClaimedRootId) of
-    [{ClaimedRootId, CertCtx}] -> {ClaimedRootId, CertCtx};
-    [] -> %% TODO TEMP HACK
-      RootId = ets:last(?CERT_TABLE),
-      case ets:lookup(?CERT_TABLE, RootId) of
+  case lists:member(?CERT_TABLE, ets:all()) of
+    true ->
+      case ets:lookup(?CERT_TABLE, ClaimedRootId) of
         [{ClaimedRootId, CertCtx}] -> {ClaimedRootId, CertCtx};
-        _Other -> {error, doesnt_exist}
-      end
+        [] -> %% TODO TEMP HACK
+          RootId = ets:last(?CERT_TABLE),
+          case ets:lookup(?CERT_TABLE, RootId) of
+          [{ClaimedRootId, CertCtx}] -> {ClaimedRootId, CertCtx};
+          _Other -> {error, doesnt_exist}
+          end
+      end;
+    _False -> {error, cert_table_not_initialized}
   end.
 
 maybe_init_group_context(GroupContext) when is_reference(GroupContext)->
@@ -147,8 +149,8 @@ maybe_init_group_context(#group_context_inputs{
       {error, init_client_group_context_tpm_failed}
   end;
 maybe_init_group_context(#group_context_inputs{
-  gpk = Gpk, credential = Credential, basename = Basename, priv_key = PrivKey}) when is_binary(PrivKey) ->
-  case xtt_erlang:xtt_init_client_group_context(Gpk, PrivKey, Credential, Basename) of
+  gpk = Gpk, credential = Credential, basename = Basename, priv_key = PrivKey, gid = Gid}) when is_binary(PrivKey) ->
+  case xtt_erlang:xtt_init_client_group_context(Gpk, PrivKey, Credential, Basename, Gid) of
     {ok, GroupCtx} ->
       lager:info("Success Creating GroupCtx"),
       {ok, GroupCtx};

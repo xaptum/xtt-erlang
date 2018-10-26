@@ -4,7 +4,7 @@
 -export([
   init/0,
   xtt_init_client_handshake_context/2,
-  xtt_init_client_group_context/4,
+  xtt_init_client_group_context/5,
   xtt_init_client_group_contextTPM/6,
   xtt_init_server_root_certificate_context/2,
   xtt_start_client_handshake/1,
@@ -19,7 +19,7 @@
   xtt_get_my_pseudonym/1,
   xtt_id_to_string/1,
   xtt_x509_from_keypair/3,
-  xtt_asn1_from_private_key/1]).
+  xtt_asn1_from_private_key/2]).
 
 -export([priv_dir/0]).
 
@@ -38,8 +38,10 @@ init() ->
   PrivDir = priv_dir(),
   case try_load(PrivDir, ?XTT_LIBNAME) of
     {error, _Error} ->
+      lager:warning("Couldn't load lib ~p from ~p", [?XTT_LIBNAME, PrivDir]),
+      lager:info("Trying to load from ~p", [?XTT_APPNAME]),
       case try_load(PrivDir, ?XTT_APPNAME) of
-        {error, Error} -> lager:error("Error loading either NIF lib ~p or app ~p: ~p", [?XTT_LIBNAME, ?XTT_APPNAME, Error]);
+        {error, Error} -> lager:error("Error loading lib ~p from ~p: ~p", [?XTT_APPNAME, PrivDir, Error]);
         ok -> 
 		      lager:info("Loaded ~p NIFs", [?XTT_APPNAME]),
 		      ok
@@ -85,7 +87,7 @@ priv_dir() ->
 %% NIFs
 %%====================================================================
 
-xtt_init_client_group_context(_Gid, _PrivKey, _Credential, _Basename)->
+xtt_init_client_group_context(_Gpk, _PrivKey, _Credential, _Basename, _Gid)->
   erlang:nif_error(?LINE).
 
 xtt_init_client_group_contextTPM(_GId, _Credential, _Basename, _KeyHandle, _TPMPassword, _TctiContext)->
@@ -133,7 +135,7 @@ xtt_id_to_string(_Identity)->
 xtt_x509_from_keypair(_LongtermKey, _LongtermPrivKey, _Identity)->
   erlang:nif_error(?LINE).
 
-xtt_asn1_from_private_key(_LongtermPrivKey)->
+xtt_asn1_from_private_key(_LontermKey, _LongtermPrivKey)->
   erlang:nif_error(?LINE).
 
 %%====================================================================

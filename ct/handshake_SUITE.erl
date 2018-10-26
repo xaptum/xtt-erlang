@@ -19,10 +19,10 @@
 
 %% Defaults
 -define(XTT_VERSION, ?XTT_VERSION_ONE).
--define(XTT_SUITE, ?XTT_X25519_LRSW_ED25519_AES256GCM_SHA512).
+-define(XTT_SUITE, ?XTT_X25519_LRSW_ECDSAP256_CHACHA20POLY1305_SHA512).
 -define(EXAMPLE_DATA_DIR, "example_data").
 
--define(XTT_SERVER_PORT, 4443).
+-define(XTT_SERVER_PORT, 4444).
 -define(XTT_SERVER_PORT_TPM, 4445).
 -define(XTT_SERVER_HOST, "localhost").
 
@@ -30,7 +30,8 @@
 -define(TPM_PORT,  "2321").
 -define(TPM_PASSWORD, <<>>).
 
-all() -> [test_tpm,test_file].
+%%all() -> [test_tpm,test_file].
+all() -> [test_file].
 
 init_per_suite(Config)->
   application:ensure_all_started(lager),
@@ -42,13 +43,19 @@ end_per_suite(_Config) ->
 test_file(Config) ->
   lager:md([{source, "TEST_FILE"}]),
   DataDir = ?config(data_dir, Config),
+
+  ok = initialize_certs(DataDir),
+
   {ok, GroupContextInputs} = group_context_inputs(DataDir),
+
   test_handshake(DataDir, ?XTT_SERVER_PORT, GroupContextInputs),
+
   Config.
 
 test_tpm(Config) ->
   lager:md([{source, "TEST_TPM"}]),
   DataDir = ?config(data_dir, Config),
+
   {ok, GroupContextInputsTpm} = group_context_inputs_tpm(DataDir),
   test_handshake(DataDir, ?XTT_SERVER_PORT_TPM, GroupContextInputsTpm),
   Config.
@@ -94,22 +101,26 @@ validate_handshake_context(HandshakeContext)->
   {ok, Cert} = xtt_erlang:xtt_x509_from_keypair(LongTermKey, LongTermPrivKey, Identity),
   lager:info("Cert: ~p", [Cert]),
 
-  {ok, Asn1} = xtt_erlang:xtt_asn1_from_private_key(LongTermPrivKey),
+  {ok, Asn1} = xtt_erlang:xtt_asn1_from_private_key(LongTermKey, LongTermPrivKey),
   lager:info("Asn1: ~p", [Asn1]),
 
   {ok, handshake_valid}.
+
+initialize_certs(DataDir) ->
+  RootIdFile = filename:join([DataDir,?ROOT_ID_FILE]),
+  RootPubKeyFile = filename:join([DataDir, ?ROOT_PUBKEY_FILE]),
+
+  xtt_utils:initialize_certs(RootIdFile, RootPubKeyFile).
 
 group_context_inputs(DataDir) ->
   BasenameFile = filename:join([DataDir, ?BASENAME_FILE]),
   GpkFile = filename:join([DataDir, ?DAA_GPK_FILE]),
   CredFile = filename:join([DataDir, ?DAA_CRED_FILE]),
   PrivKeyFile = filename:join([DataDir, ?DAA_SECRETKEY_FILE]),
-  RootIdFile = filename:join([DataDir,?ROOT_ID_FILE]),
-  RootPubKeyFile = filename:join([DataDir, ?ROOT_PUBKEY_FILE]),
+  GidFile = filename:join([DataDir, ?DAA_GID_FILE]),
 
   xtt_utils:group_context_inputs(
-      BasenameFile, GpkFile, CredFile, PrivKeyFile,
-      RootIdFile, RootPubKeyFile).
+      GpkFile, CredFile, PrivKeyFile, BasenameFile, GidFile).
 
 group_context_inputs_tpm(DataDir)->
   BasenameFile = filename:join([DataDir, ?BASENAME_FILE]),
