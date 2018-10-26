@@ -44,15 +44,13 @@ group_context_inputs(GpkFile, CredFile, SecretkeyFile, BasenameFile, GidFile) ->
 
   {ok, Basename} = file:read_file(BasenameFile),
 
-  {ok, Gpk} = file:read_file(GpkFile),
+  {ok, _Gpk} = file:read_file(GpkFile),
 
   {ok, Credential} = file:read_file(CredFile),
 
   {ok, PrivKey} = file:read_file(SecretkeyFile),
 
   {ok, Gid} = file:read_file(GidFile),
-
-  Gid = crypto:hash(sha256, Gpk),
 
   {ok, #group_context_inputs{gpk=Gid, credential = Credential, basename = Basename, priv_key = PrivKey, gid = Gid}}.
 
