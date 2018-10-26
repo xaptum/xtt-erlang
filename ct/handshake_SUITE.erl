@@ -43,13 +43,18 @@ end_per_suite(_Config) ->
 test_file(Config) ->
   lager:md([{source, "TEST_FILE"}]),
   DataDir = ?config(data_dir, Config),
+
+  ok = initialize_certs(DataDir),
+
   {ok, GroupContextInputs} = group_context_inputs(DataDir),
+
   test_handshake(DataDir, ?XTT_SERVER_PORT, GroupContextInputs),
   Config.
 
 test_tpm(Config) ->
   lager:md([{source, "TEST_TPM"}]),
   DataDir = ?config(data_dir, Config),
+
   {ok, GroupContextInputsTpm} = group_context_inputs_tpm(DataDir),
   test_handshake(DataDir, ?XTT_SERVER_PORT_TPM, GroupContextInputsTpm),
   Config.
@@ -100,17 +105,20 @@ validate_handshake_context(HandshakeContext)->
 
   {ok, handshake_valid}.
 
+initialize_certs(DataDir) ->
+  RootIdFile = filename:join([DataDir,?ROOT_ID_FILE]),
+  RootPubKeyFile = filename:join([DataDir, ?ROOT_PUBKEY_FILE]),
+
+  initialize_certs(RootIdFile, RootPubKeyFile).
+
 group_context_inputs(DataDir) ->
   BasenameFile = filename:join([DataDir, ?BASENAME_FILE]),
   GpkFile = filename:join([DataDir, ?DAA_GPK_FILE]),
   CredFile = filename:join([DataDir, ?DAA_CRED_FILE]),
   PrivKeyFile = filename:join([DataDir, ?DAA_SECRETKEY_FILE]),
-  RootIdFile = filename:join([DataDir,?ROOT_ID_FILE]),
-  RootPubKeyFile = filename:join([DataDir, ?ROOT_PUBKEY_FILE]),
 
   xtt_utils:group_context_inputs(
-      BasenameFile, GpkFile, CredFile, PrivKeyFile,
-      RootIdFile, RootPubKeyFile).
+      BasenameFile, GpkFile, CredFile, PrivKeyFile).
 
 group_context_inputs_tpm(DataDir)->
   BasenameFile = filename:join([DataDir, ?BASENAME_FILE]),

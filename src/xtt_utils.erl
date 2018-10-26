@@ -83,7 +83,7 @@ group_context_inputs_tpm(BasenameFile, TpmHost, TpmPort, TpmPassword)->
   end.
 
 
-initialize_certs(RootIdFile, RootPubkeyFile)->
+initialize_certs(RootIdFile, RootPubkeyFile) ->
   {ok, RootId} = file:read_file(RootIdFile),
   {ok, RootPubKey} = file:read_file(RootPubkeyFile),
 
