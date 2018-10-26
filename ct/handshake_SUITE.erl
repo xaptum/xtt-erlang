@@ -109,7 +109,7 @@ initialize_certs(DataDir) ->
   RootIdFile = filename:join([DataDir,?ROOT_ID_FILE]),
   RootPubKeyFile = filename:join([DataDir, ?ROOT_PUBKEY_FILE]),
 
-  initialize_certs(RootIdFile, RootPubKeyFile).
+  xtt_utils:initialize_certs(RootIdFile, RootPubKeyFile).
 
 group_context_inputs(DataDir) ->
   BasenameFile = filename:join([DataDir, ?BASENAME_FILE]),
