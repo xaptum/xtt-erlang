@@ -19,10 +19,10 @@
 
 %% Defaults
 -define(XTT_VERSION, ?XTT_VERSION_ONE).
--define(XTT_SUITE, ?XTT_X25519_LRSW_ED25519_AES256GCM_SHA512).
+-define(XTT_SUITE, ?XTT_X25519_LRSW_ECDSAP256_CHACHA20POLY1305_SHA512).
 -define(EXAMPLE_DATA_DIR, "example_data").
 
--define(XTT_SERVER_PORT, 4443).
+-define(XTT_SERVER_PORT, 4444).
 -define(XTT_SERVER_PORT_TPM, 4445).
 -define(XTT_SERVER_HOST, "localhost").
 
@@ -30,7 +30,8 @@
 -define(TPM_PORT,  "2321").
 -define(TPM_PASSWORD, <<>>).
 
-all() -> [test_tpm,test_file].
+%%all() -> [test_tpm,test_file].
+all() -> [test_file].
 
 init_per_suite(Config)->
   application:ensure_all_started(lager),
