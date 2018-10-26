@@ -8,7 +8,6 @@
 #include <tss2/tss2_sys.h>
 #include <tss2/tss2_tcti_socket.h>
 
-#include <sodium.h>
 
 extern ErlNifResourceType* TCTI_RESOURCE_TYPE;
 
@@ -1005,7 +1004,7 @@ static ErlNifFunc nif_funcs[] = {
     {"xtt_handshake_build_idclientattest", 5, xtt_handshake_build_idclientattest, ERL_NIF_DIRTY_JOB_CPU_BOUND},
     {"xtt_handshake_parse_idserverfinished", 1, xtt_handshake_parse_idserverfinished, ERL_NIF_DIRTY_JOB_CPU_BOUND},
     {"xtt_client_build_error_msg_nif", 1, xtt_client_build_error_msg_nif, ERL_NIF_DIRTY_JOB_CPU_BOUND},
-    {"xtt_init_client_group_context", 4, xtt_init_client_group_context, ERL_NIF_DIRTY_JOB_CPU_BOUND},
+    {"xtt_init_client_group_context", 5, xtt_init_client_group_context, ERL_NIF_DIRTY_JOB_CPU_BOUND},
     {"xtt_init_client_group_contextTPM", 6, xtt_init_client_group_contextTPM, ERL_NIF_DIRTY_JOB_CPU_BOUND},
     {"xtt_init_server_root_certificate_context", 2, xtt_init_server_root_certificate_context, ERL_NIF_DIRTY_JOB_CPU_BOUND},
     {"xtt_get_my_longterm_key", 1, xtt_get_my_longterm_key, 0},

@@ -151,8 +151,8 @@ maybe_init_group_context(#group_context_inputs{
       {error, init_client_group_context_tpm_failed}
   end;
 maybe_init_group_context(#group_context_inputs{
-  gpk = Gpk, credential = Credential, basename = Basename, priv_key = PrivKey}) when is_binary(PrivKey) ->
-  case xtt_erlang:xtt_init_client_group_context(Gpk, PrivKey, Credential, Basename) of
+  gpk = Gpk, credential = Credential, basename = Basename, priv_key = PrivKey, gid = Gid}) when is_binary(PrivKey) ->
+  case xtt_erlang:xtt_init_client_group_context(Gpk, PrivKey, Credential, Basename, Gid) of
     {ok, GroupCtx} ->
       lager:info("Success Creating GroupCtx"),
       {ok, GroupCtx};
