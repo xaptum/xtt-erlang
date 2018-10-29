@@ -1,0 +1,6 @@
+root_id_filename=${CMAKE_INSTALL_FULL_DATAROOTDIR}/xdaa-issuer/dev/root_id.bin
+root_pubkey_filename=${CMAKE_INSTALL_FULL_DATAROOTDIR}/xdaa-issuer/dev/root_pub.bin
+root_asn1certificate_filename=${CMAKE_INSTALL_FULL_DATAROOTDIR}/xdaa-issuer/dev/root.cert.asn1.pem
+basename_filename=${CMAKE_INSTALL_FULL_DATAROOTDIR}/xdaa-issuer/dev/basename.bin
+server_id_filename=${CMAKE_INSTALL_FULL_DATAROOTDIR}/xdaa-issuer/dev/server_id.bin
+gpk_directory=./
