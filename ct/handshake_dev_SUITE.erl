@@ -14,7 +14,7 @@
 -include_lib("xtt_erlang/include/xtt.hrl").
 
 -export([all/0, init_per_suite/1, end_per_suite/1]).
--export([test_handshake/3]).
+-export([test_file/1, test_handshake/3]).
 
 %% Defaults
 -define(XTT_VERSION, ?XTT_VERSION_ONE).

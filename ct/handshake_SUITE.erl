@@ -31,7 +31,7 @@
 -define(TPM_PASSWORD, <<>>).
 
 %%all() -> [test_tpm,test_file].
-all() -> [test_file].
+all() -> [].
 
 init_per_suite(Config)->
   application:ensure_all_started(lager),
