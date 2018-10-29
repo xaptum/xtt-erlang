@@ -14,8 +14,7 @@
 -include_lib("xtt_erlang/include/xtt.hrl").
 
 -export([all/0, init_per_suite/1, end_per_suite/1]).
--export([test_file/1, test_tpm/1]).
--export([test_handshake/3, group_context_inputs_tpm/1]).
+-export([test_handshake/3]).
 
 %% Defaults
 -define(XTT_VERSION, ?XTT_VERSION_ONE).
@@ -106,7 +105,3 @@ group_context_inputs(DataDir) ->
 
   xtt_utils:group_context_inputs(
       GpkFile, CredFile, PrivKeyFile, BasenameFile, GidFile).
-
-group_context_inputs_tpm(DataDir)->
-  BasenameFile = filename:join([DataDir, ?BASENAME_FILE]),
-  xtt_utils:group_context_inputs_tpm(BasenameFile, ?TPM_HOSTNAME, ?TPM_PORT, ?TPM_PASSWORD).
