@@ -20,8 +20,8 @@
 -define(XTT_VERSION, ?XTT_VERSION_ONE).
 -define(XTT_SUITE, ?XTT_X25519_LRSW_ECDSAP256_CHACHA20POLY1305_SHA512).
 
--define(XTT_SERVER_PORT, 444).
--define(XTT_SERVER_HOST, "mb.xaptum.net").
+-define(XTT_SERVER_DEV_PORT, 444).
+-define(XTT_SERVER_DEV_HOST, "mb.xaptum.net").
 
 all() -> [test_file].
 
@@ -40,7 +40,7 @@ test_file(Config) ->
 
   {ok, GroupContextInputs} = group_context_inputs(DataDir),
 
-  test_handshake(DataDir, ?XTT_SERVER_PORT, GroupContextInputs),
+  test_handshake(DataDir, ?XTT_SERVER_DEV_PORT, GroupContextInputs),
 
   Config.
 
@@ -51,7 +51,7 @@ test_handshake(DataDir, XttServerPort, GroupContextInputs)->
   {RequestedClientId, IntendedServerId} =
     xtt_utils:initialize_ids(RequestedClientIdFile, IntendedServerIdFile),
   {ok, Pid} = xtt_handshake:start_handshake(
-    ?XTT_SERVER_HOST, XttServerPort,
+    ?XTT_SERVER_DEV_HOST, XttServerPort,
     RequestedClientId, IntendedServerId,
     ?XTT_VERSION, ?XTT_SUITE,
     GroupContextInputs),
