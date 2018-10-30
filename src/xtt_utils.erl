@@ -44,7 +44,7 @@ group_context_inputs(GpkFile, CredFile, SecretkeyFile, BasenameFile, GidFile) ->
 
   {ok, Basename} = file:read_file(BasenameFile),
 
-  {ok, _Gpk} = file:read_file(GpkFile),
+  {ok, Gpk} = file:read_file(GpkFile),
 
   {ok, Credential} = file:read_file(CredFile),
 
@@ -52,7 +52,7 @@ group_context_inputs(GpkFile, CredFile, SecretkeyFile, BasenameFile, GidFile) ->
 
   {ok, Gid} = file:read_file(GidFile),
 
-  {ok, #group_context_inputs{gpk=Gid, credential = Credential, basename = Basename, priv_key = PrivKey, gid = Gid}}.
+  {ok, #group_context_inputs{ gpk = Gpk, credential = Credential, basename = Basename, priv_key = PrivKey, gid = Gid}}.
 
 
 group_context_inputs_tpm(BasenameFile, TpmHost, TpmPort, TpmPassword)->
