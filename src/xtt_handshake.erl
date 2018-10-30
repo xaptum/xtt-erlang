@@ -111,13 +111,14 @@ handle_call(get_handshake_context, _From, #state{handshake_status=AnythingOtherT
 
 handle_cast(start_handshake, #state{handshake_state = HandshakeState} = State) ->
   Result = xtt_erlang:xtt_start_client_handshake(HandshakeState),
-  lager:info("Result of start_client_handshake ~p", [Result]),
+  lager:debug("Result of start_client_handshake ~p", [Result]),
   gen_server:cast(self(), Result),
   {noreply, State#state{handshake_status = starting}};
 
 handle_cast({?XTT_RETURN_WANT_READ, BytesRequested},
     #state{xtt_server_socket = Socket, handshake_state = HandshakeState} = State)->
-  lager:info("XTT_RETURN_WANT_READ ~b bytes", [BytesRequested]),
+  lager:info("XTT_RETURN_WANT_READ"),
+  lager:debug("~b bytes", [BytesRequested]),
   {ok, Bin} = gen_tcp:recv(Socket, BytesRequested),
   Result = xtt_erlang:xtt_client_handshake(HandshakeState, 0, Bin),
   gen_server:cast(self(), Result),
@@ -125,7 +126,8 @@ handle_cast({?XTT_RETURN_WANT_READ, BytesRequested},
 
 handle_cast({?XTT_RETURN_WANT_WRITE, BinToWrite},
     #state{xtt_server_socket = XttServerSocket, handshake_state = HandshakeState} = State)->
-  lager:info("XTT_RETURN_WANT_WRITE ~p bytes", [BinToWrite]),
+  lager:info("XTT_RETURN_WANT_WRITE"),
+  lager:debug("~p bytes", [BinToWrite]),
   ok = gen_tcp:send(XttServerSocket, BinToWrite),
   Result = xtt_erlang:xtt_client_handshake(HandshakeState, size(BinToWrite), <<>>),
   gen_server:cast(self(), Result),
