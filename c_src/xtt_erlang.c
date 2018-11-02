@@ -94,7 +94,7 @@ static int write_buffer_to_file(const char *filename, unsigned char *buffer, siz
 static ERL_NIF_TERM
 build_response(ErlNifEnv* env, int rc, struct client_state *cs, ErlNifBinary *temp_bin){
 
-    printf("Building response with ret code %d when context state is %d\n", rc, cs->ctx.state);
+//    printf("Building response with ret code %d when context state is %d\n", rc, cs->ctx.state);
 
     ERL_NIF_TERM ret_code = enif_make_int(env, rc);
     ERL_NIF_TERM response;
@@ -154,7 +154,7 @@ build_response(ErlNifEnv* env, int rc, struct client_state *cs, ErlNifBinary *te
 static ERL_NIF_TERM
 xtt_init_client_group_context(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]){
 
-    puts("START NIF: xtt_init_client_group_context...\n");
+//    puts("START NIF: xtt_init_client_group_context...\n");
 
     if(argc != 5) {
         fprintf(stderr, "Bad arg error: expected 4 got %d\n", argc);
@@ -259,7 +259,7 @@ xtt_init_client_group_context(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[
 static ERL_NIF_TERM
 xtt_init_client_group_contextTPM(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]){
 
-puts("START NIF: xtt_init_client_group_contextTPM...\n");
+//puts("START NIF: xtt_init_client_group_contextTPM...\n");
 
     if(argc != 6) {
         fprintf(stderr, "Bad arg error: expected 6 got %d\n", argc);
@@ -371,7 +371,7 @@ puts("START NIF: xtt_init_client_group_contextTPM...\n");
 static ERL_NIF_TERM
 xtt_init_server_root_certificate_context(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]){
 
-    puts("START NIF: xtt_init_server_root_certificate_context...\n");
+//    puts("START NIF: xtt_init_server_root_certificate_context...\n");
 
     if(argc != 2) {
         fprintf(stderr, "Bad arg error: expected 2 got %d\n", argc);
@@ -435,7 +435,7 @@ xtt_init_server_root_certificate_context(ErlNifEnv* env, int argc, const ERL_NIF
 static ERL_NIF_TERM
 xtt_init_client_handshake_context(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
-    puts("START NIF: xtt_client_handshake_context...\n");
+//    puts("START NIF: xtt_client_handshake_context...\n");
 
     if(argc != 2) {
         return enif_make_badarg(env);
@@ -493,7 +493,7 @@ xtt_init_client_handshake_context(ErlNifEnv* env, int argc, const ERL_NIF_TERM a
 static ERL_NIF_TERM
 xtt_start_client_handshake(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
-    puts("START NIF: xtt_start_client_handshake...\n");
+//    puts("START NIF: xtt_start_client_handshake...\n");
 
     if(argc != 1) {
         return enif_make_badarg(env);
@@ -517,7 +517,7 @@ xtt_start_client_handshake(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 static ERL_NIF_TERM
 xtt_client_handshake(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]){
 
-    puts("START NIF: xtt_client_handshake...\n");
+//    puts("START NIF: xtt_client_handshake...\n");
 
     if(argc != 3){
         return enif_make_badarg(env);
@@ -565,7 +565,7 @@ xtt_client_handshake(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]){
 static ERL_NIF_TERM
 xtt_handshake_preparse_serverattest(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]){
 
-    puts("START NIF: xtt_handshake_preparse_serverattest...\n");
+//    puts("START NIF: xtt_handshake_preparse_serverattest...\n");
 
     if(argc != 1){
         return enif_make_badarg(env);
@@ -654,7 +654,7 @@ xtt_handshake_build_idclientattest(ErlNifEnv* env, int argc, const ERL_NIF_TERM 
 static ERL_NIF_TERM
 xtt_handshake_parse_idserverfinished(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]){
 
-    puts("START NIF: xtt_handshake_parse_idserverfinished...\n");
+//    puts("START NIF: xtt_handshake_parse_idserverfinished...\n");
 
     if(argc != 1){
         return enif_make_badarg(env);
@@ -698,7 +698,7 @@ xtt_client_build_error_msg_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv
 static ERL_NIF_TERM
 xtt_get_my_longterm_key(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]){
 
-    puts("START NIF: xtt_get_my_longterm_key...\n");
+//    puts("START NIF: xtt_get_my_longterm_key...\n");
 
     if(argc != 1){
         return enif_make_badarg(env);
@@ -732,7 +732,7 @@ xtt_get_my_longterm_key(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]){
 static ERL_NIF_TERM
 xtt_get_my_longterm_private_key(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]){
 
-    puts("START NIF: xtt_get_my_longterm_private_key...\n");
+//    puts("START NIF: xtt_get_my_longterm_private_key...\n");
 
     if(argc != 1){
         return enif_make_badarg(env);
@@ -765,7 +765,7 @@ xtt_get_my_longterm_private_key(ErlNifEnv* env, int argc, const ERL_NIF_TERM arg
 static ERL_NIF_TERM
 xtt_get_my_id(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]){
 
-    puts("START NIF: xtt_get_my_id...\n");
+//    puts("START NIF: xtt_get_my_id...\n");
 
     if(argc != 1){
         return enif_make_badarg(env);
@@ -798,7 +798,7 @@ xtt_get_my_id(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]){
 static ERL_NIF_TERM
 xtt_get_my_pseudonym(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]){
 
-    puts("START NIF: xtt_get_my_pseudonym...\n");
+//    puts("START NIF: xtt_get_my_pseudonym...\n");
 
     if(argc != 1){
         return enif_make_badarg(env);
@@ -831,7 +831,7 @@ xtt_get_my_pseudonym(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]){
 static ERL_NIF_TERM
 xtt_id_to_string(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]){
 
-    puts("START NIF: xtt_id_to_string...\n");
+//    puts("START NIF: xtt_id_to_string...\n");
 
     if(argc != 1){
         return enif_make_badarg(env);
@@ -870,7 +870,7 @@ xtt_id_to_string(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]){
 static ERL_NIF_TERM
 xtt_x509_from_keypair(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]){
 
-    puts("START NIF: xtt_x509_from_keypair...\n");
+//    puts("START NIF: xtt_x509_from_keypair...\n");
 
     if(argc != 3){
         return enif_make_badarg(env);
@@ -944,7 +944,7 @@ xtt_x509_from_keypair(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]){
 static ERL_NIF_TERM
 xtt_asn1_from_private_key(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]){
 
-    puts("START NIF: xtt_asn1_from_private_key...\n");
+//    puts("START NIF: xtt_asn1_from_private_key...\n");
 
     if(argc != 2){
         return enif_make_badarg(env);
