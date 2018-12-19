@@ -39,9 +39,16 @@ else ifeq ($(UNAME_SYS), Linux)
 endif
 
 CFLAGS += -fPIC -I $(ERTS_INCLUDE_DIR) -I $(ERL_INTERFACE_INCLUDE_DIR)
-CXXFLAGS += -fPIC -I $(ERTS_INCLUDE_DIR) -I $(ERL_INTERFACE_INCLUDE_DIR)
+CFLAGS += $(shell pkg-config --cflags xtt)
 
-LDLIBS += -L $(ERL_INTERFACE_LIB_DIR) -lerl_interface -lei -lecdaa -Wl,-rpath,$(XAPTUM_TPM_ERLANG_LIBDIR) -L $(XAPTUM_TPM_ERLANG_LIBDIR) -lxaptum_tpm_erlang -lxtt
+CXXFLAGS += -fPIC -I $(ERTS_INCLUDE_DIR) -I $(ERL_INTERFACE_INCLUDE_DIR)
+CXXFLAGS += $(shell pkg-config --cflags xtt)
+
+LDLIBS += -L $(ERL_INTERFACE_LIB_DIR) -lerl_interface -lei
+LDLIBS += -Wl,-rpath,$(XAPTUM_TPM_ERLANG_LIBDIR) -L $(XAPTUM_TPM_ERLANG_LIBDIR) -lxaptum_tpm_erlang
+LDLIBS += $(shell pkg-config --libs xtt)
+LDLIBS += -lecdaa
+
 LDFLAGS += -shared
 
 # Verbosity.
