@@ -640,7 +640,6 @@ xtt_handshake_build_idclientattest(ErlNifEnv* env, int argc, const ERL_NIF_TERM 
                                                        &(cs->io_ptr),
                                                        server_cert,
                                                        (xtt_identity_type *) requested_client_id.data,
-                                                       (xtt_identity_type *) intended_server_id.data,
                                                        group_ctx,
                                                        &(cs->ctx));
 
