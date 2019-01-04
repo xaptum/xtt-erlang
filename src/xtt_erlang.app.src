@@ -4,11 +4,10 @@
   {registered, []},
   {applications,
    [kernel,
-    stdlib,
-    lager
+    stdlib
    ]},
   {env,[]},
-  {modules, []},
+  {modules, [xtt_erlang, xtt_utils, xtt_handshake]},
 
   {contributors, []},
   {licenses, []},
