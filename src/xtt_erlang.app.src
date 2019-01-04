@@ -3,12 +3,13 @@
   {vsn, "0.1.0"},
   {registered, []},
   {applications,
-   [kernel,
-    stdlib
+   [xtt_erlang,
+    kernel,
+    stdlib,
+    lager
    ]},
   {env,[]},
-  {modules, [xtt_erlang, xtt_utils, xtt_handshake]},
-
+  {modules, [xtt_erlang]},
   {contributors, []},
   {licenses, []},
   {links, []}
