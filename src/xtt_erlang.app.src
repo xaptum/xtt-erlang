@@ -1,11 +1,12 @@
 {application, 'xtt_erlang',
- [{description, "An OTP library"},
+ [{description, "XTT NIF wrappers"},
   {vsn, "0.1.0"},
   {registered, []},
   {applications,
    [
     kernel,
-    stdlib
+    stdlib,
+     lager
    ]},
   {env,[]},
   {modules, [xtt_erlang]},

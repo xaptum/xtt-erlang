@@ -1,5 +1,10 @@
 -module(xtt_erlang).
 
+-behaviour(application).
+
+%% application API
+-export([start/2, stop/1]).
+
 %% API exports
 -export([
   init/0,
@@ -23,12 +28,18 @@
 
 -export([priv_dir/0]).
 
--on_load(init/0).
+%%-on_load(init/0).
 
 -include("xtt.hrl").
 
 -define(XTT_APPNAME, xtt_erlang).
 -define(XTT_LIBNAME, 'xtt-erlang').
+
+start(_StartType, _StartArgs) ->
+  init().
+
+stop(_State) ->
+  ok.
 
 init() ->
 %%  application:set_env(lager, handlers, [
