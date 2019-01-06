@@ -28,7 +28,7 @@
 
 -export([priv_dir/0]).
 
-%%-on_load(init/0).
+-on_load(init/0).
 
 -include("xtt.hrl").
 
