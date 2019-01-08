@@ -6,10 +6,11 @@
    [
     kernel,
     stdlib,
-     lager
+    lager
    ]},
   {env,[]},
-  {modules, [xtt_erlang]},
+  {modules, []},
+
   {contributors, []},
   {licenses, []},
   {links, []}

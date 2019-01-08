@@ -1,10 +1,5 @@
 -module(xtt_erlang).
 
--behaviour(application).
-
-%% application API
--export([start/2, stop/1]).
-
 %% API exports
 -export([
   init/0,
@@ -35,17 +30,11 @@
 -define(XTT_APPNAME, xtt_erlang).
 -define(XTT_LIBNAME, 'xtt-erlang').
 
-start(_StartType, _StartArgs) ->
-  init().
-
-stop(_State) ->
-  ok.
-
 init() ->
-%%  application:set_env(lager, handlers, [
-%%    {lager_console_backend, [{level, info}, {formatter, lager_default_formatter},
-%%      {formatter_config, [time," [",source,"][",severity,"] ", message, "\n"]}]}]),
-%%  application:ensure_all_started(lager),
+  application:set_env(lager, handlers, [
+    {lager_console_backend, [{level, info}, {formatter, lager_default_formatter},
+      {formatter_config, [time," [",source,"][",severity,"] ", message, "\n"]}]}]),
+  application:ensure_all_started(lager),
   PrivDir = priv_dir(),
   case try_load(PrivDir, ?XTT_LIBNAME) of
     {error, _Error} ->
