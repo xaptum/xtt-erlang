@@ -11,9 +11,6 @@
 -ifndef('__xtt_hrl__').
 -define('__xtt_hrl__',true).
 
--record(priv_key_tpm,
-{key_handle, tpm_password="", tcti_context, tpm_host, tpm_port}).
-
 -record(group_context_inputs,
 {gpk, credential, basename, priv_key, gid}).
 

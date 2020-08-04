@@ -4,13 +4,6 @@
 #include <xtt.h>
 #include <erl_nif.h>
 
-// TODO REMOVE
-#include <tss2/tss2_sys.h>
-#include <tss2/tss2_tcti_socket.h>
-
-
-extern ErlNifResourceType* TCTI_RESOURCE_TYPE;
-
 ERL_NIF_TERM ATOM_OK;
 ERL_NIF_TERM ATOM_ERROR;
 
@@ -255,118 +248,6 @@ xtt_init_client_group_context(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[
 
     return result;
 }
-
-static ERL_NIF_TERM
-xtt_init_client_group_contextTPM(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]){
-
-//puts("START NIF: xtt_init_client_group_contextTPM...\n");
-
-    if(argc != 6) {
-        fprintf(stderr, "Bad arg error: expected 6 got %d\n", argc);
-        return enif_make_badarg(env);
-    }
-
-    ErlNifBinary gpkBin;
-    ErlNifBinary daaCredBin;
-    ErlNifBinary basenameBin;
-
-    if(!enif_inspect_binary(env, argv[0], &gpkBin) ) {
-            fprintf(stderr, "Bad arg at position 0\n");
-            return enif_make_badarg(env);
-    }
-    else if (gpkBin.size != sizeof(xtt_daa_group_pub_key_lrsw)){
-        fprintf(stderr, "Bad arg at position 1: expecting xtt_daa_group_pub_key_lrsw size %lu got %zu\n",
-        sizeof(xtt_daa_group_pub_key_lrsw), gpkBin.size);
-        return enif_make_badarg(env);
-    }
-
-    if(!enif_inspect_binary(env, argv[1], &daaCredBin) ) {
-             fprintf(stderr, "Bad arg at position 1\n");
-             return enif_make_badarg(env);
-    }
-    else if (daaCredBin.size != sizeof(xtt_daa_credential_lrsw)){
-        fprintf(stderr, "Bad arg at position 1: expecting xtt_daa_credential_lrsw size %lu got %zu\n",
-        sizeof(xtt_daa_credential_lrsw), daaCredBin.size);
-        return enif_make_badarg(env);
-    }
-
-    if(!enif_inspect_binary(env, argv[2], &basenameBin) ) {
-        fprintf(stderr, "Bad arg at position 2\n");
-        return enif_make_badarg(env);
-    }
-    else if (basenameBin.size > MAX_BASENAME_LENGTH){
-        fprintf(stderr, "Bad arg at position 2: size of basename %lu more than MAX %d\n", basenameBin.size, MAX_BASENAME_LENGTH);
-        return enif_make_badarg(env);
-    }
-
-
-    uint32_t key_handle;
-    unsigned key_handle_temp;
-    if (!enif_get_uint(env, argv[3], &key_handle_temp)) {
-        fprintf(stderr, "Bad arg at position 3\n");
-    	return enif_make_badarg(env);
-    }
-    if (key_handle_temp > UINT32_MAX) {
-    	fprintf(stderr, "Bad arg at position 3: received non-32bit TPM handle\n");
-    	return enif_make_badarg(env);
-    }
-    key_handle = (uint32_t)key_handle_temp;
-
-    ErlNifBinary tpmPasswordBin;
-
-    if(!enif_inspect_binary(env, argv[4], &tpmPasswordBin) ) {
-        fprintf(stderr, "Bad tpmPassword arg at position 4\n");
-        return enif_make_badarg(env);
-    }
-
-
-    TSS2_TCTI_CONTEXT * tcti_context;
-
-    if(!enif_get_resource(env, argv[5], TCTI_RESOURCE_TYPE, (void**) &tcti_context)) {
-        return enif_make_badarg(env);
-    }
-
-    struct xtt_client_group_context *group_ctx = enif_alloc_resource(GROUP_CONTEXT_RESOURCE_TYPE, sizeof(struct xtt_client_group_context));
-
-    if(group_ctx == NULL){
-        puts("Failed to allocate resource for struct xtt_client_group_context group_ctx!\n");
-        return enif_make_tuple2(env, ATOM_ERROR, enif_make_int(env, 1));
-    }
-
-    xtt_group_id gid;
-    int hash_ret = crypto_hash_sha256(gid.data, gpkBin.data, gpkBin.size);
-    if (0 != hash_ret)
-        return enif_make_int(env, -1);
-
-    xtt_return_code_type rc = xtt_initialize_client_group_context_lrswTPM(group_ctx,
-                                                                     &gid,
-                                                                     (xtt_daa_credential_lrsw *) daaCredBin.data,
-                                                                     basenameBin.data,
-                                                                     basenameBin.size,
-                                                                     key_handle,
-                                                                     tpmPasswordBin.data,
-                                                                     tpmPasswordBin.size,
-                                                                     tcti_context);
-
-    printf("Finished xtt_initialize_client_group_context_lrswTPM with return code %d\n", rc);
-
-    ERL_NIF_TERM result;
-
-    if (XTT_RETURN_SUCCESS != rc) {
-            fprintf(stderr, "Error initializing client group context: %d\n", rc);
-            result = enif_make_tuple2(env, ATOM_ERROR, enif_make_int(env, rc));
-    }
-    else{
-        puts("SUCCESS\n");
-        result = enif_make_tuple2(env, ATOM_OK, enif_make_resource(env, group_ctx));
-    }
-
-    enif_release_resource(group_ctx);
-
-    return result;
-
-}
-
 
 static ERL_NIF_TERM
 xtt_init_server_root_certificate_context(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]){
@@ -1004,7 +885,6 @@ static ErlNifFunc nif_funcs[] = {
     {"xtt_handshake_parse_idserverfinished", 1, xtt_handshake_parse_idserverfinished, ERL_NIF_DIRTY_JOB_CPU_BOUND},
     {"xtt_client_build_error_msg_nif", 1, xtt_client_build_error_msg_nif, ERL_NIF_DIRTY_JOB_CPU_BOUND},
     {"xtt_init_client_group_context", 5, xtt_init_client_group_context, ERL_NIF_DIRTY_JOB_CPU_BOUND},
-    {"xtt_init_client_group_contextTPM", 6, xtt_init_client_group_contextTPM, ERL_NIF_DIRTY_JOB_CPU_BOUND},
     {"xtt_init_server_root_certificate_context", 2, xtt_init_server_root_certificate_context, ERL_NIF_DIRTY_JOB_CPU_BOUND},
     {"xtt_get_my_longterm_key", 1, xtt_get_my_longterm_key, 0},
     {"xtt_get_my_longterm_private_key", 1, xtt_get_my_longterm_private_key, 0},

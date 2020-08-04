@@ -15,9 +15,7 @@
 -export([
   get_handshake_result/1,
   group_context_inputs/5,
-  group_context_inputs_tpm/4,
   initialize_certs/2,
-  initialize_certsTPM/1,
   init_cert_db/2,
   lookup_cert/1,
   maybe_init_group_context/1,
@@ -54,46 +52,11 @@ group_context_inputs(GpkFile, CredFile, SecretkeyFile, BasenameFile, GidFile) ->
 
   {ok, #group_context_inputs{gpk=Gid, credential = Credential, basename = Basename, priv_key = PrivKey, gid = Gid}}.
 
-
-group_context_inputs_tpm(BasenameFile, TpmHost, TpmPort, TpmPassword)->
-  {ok, Basename} = file:read_file(BasenameFile),
-  case xaptum_tpm:tss2_sys_maybe_initialize(TpmHost, TpmPort) of
-    {ok, SapiContext} ->
-      {ok, Gpk} = xaptum_tpm:tss2_sys_nv_read(?XTT_DAA_GROUP_PUB_KEY_SIZE, ?GPK_HANDLE, SapiContext),
-
-      {ok, Credential} = xaptum_tpm:tss2_sys_nv_read(?XTT_DAA_CRED_SIZE, ?CRED_HANDLE, SapiContext),
-
-      _Gid = crypto:hash(sha256, Gpk),
-
-      PrivKeyInputs = #priv_key_tpm{key_handle = ?KEY_HANDLE,
-        tcti_context = undefined,
-        tpm_host = TpmHost, tpm_port = TpmPort, tpm_password = TpmPassword},
-
-      ok = xtt_utils:initialize_certsTPM(SapiContext),
-
-      %% TODO: temporarily using Gpk (and do hashing inside the NIF)
-      %% using Gid instead of Gpk inside TPM group context creation
-      %% later causes error 28 during xtt_handshake_build_idclientattest
-      {ok, #group_context_inputs{
-        gpk = Gpk,
-        credential = Credential,
-        basename = Basename,
-        priv_key = PrivKeyInputs}};
-    {error, _ErrorCode} -> {error, init_tss2_sys_failed}
-  end.
-
-
 initialize_certs(RootIdFile, RootPubkeyFile) ->
   {ok, RootId} = file:read_file(RootIdFile),
   {ok, RootPubKey} = file:read_file(RootPubkeyFile),
 
   xtt_utils:init_cert_db(RootId, RootPubKey).
-
-initialize_certsTPM(SapiContext)->
-  {ok, RootId} = xaptum_tpm:tss2_sys_nv_read(?XTT_DAA_ROOT_ID_SIZE, ?ROOT_ID_HANDLE, SapiContext),
-  {ok, RootPubKey} = xaptum_tpm:tss2_sys_nv_read(?XTT_DAA_ROOT_PUB_KEY_SIZE, ?ROOT_PUBKEY_HANDLE, SapiContext),
-  xtt_utils:init_cert_db(RootId, RootPubKey).
-
 
 init_cert_db(RootId, RootPubkey)->
   lager:info("Initializing cert db with RootId ~p and RootPubKey ~p", [RootId, RootPubkey]),
@@ -129,25 +92,6 @@ lookup_cert(ClaimedRootId)->
 
 maybe_init_group_context(GroupContext) when is_reference(GroupContext)->
   {ok, GroupContext};
-maybe_init_group_context(#group_context_inputs{
-  priv_key = #priv_key_tpm{tcti_context = undefined, tpm_host = TpmHost, tpm_port = TpmPort} = PrivKeyTpm} = GroupContextInputs) ->
-  case xaptum_tpm:tss2_tcti_maybe_initialize_socket(TpmHost , TpmPort) of
-    {ok, TctiContext} -> maybe_init_group_context(GroupContextInputs#group_context_inputs{priv_key = PrivKeyTpm#priv_key_tpm{tcti_context = TctiContext}});
-    {error, ErrorCode} -> lager:error("Failed to initialize tcti context with error ~p", [ErrorCode]),
-      {error, init_tss2_sys_failed}
-  end;
-maybe_init_group_context(#group_context_inputs{
-  gpk = Gpk, credential = Credential, basename = Basename,
-  priv_key = #priv_key_tpm{tcti_context = TctiContext, key_handle = KeyHandle, tpm_password = TpmPassword}}) ->
-  case xtt_erlang:xtt_init_client_group_contextTPM(
-    Gpk, Credential, Basename, KeyHandle, TpmPassword, TctiContext) of
-    {ok, GroupCtxTPM} ->
-      lager:info("Succes Creating GroupCtxTPM"),
-      {ok, GroupCtxTPM};
-    {error, ErrorCode} ->
-      lager:error("Error ~p initializing client group context TPM", [ErrorCode]),
-      {error, init_client_group_context_tpm_failed}
-  end;
 maybe_init_group_context(#group_context_inputs{
   gpk = Gpk, credential = Credential, basename = Basename, priv_key = PrivKey, gid = Gid}) when is_binary(PrivKey) ->
   case xtt_erlang:xtt_init_client_group_context(Gpk, PrivKey, Credential, Basename, Gid) of

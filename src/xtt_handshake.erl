@@ -18,8 +18,6 @@
   xtt_handshake_reg_name/2,
   start_handshake/7,
   handshake_complete/1,
-  priv_key/2,
-  priv_key/3,
   group_context/4]).
 
 %% gen_server callbacks
@@ -46,15 +44,6 @@
 %%%===================================================================
 %%% API
 %%%===================================================================
-
-priv_key(KeyHandle, TctiContext) when is_integer(KeyHandle)->
-  priv_key(KeyHandle, _TpmPassword = "", TctiContext).
-
-priv_key(KeyHandle, TpmPassword, TctiContext) when is_integer(KeyHandle), is_list(TpmPassword), is_reference(TctiContext)->
-  #priv_key_tpm{key_handle = KeyHandle, tpm_password = TpmPassword, tcti_context = TctiContext};
-priv_key(KeyHandle, TpmPassword, {TpmHostname, TpmPort} = _TctiContextCredentials) when is_integer(KeyHandle), is_list(TpmPassword) ->
-  {ok, TctiContext} = xaptum_tpm:tss2_tcti_maybe_initialize_socket(TpmHostname, TpmPort),
-  priv_key(KeyHandle, TpmPassword, TctiContext).
 
 group_context(Gpk, Credential, Basename, PrivKey) when is_binary(PrivKey); is_tuple(PrivKey)->
   #group_context_inputs{gpk = Gpk, credential = Credential, basename = Basename, priv_key = PrivKey}.

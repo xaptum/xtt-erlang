@@ -14,8 +14,8 @@
 -include_lib("xtt_erlang/include/xtt.hrl").
 
 -export([all/0, init_per_suite/1, end_per_suite/1]).
--export([test_file/1, test_tpm/1]).
--export([test_handshake/3, group_context_inputs_tpm/1]).
+-export([test_file/1]).
+-export([test_handshake/3]).
 
 %% Defaults
 -define(XTT_VERSION, ?XTT_VERSION_ONE).
@@ -23,14 +23,8 @@
 -define(EXAMPLE_DATA_DIR, "example_data").
 
 -define(XTT_SERVER_PORT, 4444).
--define(XTT_SERVER_PORT_TPM, 4445).
 -define(XTT_SERVER_HOST, "localhost").
 
--define(TPM_HOSTNAME, "localhost").
--define(TPM_PORT,  "2321").
--define(TPM_PASSWORD, <<>>).
-
-%%all() -> [test_tpm,test_file].
 all() -> [test_file].
 
 init_per_suite(Config)->
@@ -50,14 +44,6 @@ test_file(Config) ->
 
   test_handshake(DataDir, ?XTT_SERVER_PORT, GroupContextInputs),
 
-  Config.
-
-test_tpm(Config) ->
-  lager:md([{source, "TEST_TPM"}]),
-  DataDir = ?config(data_dir, Config),
-
-  {ok, GroupContextInputsTpm} = group_context_inputs_tpm(DataDir),
-  test_handshake(DataDir, ?XTT_SERVER_PORT_TPM, GroupContextInputsTpm),
   Config.
 
 test_handshake(DataDir, XttServerPort, GroupContextInputs)->
@@ -121,7 +107,3 @@ group_context_inputs(DataDir) ->
 
   xtt_utils:group_context_inputs(
       GpkFile, CredFile, PrivKeyFile, BasenameFile, GidFile).
-
-group_context_inputs_tpm(DataDir)->
-  BasenameFile = filename:join([DataDir, ?BASENAME_FILE]),
-  xtt_utils:group_context_inputs_tpm(BasenameFile, ?TPM_HOSTNAME, ?TPM_PORT, ?TPM_PASSWORD).

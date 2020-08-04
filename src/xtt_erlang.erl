@@ -5,7 +5,6 @@
   init/0,
   xtt_init_client_handshake_context/2,
   xtt_init_client_group_context/5,
-  xtt_init_client_group_contextTPM/6,
   xtt_init_server_root_certificate_context/2,
   xtt_start_client_handshake/1,
   xtt_client_handshake/3,
@@ -88,9 +87,6 @@ priv_dir() ->
 %%====================================================================
 
 xtt_init_client_group_context(_Gpk, _PrivKey, _Credential, _Basename, _Gid)->
-  erlang:nif_error(?LINE).
-
-xtt_init_client_group_contextTPM(_GId, _Credential, _Basename, _KeyHandle, _TPMPassword, _TctiContext)->
   erlang:nif_error(?LINE).
 
 xtt_init_server_root_certificate_context(_RootId, _RootPubKey)->
