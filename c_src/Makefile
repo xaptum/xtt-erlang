@@ -44,7 +44,7 @@ CFLAGS += $(shell pkg-config --cflags xtt)
 CXXFLAGS += -fPIC -I $(ERTS_INCLUDE_DIR) -I $(ERL_INTERFACE_INCLUDE_DIR)
 CXXFLAGS += $(shell pkg-config --cflags xtt)
 
-LDLIBS += -L $(ERL_INTERFACE_LIB_DIR) -lerl_interface -lei
+LDLIBS += -L $(ERL_INTERFACE_LIB_DIR) -lei
 LDLIBS += -Wl,-rpath,$(XAPTUM_TPM_ERLANG_LIBDIR) -L $(XAPTUM_TPM_ERLANG_LIBDIR) -lxaptum_tpm_erlang
 LDLIBS += $(shell pkg-config --libs xtt)
 LDLIBS += -lecdaa
