@@ -36,12 +36,12 @@ init() ->
   application:ensure_all_started(lager),
   PrivDir = priv_dir(),
   case try_load(PrivDir, ?XTT_LIBNAME) of
-    {error, _Error} ->
-      lager:info("Couldn't load lib ~p from ~p", [?XTT_LIBNAME, PrivDir]),
+    {error, Error} ->
+      lager:info("Couldn't load lib ~p from ~p: ~p", [?XTT_LIBNAME, PrivDir, Error]),
       lager:info("Trying to load from ~p", [?XTT_APPNAME]),
       case try_load(PrivDir, ?XTT_APPNAME) of
         {error, Error} -> lager:error("Error loading lib ~p from ~p: ~p", [?XTT_APPNAME, PrivDir, Error]);
-        ok -> 
+        ok ->
 		      lager:info("Loaded ~p NIFs", [?XTT_APPNAME]),
 		      ok
       end;
