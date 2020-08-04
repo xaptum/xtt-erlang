@@ -11,6 +11,7 @@
 #include "nif_utils.h"
 
 #include "client_group_context.h"
+#include "server_root_certificate_context.h"
 
 const char *longterm_public_key_out_file = "longterm_certificate.asn1.bin";
 const char *longterm_private_key_out_file = "longterm_priv.asn1.bin";
@@ -20,13 +21,16 @@ int open_resources(ErlNifEnv* env, xtt_nif_data* data)
 {
   ErlNifResourceFlags flags = (ERL_NIF_RT_CREATE | ERL_NIF_RT_TAKEOVER);
 
-  data->res_cert_context = enif_open_resource_type(env, NULL, "xtt_cert_context", NULL, flags, NULL);
-  data->res_client_group_context = enif_open_resource_type(env, NULL, "xtt_client_group_context", NULL, flags, NULL);
+  data->res_server_root_certificate_context = enif_open_resource_type(env, NULL,
+                                                                      "xtt_server_root_certificate_context",
+                                                                      NULL, flags, NULL);
+  data->res_client_group_context = enif_open_resource_type(env, NULL, "xtt_client_group_context",
+                                                           NULL, flags, NULL);
 
   data->res_client = enif_open_resource_type(env, NULL, "xtt_nif_client", NULL, flags, NULL);
   data->res_struct = enif_open_resource_type(env, NULL, "xtt_nif_struct", NULL, flags, NULL);
 
-  if (!data->res_cert_context  ||
+  if (!data->res_server_root_certificate_context  ||
       !data->res_client_group_context ||
       !data->res_client        ||
       !data->res_struct)
@@ -36,7 +40,7 @@ int open_resources(ErlNifEnv* env, xtt_nif_data* data)
 }
 
 #define DECLARE_ATOM(name) \
-  ATOMS.name = make_atom(env, #name);
+  ATOMS.name = make_atom(env, #name)
 
 static int
 on_nif_load(ErlNifEnv* env, void** priv, ERL_NIF_TERM load_info)
@@ -134,71 +138,6 @@ build_response(ErlNifEnv* env, int rc, xtt_nif_client *cs, ErlNifBinary *temp_bi
         default:
             return make_return_int(env, ATOMS.error, rc);
     }
-}
-
-// ******************************************************
-static ERL_NIF_TERM
-xtt_init_server_root_certificate_context(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]){
-    xtt_nif_data* data = enif_priv_data(env);
-
-    if(argc != 2) {
-        fprintf(stderr, "Bad arg error: expected 2 got %d\n", argc);
-        return enif_make_badarg(env);
-    }
-
-    ErlNifBinary certRootIdBin;
-    ErlNifBinary certRootPubKeyBin;
-
-    if(!enif_inspect_binary(env, argv[0], &certRootIdBin) ) {
-        fprintf(stderr, "Bad arg at position 0\n");
-        return enif_make_badarg(env);
-    }
-    else if (certRootIdBin.size != sizeof(xtt_certificate_root_id)){
-        fprintf(stderr, "Bad arg at position 0: expecting xtt_certificate_root_id size %lu got %zu\n",
-        sizeof(xtt_certificate_root_id), certRootIdBin.size);
-        return enif_make_badarg(env);
-    }
-
-    if(!enif_inspect_binary(env, argv[1], &certRootPubKeyBin) ) {
-            fprintf(stderr, "Bad arg at position 1\n");
-            return enif_make_badarg(env);
-    }
-    else if (certRootPubKeyBin.size != sizeof(xtt_ecdsap256_pub_key)){
-        fprintf(stderr, "Bad arg at position 1: expecting xtt_ecdsap256_pub_key size %lu got %zu\n",
-        sizeof(xtt_ecdsap256_pub_key), certRootPubKeyBin.size);
-        return enif_make_badarg(env);
-    }
-
-    puts("enif_alloc_resource xtt_server_root_certificate_context\n");
-
-    struct xtt_server_root_certificate_context *cert_ctx = enif_alloc_resource(data->res_cert_context,
-                                                                               sizeof(struct xtt_server_root_certificate_context));
-
-    if(cert_ctx == NULL){
-        puts("Failed to allocate xtt_server_root_certificate_context cert_ctx!\n");
-        return enif_make_badarg(env);
-    }
-
-    puts("STARTing xtt_initialize_server_root_certificate_context_ecdsap256.....\n");
-
-    xtt_return_code_type rc = xtt_initialize_server_root_certificate_context_ecdsap256(cert_ctx,
-                                                                (xtt_certificate_root_id *) certRootIdBin.data,
-                                                                (xtt_ecdsap256_pub_key *) certRootPubKeyBin.data);
-
-    ERL_NIF_TERM result;
-
-    if (XTT_RETURN_SUCCESS != rc){
-        fprintf(stderr, "Error initializing root certificate context: %d\n", rc);
-        result = make_error(env, enif_make_int(env, rc));
-    }
-    else{
-        puts("xtt_initialize_server_root_certificate_context_ecdsap256 SUCCESS\n");
-        result = make_ok(env, enif_make_resource(env, cert_ctx));
-    }
-
-    enif_release_resource(cert_ctx);
-
-    return result;
 }
 
 static ERL_NIF_TERM
@@ -369,8 +308,8 @@ xtt_handshake_build_idclientattest(ErlNifEnv* env, int argc, const ERL_NIF_TERM 
     struct xtt_client_group_context *group_ctx;
     xtt_nif_client *cs;
 
-    if(!enif_get_resource(env, argv[0], data->res_cert_context, (void**) &server_cert)) {
-    	return enif_make_badarg(env);
+    if(!enif_get_resource(env, argv[0], data->res_server_root_certificate_context, (void**) &server_cert)) {
+        return enif_make_badarg(env);
     }
 
 
@@ -709,7 +648,7 @@ static ErlNifFunc nif_funcs[] = {
     {"xtt_handshake_parse_idserverfinished", 1, xtt_handshake_parse_idserverfinished, ERL_NIF_DIRTY_JOB_CPU_BOUND},
     {"xtt_client_build_error_msg_nif", 1, xtt_client_build_error_msg_nif, ERL_NIF_DIRTY_JOB_CPU_BOUND},
     {"xtt_initialize_client_group_context_lrsw", 4, xtt_nif_initialize_client_group_context_lrsw, ERL_NIF_DIRTY_JOB_CPU_BOUND},
-    {"xtt_init_server_root_certificate_context", 2, xtt_init_server_root_certificate_context, ERL_NIF_DIRTY_JOB_CPU_BOUND},
+    {"xtt_initialize_server_root_certificate_context_ecdsap256", 2, xtt_nif_initialize_server_root_certificate_context_ecdsap256, ERL_NIF_DIRTY_JOB_CPU_BOUND},
     {"xtt_get_my_longterm_key", 1, xtt_get_my_longterm_key, 0},
     {"xtt_get_my_longterm_private_key", 1, xtt_get_my_longterm_private_key, 0},
     {"xtt_get_my_id", 1, xtt_get_my_id, 0},

@@ -26,7 +26,7 @@ typedef struct
 {
   ErlNifResourceType* res_struct;
   ErlNifResourceType* res_client_group_context;
-  ErlNifResourceType* res_cert_context;
+  ErlNifResourceType* res_server_root_certificate_context;
   ErlNifResourceType* res_client;
 } xtt_nif_data;
 

@@ -60,7 +60,7 @@ initialize_certs(RootIdFile, RootPubkeyFile) ->
 
 init_cert_db(RootId, RootPubkey)->
   lager:info("Initializing cert db with RootId ~p and RootPubKey ~p", [RootId, RootPubkey]),
-  case xtt_nif:xtt_init_server_root_certificate_context(RootId, RootPubkey) of
+  case xtt_nif:xtt_initialize_server_root_certificate_context_ecdsap256(RootId, RootPubkey) of
     {ok, CertContext} ->
       case lists:member(?CERT_TABLE, ets:all()) of
         false -> ets:new(?CERT_TABLE, ?DEFAULT_ETS_OPTS);
