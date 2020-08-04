@@ -28,7 +28,7 @@ int open_resources(ErlNifEnv* env, xtt_nif_data* data)
       !data->res_struct)
     return -1;
 
-  return 0;
+  return xtt_crypto_initialize_crypto();
 }
 
 #define DECLARE_ATOM(name) \
