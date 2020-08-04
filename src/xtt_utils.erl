@@ -60,7 +60,7 @@ initialize_certs(RootIdFile, RootPubkeyFile) ->
 
 init_cert_db(RootId, RootPubkey)->
   lager:info("Initializing cert db with RootId ~p and RootPubKey ~p", [RootId, RootPubkey]),
-  case xtt_erlang:xtt_init_server_root_certificate_context(RootId, RootPubkey) of
+  case xtt_nif:xtt_init_server_root_certificate_context(RootId, RootPubkey) of
     {ok, CertContext} ->
       case lists:member(?CERT_TABLE, ets:all()) of
         false -> ets:new(?CERT_TABLE, ?DEFAULT_ETS_OPTS);
@@ -94,7 +94,7 @@ maybe_init_group_context(GroupContext) when is_reference(GroupContext)->
   {ok, GroupContext};
 maybe_init_group_context(#group_context_inputs{
   gpk = Gpk, credential = Credential, basename = Basename, priv_key = PrivKey, gid = Gid}) when is_binary(PrivKey) ->
-  case xtt_erlang:xtt_init_client_group_context(Gpk, PrivKey, Credential, Basename, Gid) of
+  case xtt_nif:xtt_initialize_client_group_context_lrsw(Gid, PrivKey, Credential, Basename) of
     {ok, GroupCtx} ->
       lager:info("Success Creating GroupCtx"),
       {ok, GroupCtx};

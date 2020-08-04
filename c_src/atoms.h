@@ -14,6 +14,7 @@ typedef struct
 {
   ERL_NIF_TERM ok;
   ERL_NIF_TERM error;
+  ERL_NIF_TERM alloc_failed;
 
   ERL_NIF_TERM want_write;
   ERL_NIF_TERM want_read;
