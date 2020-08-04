@@ -10,6 +10,8 @@
 
 #include "erl_nif.h"
 
+#define UNUSED(expr) do { (void)(expr); } while (0)
+
 ERL_NIF_TERM make_atom(ErlNifEnv* env, const char* name);
 ERL_NIF_TERM make_ok(ErlNifEnv* env, ERL_NIF_TERM term);
 ERL_NIF_TERM make_error(ErlNifEnv* env, ERL_NIF_TERM term);

@@ -61,6 +61,31 @@ on_nif_load(ErlNifEnv* env, void** priv, ERL_NIF_TERM load_info)
   return 0;
 }
 
+static void
+on_nif_unload(ErlNifEnv* env, void* priv)
+{
+  UNUSED(env);
+  xtt_nif_data* data = priv;
+  enif_free(data);
+}
+
+static int
+on_nif_upgrade(ErlNifEnv* env, void** priv, void** old_priv, ERL_NIF_TERM info)
+{
+  UNUSED(old_priv);
+  UNUSED(info);
+
+  xtt_nif_data* data = enif_alloc(sizeof(*data));
+  if (!open_resources(env, data))
+  {
+    enif_free(data);
+    return -1;
+  }
+
+  *priv = data;
+  return 0;
+}
+
 static int write_buffer_to_file(const char *filename, unsigned char *buffer, size_t bytes_to_write)
 {
     FILE *ptr;
@@ -791,4 +816,4 @@ static ErlNifFunc nif_funcs[] = {
     {"xtt_x509_from_keypair", 3, xtt_x509_from_keypair, 0},
 };
 
-ERL_NIF_INIT(xtt_nif, nif_funcs, &on_nif_load, NULL, NULL, NULL);
+ERL_NIF_INIT(xtt_nif, nif_funcs, &on_nif_load, NULL, on_nif_upgrade, on_nif_unload);
