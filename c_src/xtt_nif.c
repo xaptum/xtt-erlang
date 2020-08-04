@@ -190,7 +190,7 @@ xtt_init_client_group_context(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[
         return enif_make_badarg(env);
      }
      else if (gidBin.size != sizeof(xtt_group_id)){
-        fprintf(stderr, "Bad arg at position 4: size of gid %lu more than xtt_group_id %d\n", gidBin.size, sizeof(xtt_group_id));
+        fprintf(stderr, "Bad arg at position 4: size of gid %lu more than xtt_group_id %ld\n", gidBin.size, sizeof(xtt_group_id));
         return enif_make_badarg(env);
      }
 
@@ -413,7 +413,7 @@ xtt_client_handshake(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]){
         puts("DONE\n");
     }
     else{
-        printf("Received bytes: %lu Written bytes: %zu\n", received_bin.size, bytes_written);
+        printf("Received bytes: %lu Written bytes: %u\n", received_bin.size, bytes_written);
     }
 
     xtt_return_code_type rc = xtt_handshake_client_handle_io(
@@ -538,21 +538,23 @@ xtt_handshake_parse_idserverfinished(ErlNifEnv* env, int argc, const ERL_NIF_TER
 
 static ERL_NIF_TERM
 xtt_client_build_error_msg_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]){
+   xtt_nif_data* data = enif_priv_data(env);
 
    if(argc != 1) {
            return enif_make_badarg(env);
    }
 
-   int version;
+   xtt_nif_client *cs;
 
-   if(!enif_get_int(env, argv[0], &version)) {
+   if(!enif_get_resource(env, argv[0], data->res_client, (void**) &cs)) {
         return enif_make_badarg(env);
-   }
+    }
 
    uint16_t *err_buff_len = (uint16_t *) 16;
    ErlNifBinary err_buffer_bin;
    enif_alloc_binary((size_t) err_buff_len, &err_buffer_bin);
-   (void)xtt_client_build_error_msg(err_buffer_bin.data, err_buff_len, version);
+
+   (void) xtt_client_build_error_msg(err_buff_len, &err_buffer_bin.data, &cs->ctx);
 
    return enif_make_binary(env, &err_buffer_bin);
 }
@@ -782,8 +784,6 @@ xtt_x509_from_keypair(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]){
         return make_error(env, enif_make_int(env, 1));
     }
     else{
-        X509 * temp_x509 = (X509 *) cert_buf;
-
         ErlNifBinary cert_bin;
         enif_alloc_binary((size_t) XTT_X509_CERTIFICATE_LENGTH, &cert_bin);
         memcpy(cert_bin.data, cert_buf, XTT_X509_CERTIFICATE_LENGTH);
