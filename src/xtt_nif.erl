@@ -1,10 +1,10 @@
--module(xtt_erlang).
+-module(xtt_nif).
 
 %% API exports
 -export([
   init/0,
   xtt_init_client_handshake_context/2,
-  xtt_init_client_group_context/5,
+  xtt_initialize_client_group_context_lrsw/4,
   xtt_init_server_root_certificate_context/2,
   xtt_start_client_handshake/1,
   xtt_client_handshake/3,
@@ -27,7 +27,7 @@
 -include("xtt.hrl").
 
 -define(XTT_APPNAME, xtt_erlang).
--define(XTT_LIBNAME, 'xtt-erlang').
+-define(XTT_LIBNAME, 'xtt_nif').
 
 init() ->
   application:set_env(lager, handlers, [
@@ -86,7 +86,7 @@ priv_dir() ->
 %% NIFs
 %%====================================================================
 
-xtt_init_client_group_context(_Gpk, _PrivKey, _Credential, _Basename, _Gid)->
+xtt_initialize_client_group_context_lrsw(_Gid, _PrivKey, _Credential, _Basename)->
   erlang:nif_error(?LINE).
 
 xtt_init_server_root_certificate_context(_RootId, _RootPubKey)->

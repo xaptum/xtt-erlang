@@ -76,7 +76,7 @@ init([XttServerHost, XttServerPort,
   RequestedClientId, IntendedServerId,
   XttVersion, XttSuite,
   GroupContext]) ->
-  {ok, XttClientHandshakeState} = xtt_erlang:xtt_init_client_handshake_context(XttVersion, XttSuite),
+  {ok, XttClientHandshakeState} = xtt_nif:xtt_init_client_handshake_context(XttVersion, XttSuite),
   {ok, XttServerSocket} = gen_tcp:connect(XttServerHost, XttServerPort, ?TCP_OPTIONS),
   lager:md([{source, XttServerHost ++ ":" ++ integer_to_list(XttServerPort) ++ "_" ++ binary_to_list(RequestedClientId)}]),
   gen_server:cast(self(), start_handshake),
@@ -99,7 +99,7 @@ handle_call(get_handshake_context, _From, #state{handshake_status=AnythingOtherT
   {reply, {error, {in_progress, AnythingOtherThanSuccess}}, State}.
 
 handle_cast(start_handshake, #state{handshake_state = HandshakeState} = State) ->
-  Result = xtt_erlang:xtt_start_client_handshake(HandshakeState),
+  Result = xtt_nif:xtt_start_client_handshake(HandshakeState),
   lager:debug("Result of start_client_handshake ~p", [Result]),
   gen_server:cast(self(), Result),
   {noreply, State#state{handshake_status = starting}};
@@ -109,7 +109,7 @@ handle_cast({?XTT_RETURN_WANT_READ, BytesRequested},
   lager:info("XTT_RETURN_WANT_READ"),
   lager:debug("~b bytes", [BytesRequested]),
   {ok, Bin} = gen_tcp:recv(Socket, BytesRequested),
-  Result = xtt_erlang:xtt_client_handshake(HandshakeState, 0, Bin),
+  Result = xtt_nif:xtt_client_handshake(HandshakeState, 0, Bin),
   gen_server:cast(self(), Result),
   {noreply, State#state{handshake_status = want_read_finished}};
 
@@ -118,7 +118,7 @@ handle_cast({?XTT_RETURN_WANT_WRITE, BinToWrite},
   lager:info("XTT_RETURN_WANT_WRITE"),
   lager:debug("~p bytes", [BinToWrite]),
   ok = gen_tcp:send(XttServerSocket, BinToWrite),
-  Result = xtt_erlang:xtt_client_handshake(HandshakeState, size(BinToWrite), <<>>),
+  Result = xtt_nif:xtt_client_handshake(HandshakeState, size(BinToWrite), <<>>),
   gen_server:cast(self(), Result),
   {noreply, State#state{handshake_status = want_write_finished}};
 
@@ -126,7 +126,7 @@ handle_cast({?XTT_RETURN_WANT_WRITE, BinToWrite},
 handle_cast({?XTT_RETURN_WANT_PREPARSESERVERATTEST},
     #state{handshake_state = HandshakeState} = State) ->
   lager:info("XTT_RETURN_WANT_PREPARSESERVERATTEST"),
-  Result = xtt_erlang:xtt_handshake_preparse_serverattest(HandshakeState),
+  Result = xtt_nif:xtt_handshake_preparse_serverattest(HandshakeState),
   gen_server:cast(self(), Result),
   {noreply, State#state{handshake_status = preparseserverattest_finished}};
 
@@ -141,12 +141,12 @@ handle_cast({?XTT_RETURN_WANT_BUILDIDCLIENTATTEST, ClaimedRootId},
   case xtt_utils:lookup_cert(ClaimedRootId) of
     {ClaimedRootId, ServerCert} ->
         {ok, GroupCtx} = xtt_utils:maybe_init_group_context(GroupContext),
-        Result = xtt_erlang:xtt_handshake_build_idclientattest(ServerCert, RequestedClientId, IntendedServerId, GroupCtx, HandshakeState),
+        Result = xtt_nif:xtt_handshake_build_idclientattest(ServerCert, RequestedClientId, IntendedServerId, GroupCtx, HandshakeState),
         gen_server:cast(self(), Result),
         {noreply, State#state{handshake_status = buildidclientattest_finished}};
     {error, Error} ->
       lager:error("Failed to lookup cert context by claimed root id ~p due to error ~p", [ClaimedRootId, Error]),
-      ErrorMsg = xtt_erlang:xtt_client_build_error_msg_nif(XttVersion),
+      ErrorMsg = xtt_nif:xtt_client_build_error_msg_nif(XttVersion),
       ok = gen_tcp:send(XttServerSocket, ErrorMsg),
       {stop, cert_lookup_failure, State#state{handshake_status = cert_lookup_failure}}
   end;
@@ -154,7 +154,7 @@ handle_cast({?XTT_RETURN_WANT_BUILDIDCLIENTATTEST, ClaimedRootId},
 handle_cast({?XTT_RETURN_WANT_PARSEIDSERVERFINISHED},
   #state{handshake_state = HandshakeState} = State)->
   lager:info("XTT_RETURN_WANT_PARSEIDSERVERFINISHED"),
-  Result = xtt_erlang:xtt_handshake_parse_idserverfinished(HandshakeState),
+  Result = xtt_nif:xtt_handshake_parse_idserverfinished(HandshakeState),
   gen_server:cast(self(), Result),
   {noreply, State#state{handshake_status = parseidserver_finished}};
 
