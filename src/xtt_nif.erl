@@ -3,22 +3,21 @@
 %% API exports
 -export([
   init/0,
-  xtt_init_client_handshake_context/2,
   xtt_initialize_client_group_context_lrsw/4,
   xtt_initialize_server_root_certificate_context_ecdsap256/2,
-  xtt_start_client_handshake/1,
-  xtt_client_handshake/3,
-  xtt_handshake_preparse_serverattest/1,
-  xtt_handshake_build_idclientattest/5,
-  xtt_handshake_parse_idserverfinished/1,
-  xtt_client_build_error_msg_nif/1,
-  xtt_get_my_longterm_key/1,
-  xtt_get_my_longterm_private_key/1,
-  xtt_get_my_id/1,
-  xtt_get_my_pseudonym/1,
+  xtt_initialize_client_handshake_context/2,
+  xtt_handshake_client_start/1,
+  xtt_handshake_client_handle_io/3,
+  xtt_handshake_client_preparse_serverattest/1,
+  xtt_handshake_client_build_idclientattest/4,
+  xtt_handshake_client_parse_idserverfinished/1,
+  xtt_client_build_error_msg/1,
+  xtt_get_my_longterm_key_ecdsap256/1,
+  xtt_get_my_longterm_private_key_ecdsap256/1,
+  xtt_get_my_identity/1,
+  xtt_get_my_pseudonym_lrsw/1,
   xtt_id_to_string/1,
-  xtt_x509_from_keypair/3,
-  xtt_asn1_from_private_key/2]).
+  xtt_x509_from_keypair/3]).
 
 -export([priv_dir/0]).
 
@@ -78,51 +77,46 @@ priv_dir() ->
 -define(PRINT_BIN(Bin), Bin).
 
 %%====================================================================
-%% API functions
-%%====================================================================
-
-
-%%====================================================================
 %% NIFs
 %%====================================================================
 
-xtt_initialize_client_group_context_lrsw(_Gid, _PrivKey, _Credential, _Basename)->
+xtt_initialize_client_group_context_lrsw(_Gid, _PrivKey, _Credential, _Basename) ->
   erlang:nif_error(?LINE).
 
-xtt_initialize_server_root_certificate_context_ecdsap256(_RootId, _RootPubKey)->
+xtt_initialize_server_root_certificate_context_ecdsap256(_RootId, _RootPubKey) ->
   erlang:nif_error(?LINE).
 
-xtt_init_client_handshake_context(_XttVersion, _XttSuite)->
+xtt_initialize_client_handshake_context(_XttVersion, _XttSuiteSpec) ->
   erlang:nif_error(?LINE).
 
-xtt_start_client_handshake(_XttClientState)->
+xtt_get_my_longterm_key_ecdsap256(_ClientHandshakeCtx)->
   erlang:nif_error(?LINE).
 
-xtt_client_handshake(_XttClientState, _NumBytesWritten, _BytesRead)->
+xtt_get_my_longterm_private_key_ecdsap256(_ClientHandshakeCtx)->
   erlang:nif_error(?LINE).
 
-xtt_handshake_preparse_serverattest(_HandshakeState) ->
+xtt_get_my_identity(_ClientHandshakeCtx)->
   erlang:nif_error(?LINE).
 
-xtt_handshake_build_idclientattest(_ServerCert, _RequestedClientId, _IntendedServerId, _GroupContext, _HandshakeState)->
+xtt_get_my_pseudonym_lrsw(_ClientHandshakeCtx)->
   erlang:nif_error(?LINE).
 
-xtt_handshake_parse_idserverfinished(_HandsakeState)->
+xtt_handshake_client_start(_ClientHandshakeCtx) ->
   erlang:nif_error(?LINE).
 
-xtt_client_build_error_msg_nif(_XttVersion)->
+xtt_handshake_client_handle_io(_ClientHandshakeCtx, _BytesWritten, _Received) ->
   erlang:nif_error(?LINE).
 
-xtt_get_my_longterm_key(_HandsakeState)->
+xtt_handshake_client_preparse_serverattest(_ClientHandshakeCtx) ->
   erlang:nif_error(?LINE).
 
-xtt_get_my_longterm_private_key(_HandsakeState)->
+xtt_handshake_client_build_idclientattest(_ClientHandshakeCtx, _ServerRootCert, _RequestedClientId, _GroupCtx) ->
   erlang:nif_error(?LINE).
 
-xtt_get_my_id(_HandsakeState)->
+xtt_handshake_client_parse_idserverfinished(_ClientHandshakeCtx)->
   erlang:nif_error(?LINE).
 
-xtt_get_my_pseudonym(_HandsakeState)->
+xtt_client_build_error_msg(_ClientHandshakeCtx)->
   erlang:nif_error(?LINE).
 
 xtt_id_to_string(_Identity)->
@@ -130,10 +124,3 @@ xtt_id_to_string(_Identity)->
 
 xtt_x509_from_keypair(_LongtermKey, _LongtermPrivKey, _Identity)->
   erlang:nif_error(?LINE).
-
-xtt_asn1_from_private_key(_LontermKey, _LongtermPrivKey)->
-  erlang:nif_error(?LINE).
-
-%%====================================================================
-%% Internal functions
-%%====================================================================

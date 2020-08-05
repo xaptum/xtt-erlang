@@ -11,6 +11,7 @@
 #include "nif_utils.h"
 
 #include "client_group_context.h"
+#include "client_handshake_context.h"
 #include "server_root_certificate_context.h"
 
 const char *longterm_public_key_out_file = "longterm_certificate.asn1.bin";
@@ -27,12 +28,16 @@ int open_resources(ErlNifEnv* env, xtt_nif_data* data)
   data->res_client_group_context = enif_open_resource_type(env, NULL, "xtt_client_group_context",
                                                            NULL, flags, NULL);
 
+  data->res_client_handshake_context = enif_open_resource_type(env, NULL, "xtt_client_handshake_context",
+                                                               NULL, flags, NULL);
+
   data->res_client = enif_open_resource_type(env, NULL, "xtt_nif_client", NULL, flags, NULL);
   data->res_struct = enif_open_resource_type(env, NULL, "xtt_nif_struct", NULL, flags, NULL);
 
   if (!data->res_server_root_certificate_context  ||
       !data->res_client_group_context ||
-      !data->res_client        ||
+      !data->res_client_handshake_context ||
+      !data->res_client ||
       !data->res_struct)
     return -1;
 
@@ -111,422 +116,6 @@ static int write_buffer_to_file(const char *filename, unsigned char *buffer, siz
 
 
     return (int)bytes_written;
-}
-
-// *************** INTERNAL FUNCTIONS *****************
-
-static ERL_NIF_TERM
-build_response(ErlNifEnv* env, int rc, xtt_nif_client *cs, ErlNifBinary *temp_bin)
-{
-    switch(rc) {
-        case XTT_RETURN_WANT_WRITE:
-            enif_alloc_binary(cs->bytes_requested, temp_bin);
-            memcpy(temp_bin->data, cs->io_ptr, cs->bytes_requested);
-            return make_return_binary(env, ATOMS.want_write, temp_bin);
-        case XTT_RETURN_WANT_READ:
-            return make_return_int(env, ATOMS.want_read, cs->bytes_requested);
-        case XTT_RETURN_WANT_BUILDIDCLIENTATTEST:
-            enif_alloc_binary(sizeof(xtt_certificate_root_id), temp_bin);
-            memcpy(temp_bin->data, &(cs->claimed_root_id), sizeof(xtt_certificate_root_id));
-            return make_return_binary(env, ATOMS.want_buildidclientattest, temp_bin);
-        case XTT_RETURN_WANT_PREPARSESERVERATTEST:
-            return make_return(env, ATOMS.want_preparseserverattest);
-        case XTT_RETURN_WANT_PARSEIDSERVERFINISHED:
-            return make_return(env, ATOMS.want_parseidserverfinished);
-        case XTT_RETURN_HANDSHAKE_FINISHED:
-            return make_return(env, ATOMS.handshake_finished);
-        default:
-            return make_return_int(env, ATOMS.error, rc);
-    }
-}
-
-static ERL_NIF_TERM
-xtt_init_client_handshake_context(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
-{
-    xtt_nif_data* data = enif_priv_data(env);
-
-    if(argc != 2) {
-        return enif_make_badarg(env);
-    }
-
-    int version;
-    int suite;
-
-    if(!enif_get_int(env, argv[0], &version)) {
-        return enif_make_badarg(env);
-    }
-
-    if(!enif_get_int(env, argv[1], &suite)) {
-        return enif_make_badarg(env);
-    }
-    else if (suite != 1 && suite != 2 && suite != 3 && suite != 4) {
-        fprintf(stderr, "Unknown suite %d\n", suite);
-        return enif_make_badarg(env);
-    }
-
-     xtt_nif_client *cs = enif_alloc_resource(data->res_client, sizeof(*cs));
-
-     if(cs == NULL){
-        puts("Failed to allocate xtt_nif_client cs!\n");
-        return enif_make_badarg(env);
-     }
-
-
-     cs->io_ptr = NULL;
-
-     printf("STARTING xtt_initialize_client_handshake_context with version %d and suite %d...\n", version, suite);
-
-     xtt_return_code_type rc = xtt_initialize_client_handshake_context(
-            &(cs->ctx), cs->in, sizeof(cs->in), cs->out, sizeof(cs->out), (xtt_version) version, (xtt_suite_spec) suite);
-
-
-     ERL_NIF_TERM  result;
-
-     if (XTT_RETURN_SUCCESS != rc) {
-        fprintf(stderr, "Error initializing client handshake context: %d\n", rc);
-        result = make_error(env, enif_make_int(env, rc));
-     }
-     else {
-        puts("SUCCESS\n");
-        result = make_ok(env, enif_make_resource(env, cs));
-     }
-
-     enif_release_resource(cs);
-
-     return result;
-
-}
-
-//STEP 1.
-static ERL_NIF_TERM
-xtt_start_client_handshake(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
-{
-    xtt_nif_data* data = enif_priv_data(env);
-
-    if(argc != 1) {
-        return enif_make_badarg(env);
-    }
-
-    xtt_nif_client *cs;
-
-    if(!enif_get_resource(env, argv[0], data->res_client, (void**) &cs)) {
-        return enif_make_badarg(env);
-    }
-
-    xtt_return_code_type rc = xtt_handshake_client_start(&(cs->bytes_requested), &(cs->io_ptr), &(cs->ctx));
-
-    printf("Result of xtt_handshake_client_start %d\n", rc);
-
-    ErlNifBinary temp_bin;
-
-    return build_response(env, rc, cs, &temp_bin);
-}
-
-static ERL_NIF_TERM
-xtt_client_handshake(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]){
-    xtt_nif_data* data = enif_priv_data(env);
-
-    if(argc != 3){
-        return enif_make_badarg(env);
-    }
-
-    xtt_nif_client *cs;
-
-    if(!enif_get_resource(env, argv[0], data->res_client, (void**) &cs)) {
-        return enif_make_badarg(env);
-    }
-
-    int bytes_written;
-
-    if(!enif_get_int(env, argv[1],  &bytes_written)) {
-            return enif_make_badarg(env);
-    }
-
-    ErlNifBinary received_bin;
-
-    if(!enif_inspect_binary(env, argv[2], &received_bin)) {
-            return enif_make_badarg(env);
-    }
-
-    if(received_bin.size > 0 && bytes_written == 0){
-        printf("Appending received binary of size %lu to io_ptr...\n", received_bin.size);
-        memcpy(cs->io_ptr, received_bin.data, received_bin.size);
-        puts("DONE\n");
-    }
-    else{
-        printf("Received bytes: %lu Written bytes: %u\n", received_bin.size, bytes_written);
-    }
-
-    xtt_return_code_type rc = xtt_handshake_client_handle_io(
-                               (uint16_t) bytes_written,
-                               (uint16_t) received_bin.size,
-                               &(cs->bytes_requested),
-                               &(cs->io_ptr),
-                               &(cs->ctx));
-
-    ErlNifBinary temp_bin;
-
-    return build_response(env, rc, cs, &temp_bin);
-}
-
-static ERL_NIF_TERM
-xtt_handshake_preparse_serverattest(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]){
-    xtt_nif_data* data = enif_priv_data(env);
-
-    if(argc != 1){
-        return enif_make_badarg(env);
-    }
-
-    xtt_nif_client *cs;
-
-    if(!enif_get_resource(env, argv[0], data->res_client, (void**) &cs)) {
-        return enif_make_badarg(env);
-    }
-
-    xtt_return_code_type rc = xtt_handshake_client_preparse_serverattest(&(cs->claimed_root_id),
-                                                    &(cs->bytes_requested),
-                                                    &(cs->io_ptr),
-                                                    &(cs->ctx));
-
-    ErlNifBinary temp_bin;
-
-    return build_response(env, rc, cs, &temp_bin);
-}
-
-static ERL_NIF_TERM
-xtt_handshake_build_idclientattest(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]){
-    xtt_nif_data* data = enif_priv_data(env);
-
-    if(argc != 5){
-        return enif_make_badarg(env);
-    }
-
-    struct xtt_server_root_certificate_context *server_cert;
-
-    ErlNifBinary requested_client_id;
-    ErlNifBinary intended_server_id;
-    struct xtt_client_group_context *group_ctx;
-    xtt_nif_client *cs;
-
-    if(!enif_get_resource(env, argv[0], data->res_server_root_certificate_context, (void**) &server_cert)) {
-        return enif_make_badarg(env);
-    }
-
-
-    if(!enif_inspect_binary(env, argv[1], &requested_client_id) ) {
-        fprintf(stderr, "Bad arg at position 1\n");
-        return enif_make_badarg(env);
-    }
-    else if (requested_client_id.size != sizeof(xtt_identity_type)){
-            fprintf(stderr, "Bad arg at position 1: expecting requested_client_id size %lu got %zu\n",
-            sizeof(xtt_identity_type), requested_client_id.size);
-            return enif_make_badarg(env);
-     }
-
-     if(!enif_inspect_binary(env, argv[2], &intended_server_id) ) {
-            fprintf(stderr, "Bad arg at position 1\n");
-            return enif_make_badarg(env);
-     }
-     else if (intended_server_id.size != sizeof(xtt_identity_type)){
-            fprintf(stderr, "Bad arg at position 1: expecting requested_client_id size %lu got %zu\n",
-            sizeof(xtt_identity_type), intended_server_id.size);
-            return enif_make_badarg(env);
-     }
-
-    if(!enif_get_resource(env, argv[3], data->res_client_group_context, (void**) &group_ctx)) {
-                return enif_make_badarg(env);
-    }
-
-    if(!enif_get_resource(env, argv[4], data->res_client, (void**) &cs)) {
-            return enif_make_badarg(env);
-    }
-
-    xtt_return_code_type rc = xtt_handshake_client_build_idclientattest(&(cs->bytes_requested),
-                                                       &(cs->io_ptr),
-                                                       server_cert,
-                                                       (xtt_identity_type *) requested_client_id.data,
-                                                       group_ctx,
-                                                       &(cs->ctx));
-
-     printf("FINISHED NIF: xtt_handshake_build_idclientattest with response %d\n", rc);
-
-     ErlNifBinary temp_bin;
-
-     return build_response(env, rc, cs, &temp_bin);
-}
-
-static ERL_NIF_TERM
-xtt_handshake_parse_idserverfinished(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]){
-    xtt_nif_data* data = enif_priv_data(env);
-
-    if(argc != 1){
-        return enif_make_badarg(env);
-    }
-
-    xtt_nif_client *cs;
-
-    if(!enif_get_resource(env, argv[0], data->res_client, (void**) &cs)) {
-        return enif_make_badarg(env);
-    }
-
-    xtt_return_code_type rc = xtt_handshake_client_parse_idserverfinished(&(cs->bytes_requested),
-                                                     &(cs->io_ptr),
-                                                     &(cs->ctx));
-    ErlNifBinary temp_bin;
-
-    return build_response(env, rc, cs, &temp_bin);
-}
-
-static ERL_NIF_TERM
-xtt_client_build_error_msg_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]){
-   xtt_nif_data* data = enif_priv_data(env);
-
-   if(argc != 1) {
-           return enif_make_badarg(env);
-   }
-
-   xtt_nif_client *cs;
-
-   if(!enif_get_resource(env, argv[0], data->res_client, (void**) &cs)) {
-        return enif_make_badarg(env);
-    }
-
-   uint16_t *err_buff_len = (uint16_t *) 16;
-   ErlNifBinary err_buffer_bin;
-   enif_alloc_binary((size_t) err_buff_len, &err_buffer_bin);
-
-   (void) xtt_client_build_error_msg(err_buff_len, &err_buffer_bin.data, &cs->ctx);
-
-   return enif_make_binary(env, &err_buffer_bin);
-}
-
-static ERL_NIF_TERM
-xtt_get_my_longterm_key(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]){
-    xtt_nif_data* data = enif_priv_data(env);
-
-    if(argc != 1){
-        return enif_make_badarg(env);
-    }
-
-    xtt_nif_client *cs;
-
-    if(!enif_get_resource(env, argv[0], data->res_client, (void**) &cs)) {
-        return enif_make_badarg(env);
-    }
-
-    xtt_ecdsap256_pub_key clients_longterm_key;
-
-    xtt_return_code_type rc = xtt_get_my_longterm_key_ecdsap256(&clients_longterm_key, &(cs->ctx));
-
-    printf("Result of xtt_get_my_longterm_key_ecdsap256 is %d\n", rc);
-
-    if (XTT_RETURN_SUCCESS != rc) {
-        printf("Error getting the client's public longterm key!\n");
-        return make_error(env, enif_make_int(env, rc));
-    }
-    else{
-       ErlNifBinary longterm_key_bin;
-       enif_alloc_binary(sizeof(xtt_ecdsap256_pub_key), &longterm_key_bin);
-       memcpy(longterm_key_bin.data, clients_longterm_key.data, sizeof(xtt_ecdsap256_pub_key));
-       return make_ok(env, enif_make_binary(env, &longterm_key_bin));
-    }
-}
-
-
-static ERL_NIF_TERM
-xtt_get_my_longterm_private_key(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]){
-    xtt_nif_data* data = enif_priv_data(env);
-
-    if(argc != 1){
-        return enif_make_badarg(env);
-    }
-
-    xtt_nif_client *cs;
-
-    if(!enif_get_resource(env, argv[0], data->res_client, (void**) &cs)) {
-        return enif_make_badarg(env);
-    }
-
-    xtt_ecdsap256_priv_key my_longterm_priv_key;
-
-    xtt_return_code_type rc = xtt_get_my_longterm_private_key_ecdsap256(&my_longterm_priv_key, &(cs->ctx));
-
-    printf("Result of xtt_get_my_longterm_private_key_ecdsap256 is %d\n", rc);
-
-    if (XTT_RETURN_SUCCESS != rc) {
-        printf("Error getting the client's private longterm key!\n");
-        return make_error(env, enif_make_int(env, rc));
-    }
-    else{
-        ErlNifBinary longterm_priv_key_bin;
-        enif_alloc_binary(sizeof(xtt_ecdsap256_priv_key), &longterm_priv_key_bin);
-        memcpy(longterm_priv_key_bin.data, my_longterm_priv_key.data, sizeof(xtt_ecdsap256_priv_key));
-        return make_ok(env, enif_make_binary(env, &longterm_priv_key_bin));
-    }
-}
-
-static ERL_NIF_TERM
-xtt_get_my_id(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]){
-    xtt_nif_data* data = enif_priv_data(env);
-
-    if(argc != 1){
-        return enif_make_badarg(env);
-    }
-
-    xtt_nif_client *cs;
-
-    if(!enif_get_resource(env, argv[0], data->res_client, (void**) &cs)) {
-        return enif_make_badarg(env);
-    }
-
-    xtt_identity_type client_id;
-
-    xtt_return_code_type rc = xtt_get_my_identity(&client_id, &(cs->ctx));
-
-    printf("Result of xtt_get_my_identity is %d\n", rc);
-
-    if (XTT_RETURN_SUCCESS != rc) {
-        printf("Error getting the client's identity!\n");
-        return make_error(env, enif_make_int(env, rc));
-    }
-    else{
-       ErlNifBinary client_id_bin;
-       enif_alloc_binary(sizeof(xtt_identity_type), &client_id_bin);
-       memcpy(client_id_bin.data, client_id.data, sizeof(xtt_identity_type));
-       return make_ok(env, enif_make_binary(env, &client_id_bin));
-    }
-}
-
-static ERL_NIF_TERM
-xtt_get_my_pseudonym(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]){
-    xtt_nif_data* data = enif_priv_data(env);
-
-    if(argc != 1){
-        return enif_make_badarg(env);
-    }
-
-    xtt_nif_client *cs;
-
-    if(!enif_get_resource(env, argv[0], data->res_client, (void**) &cs)) {
-        return enif_make_badarg(env);
-    }
-
-    xtt_daa_pseudonym_lrsw pseudonym;
-
-    xtt_return_code_type rc = xtt_get_my_pseudonym_lrsw(&pseudonym, &(cs->ctx));
-
-    printf("Result of xtt_get_my_pseudonym_lrsw is %d\n", rc);
-
-    if (XTT_RETURN_SUCCESS != rc) {
-        printf("Error getting the client's pseudonym!\n");
-        return make_error(env, enif_make_int(env, rc));
-    }
-    else{
-       ErlNifBinary pseudonym_bin;
-       enif_alloc_binary((size_t) sizeof(xtt_daa_pseudonym_lrsw), &pseudonym_bin);
-       memcpy(pseudonym_bin.data, pseudonym.data, sizeof(xtt_daa_pseudonym_lrsw));
-       return make_ok(env, enif_make_binary(env, &pseudonym_bin));
-    }
 }
 
 static ERL_NIF_TERM
@@ -640,19 +229,19 @@ xtt_x509_from_keypair(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]){
 }
 
 static ErlNifFunc nif_funcs[] = {
-    {"xtt_init_client_handshake_context", 2, xtt_init_client_handshake_context, ERL_NIF_DIRTY_JOB_CPU_BOUND},
-    {"xtt_start_client_handshake", 1, xtt_start_client_handshake, ERL_NIF_DIRTY_JOB_CPU_BOUND},
-    {"xtt_client_handshake", 3, xtt_client_handshake, ERL_NIF_DIRTY_JOB_CPU_BOUND},
-    {"xtt_handshake_preparse_serverattest", 1, xtt_handshake_preparse_serverattest, ERL_NIF_DIRTY_JOB_CPU_BOUND},
-    {"xtt_handshake_build_idclientattest", 5, xtt_handshake_build_idclientattest, ERL_NIF_DIRTY_JOB_CPU_BOUND},
-    {"xtt_handshake_parse_idserverfinished", 1, xtt_handshake_parse_idserverfinished, ERL_NIF_DIRTY_JOB_CPU_BOUND},
-    {"xtt_client_build_error_msg_nif", 1, xtt_client_build_error_msg_nif, ERL_NIF_DIRTY_JOB_CPU_BOUND},
+    {"xtt_initialize_client_handshake_context", 2, xtt_nif_initialize_client_handshake_context, ERL_NIF_DIRTY_JOB_CPU_BOUND},
+    {"xtt_handshake_client_start", 1, xtt_nif_handshake_client_start, ERL_NIF_DIRTY_JOB_CPU_BOUND},
+    {"xtt_handshake_client_handle_io", 3, xtt_nif_handshake_client_handle_io, ERL_NIF_DIRTY_JOB_CPU_BOUND},
+    {"xtt_handshake_client_preparse_serverattest", 1, xtt_nif_handshake_client_preparse_serverattest, ERL_NIF_DIRTY_JOB_CPU_BOUND},
+    {"xtt_handshake_client_build_idclientattest", 4, xtt_nif_handshake_client_build_idclientattest, ERL_NIF_DIRTY_JOB_CPU_BOUND},
+    {"xtt_handshake_client_parse_idserverfinished", 1, xtt_nif_handshake_client_parse_idserverfinished, ERL_NIF_DIRTY_JOB_CPU_BOUND},
+    {"xtt_client_build_error_msg", 1, xtt_nif_client_build_error_msg, ERL_NIF_DIRTY_JOB_CPU_BOUND},
     {"xtt_initialize_client_group_context_lrsw", 4, xtt_nif_initialize_client_group_context_lrsw, ERL_NIF_DIRTY_JOB_CPU_BOUND},
     {"xtt_initialize_server_root_certificate_context_ecdsap256", 2, xtt_nif_initialize_server_root_certificate_context_ecdsap256, ERL_NIF_DIRTY_JOB_CPU_BOUND},
-    {"xtt_get_my_longterm_key", 1, xtt_get_my_longterm_key, 0},
-    {"xtt_get_my_longterm_private_key", 1, xtt_get_my_longterm_private_key, 0},
-    {"xtt_get_my_id", 1, xtt_get_my_id, 0},
-    {"xtt_get_my_pseudonym", 1, xtt_get_my_pseudonym, 0},
+    {"xtt_get_my_longterm_key_ecdsap256", 1, xtt_nif_get_my_longterm_key_ecdsap256, 0},
+    {"xtt_get_my_longterm_private_key_ecdsap256", 1, xtt_nif_get_my_longterm_private_key_ecdsap256, 0},
+    {"xtt_get_my_identity", 1, xtt_nif_get_my_identity, 0},
+    {"xtt_get_my_pseudonym_lrsw", 1, xtt_nif_get_my_pseudonym_lrsw, 0},
     {"xtt_id_to_string", 1, xtt_id_to_string, 0},
     {"xtt_x509_from_keypair", 3, xtt_x509_from_keypair, 0},
 };

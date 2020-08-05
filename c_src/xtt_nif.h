@@ -24,9 +24,23 @@ typedef struct
 
 typedef struct
 {
+  struct xtt_client_handshake_context base;
+
+  unsigned char in[MAX_HANDSHAKE_SERVER_MESSAGE_LENGTH];
+  unsigned char out[MAX_HANDSHAKE_CLIENT_MESSAGE_LENGTH];
+
+  unsigned char* io_ptr;
+  uint16_t io_bytes_requested;
+  xtt_certificate_root_id claimed_root_id;
+} xtt_nif_client_handshake_context;
+
+typedef struct
+{
   ErlNifResourceType* res_struct;
   ErlNifResourceType* res_client_group_context;
   ErlNifResourceType* res_server_root_certificate_context;
+  ErlNifResourceType* res_client_handshake_context;
+
   ErlNifResourceType* res_client;
 } xtt_nif_data;
 

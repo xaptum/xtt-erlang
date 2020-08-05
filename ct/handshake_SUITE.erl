@@ -73,7 +73,7 @@ validate_handshake_context(HandshakeContext)->
   {ok, LongTermPrivKey} = xtt_erlang:xtt_get_my_longterm_private_key(HandshakeContext),
   lager:info("LongTermPrivKey: ~p", [LongTermPrivKey]),
 
-  {ok, Identity} = xtt_erlang:xtt_get_my_id(HandshakeContext),
+  {ok, Identity} = xtt_erlang:xtt_get_my_identity(HandshakeContext),
   lager:info("Identity: ~p", [Identity]),
 
   lager:info("Ipv6: ~p", [xtt_utils:identity_to_ipv6_str(Identity)]),
@@ -81,7 +81,7 @@ validate_handshake_context(HandshakeContext)->
   {ok, IdStr} = xtt_erlang:xtt_id_to_string(Identity),
   lager:info("Converted identity string: ~p", [IdStr]),
 
-  {ok, Pseudonym} = xtt_erlang:xtt_get_my_pseudonym(HandshakeContext),
+  {ok, Pseudonym} = xtt_erlang:xtt_get_my_pseudonym_lrsw(HandshakeContext),
   lager:info("Psuedonym: ~p", [Pseudonym]),
 
   {ok, Cert} = xtt_erlang:xtt_x509_from_keypair(LongTermKey, LongTermPrivKey, Identity),

@@ -76,7 +76,7 @@ init([XttServerHost, XttServerPort,
   RequestedClientId, IntendedServerId,
   XttVersion, XttSuite,
   GroupContext]) ->
-  {ok, XttClientHandshakeState} = xtt_nif:xtt_init_client_handshake_context(XttVersion, XttSuite),
+  {ok, XttClientHandshakeState} = xtt_nif:xtt_initialize_client_handshake_context(XttVersion, XttSuite),
   {ok, XttServerSocket} = gen_tcp:connect(XttServerHost, XttServerPort, ?TCP_OPTIONS),
   lager:md([{source, XttServerHost ++ ":" ++ integer_to_list(XttServerPort) ++ "_" ++ binary_to_list(RequestedClientId)}]),
   gen_server:cast(self(), start_handshake),
