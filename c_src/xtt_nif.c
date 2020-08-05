@@ -102,6 +102,26 @@ on_nif_upgrade(ErlNifEnv* env, void** priv, void** old_priv, ERL_NIF_TERM info)
   return 0;
 }
 
+static
+ERL_NIF_TERM xtt_nif_identity_to_string(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]){
+  ErlNifBinary identity;
+  xtt_identity_string* string;
+  ERL_NIF_TERM ret;
+
+  if ((argc != 1) ||
+      (!enif_inspect_binary(env, argv[0], &identity)))
+    return enif_make_badarg(env);
+
+  if (identity.size != sizeof(xtt_identity_type))
+    return enif_make_badarg(env);
+
+  string = (void*) enif_make_new_binary(env, sizeof(*string), &ret);
+
+  (void) xtt_identity_to_string((void*)identity.data, string);
+
+  return ret;
+}
+
 static int write_buffer_to_file(const char *filename, unsigned char *buffer, size_t bytes_to_write)
 {
     FILE *ptr;
@@ -116,45 +136,6 @@ static int write_buffer_to_file(const char *filename, unsigned char *buffer, siz
 
 
     return (int)bytes_written;
-}
-
-static ERL_NIF_TERM
-xtt_id_to_string(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]){
-
-//    puts("START NIF: xtt_id_to_string...\n");
-
-    if(argc != 1){
-        return enif_make_badarg(env);
-    }
-
-    ErlNifBinary my_assigned_id;
-
-    if(!enif_inspect_binary(env, argv[0], &my_assigned_id) ) {
-        fprintf(stderr, "Bad 'my_assigned_id' arg\n");
-        return enif_make_badarg(env);
-    }
-    else if (my_assigned_id.size != sizeof(xtt_identity_type)){
-        fprintf(stderr, "Bad arg at position 0: expecting 'my_assigned_id' of size %lu got %zu\n",
-        sizeof(xtt_identity_type), my_assigned_id.size);
-        return enif_make_badarg(env);
-    }
-
-    xtt_identity_string my_assigned_id_as_string;
-    int convert_ret = xtt_identity_to_string(
-                                    (xtt_identity_type *) my_assigned_id.data,
-                                    &my_assigned_id_as_string
-                                );
-    if (0 != convert_ret) {
-        fprintf(stderr, "Error converting assigned id %s to string\n", my_assigned_id.data);
-        return make_error(env, enif_make_int(env, convert_ret));
-    }
-
-    printf("Converted my_assigned_id %s to string %s\n", my_assigned_id.data, my_assigned_id_as_string.data);
-
-    ErlNifBinary id_str_bin;
-    enif_alloc_binary((size_t) sizeof(xtt_identity_string), &id_str_bin);
-    memcpy(id_str_bin.data, my_assigned_id_as_string.data, sizeof(xtt_identity_string));
-    return make_ok(env, enif_make_binary(env, &id_str_bin));
 }
 
 static ERL_NIF_TERM
@@ -242,7 +223,7 @@ static ErlNifFunc nif_funcs[] = {
     {"xtt_get_my_longterm_private_key_ecdsap256", 1, xtt_nif_get_my_longterm_private_key_ecdsap256, 0},
     {"xtt_get_my_identity", 1, xtt_nif_get_my_identity, 0},
     {"xtt_get_my_pseudonym_lrsw", 1, xtt_nif_get_my_pseudonym_lrsw, 0},
-    {"xtt_id_to_string", 1, xtt_id_to_string, 0},
+    {"xtt_identity_to_string", 1, xtt_nif_identity_to_string, 0},
     {"xtt_x509_from_keypair", 3, xtt_x509_from_keypair, 0},
 };
 
