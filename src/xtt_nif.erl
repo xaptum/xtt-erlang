@@ -17,7 +17,7 @@
   xtt_get_my_identity/1,
   xtt_get_my_pseudonym_lrsw/1,
   xtt_identity_to_string/1,
-  xtt_x509_from_keypair/3]).
+  xtt_x509_from_ecdsap256_keypair/3]).
 
 -export([priv_dir/0]).
 
@@ -122,5 +122,5 @@ xtt_client_build_error_msg(_ClientHandshakeCtx)->
 xtt_identity_to_string(_Identity)->
   erlang:nif_error(?LINE).
 
-xtt_x509_from_keypair(_LongtermKey, _LongtermPrivKey, _Identity)->
+xtt_x509_from_ecdsap256_keypair(_PublicKey, _PrivateKey, _CommonName)->
   erlang:nif_error(?LINE).

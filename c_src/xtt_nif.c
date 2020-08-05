@@ -10,6 +10,7 @@
 #include "atoms.h"
 #include "nif_utils.h"
 
+#include "asn1.h"
 #include "client_group_context.h"
 #include "client_handshake_context.h"
 #include "server_root_certificate_context.h"
@@ -122,93 +123,6 @@ ERL_NIF_TERM xtt_nif_identity_to_string(ErlNifEnv* env, int argc, const ERL_NIF_
   return ret;
 }
 
-static int write_buffer_to_file(const char *filename, unsigned char *buffer, size_t bytes_to_write)
-{
-    FILE *ptr;
-
-    ptr = fopen(filename, "wb");
-    if (NULL == ptr)
-        return -1;
-
-    size_t bytes_written = fwrite(buffer, 1, bytes_to_write, ptr);
-
-    (void)fclose(ptr);
-
-
-    return (int)bytes_written;
-}
-
-static ERL_NIF_TERM
-xtt_x509_from_keypair(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]){
-
-//    puts("START NIF: xtt_x509_from_keypair...\n");
-
-    if(argc != 3){
-        return enif_make_badarg(env);
-    }
-
-    ErlNifBinary my_longterm_key;
-    ErlNifBinary my_longterm_priv_key;
-    ErlNifBinary my_assigned_id;
-
-    if(!enif_inspect_binary(env, argv[0], &my_longterm_key) ) {
-        fprintf(stderr, "Bad 'my_longterm_key' arg\n");
-        return enif_make_badarg(env);
-    }
-    else if (my_longterm_key.size != sizeof(xtt_ecdsap256_pub_key)){
-        fprintf(stderr, "Bad arg at position 0: expecting 'my_longterm_key' of size %lu got %zu\n",
-        sizeof(xtt_ecdsap256_pub_key), my_longterm_key.size);
-        return enif_make_badarg(env);
-    }
-
-    if(!enif_inspect_binary(env, argv[1], &my_longterm_priv_key) ) {
-        fprintf(stderr, "Bad 'my_longterm_priv_key' arg\n");
-        return enif_make_badarg(env);
-    }
-    else if (my_longterm_priv_key.size != sizeof(xtt_ecdsap256_priv_key)){
-        fprintf(stderr, "Bad arg at position 1: expecting 'my_longterm_priv_key' of size %lu got %zu\n",
-        sizeof(xtt_ecdsap256_priv_key), my_longterm_priv_key.size);
-        return enif_make_badarg(env);
-    }
-
-    if(!enif_inspect_binary(env, argv[2], &my_assigned_id) ) {
-        fprintf(stderr, "Bad 'my_assigned_id' arg\n");
-        return enif_make_badarg(env);
-    }
-    else if (my_assigned_id.size != sizeof(xtt_identity_type)){
-        fprintf(stderr, "Bad arg at position 0: expecting 'my_assigned_id' of size %lu got %zu\n",
-        sizeof(xtt_identity_type), my_assigned_id.size);
-        return enif_make_badarg(env);
-    }
-
-    // Save longterm keypair as X509 certificate
-    unsigned char cert_buf[XTT_X509_CERTIFICATE_LENGTH];
-
-    if (0 != xtt_x509_from_ecdsap256_keypair((xtt_ecdsap256_pub_key *) my_longterm_key.data,
-                                           (xtt_ecdsap256_priv_key *) my_longterm_priv_key.data,
-                                           (xtt_identity_type *) my_assigned_id.data,
-                                           cert_buf, sizeof(cert_buf))) {
-
-
-
-        fprintf(stderr, "Error creating X509 certificate\n");
-        return make_error(env, enif_make_int(env, 1));
-    }
-    else{
-        ErlNifBinary cert_bin;
-        enif_alloc_binary((size_t) XTT_X509_CERTIFICATE_LENGTH, &cert_bin);
-        memcpy(cert_bin.data, cert_buf, XTT_X509_CERTIFICATE_LENGTH);
-
-        int write_ret = write_buffer_to_file(longterm_public_key_out_file, cert_buf, sizeof(cert_buf));
-        if (sizeof(cert_buf) != write_ret) {
-            fprintf(stderr, "Error writing longterm public key certificate to file\n");
-            return 1;
-        }
-
-        return make_ok(env, enif_make_binary(env, &cert_bin));
-    }
-}
-
 static ErlNifFunc nif_funcs[] = {
     {"xtt_initialize_client_handshake_context", 2, xtt_nif_initialize_client_handshake_context, ERL_NIF_DIRTY_JOB_CPU_BOUND},
     {"xtt_handshake_client_start", 1, xtt_nif_handshake_client_start, ERL_NIF_DIRTY_JOB_CPU_BOUND},
@@ -224,7 +138,7 @@ static ErlNifFunc nif_funcs[] = {
     {"xtt_get_my_identity", 1, xtt_nif_get_my_identity, 0},
     {"xtt_get_my_pseudonym_lrsw", 1, xtt_nif_get_my_pseudonym_lrsw, 0},
     {"xtt_identity_to_string", 1, xtt_nif_identity_to_string, 0},
-    {"xtt_x509_from_keypair", 3, xtt_x509_from_keypair, 0},
+    {"xtt_x509_from_ecdsap256_keypair", 3, xtt_nif_x509_from_ecdsap256_keypair, 0},
 };
 
 ERL_NIF_INIT(xtt_nif, nif_funcs, &on_nif_load, NULL, on_nif_upgrade, on_nif_unload);
